@@ -1,0 +1,85 @@
+<x-layouts.public title="Register CUANTAH">
+    <section class="relative overflow-hidden bg-[#f7faf5]">
+        <div class="absolute left-0 top-0 h-56 w-56 rounded-full bg-emerald-100/70 blur-3xl"></div>
+        <div class="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-lime-100/80 blur-3xl"></div>
+
+        <div class="relative mx-auto grid min-h-[calc(100vh-88px)] max-w-6xl items-center gap-10 px-4 py-14 lg:grid-cols-[.9fr_1.1fr] lg:px-8 lg:py-16">
+            <div class="mx-auto max-w-xl text-center lg:mx-0 lg:text-left">
+                <div class="inline-flex items-center gap-4">
+                    <span class="flex h-[72px] w-[72px] items-center justify-center rounded-3xl bg-emerald-700 text-white shadow-lg shadow-emerald-900/20">
+                        <svg class="h-11 w-11" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+                            <path d="M20 4C13.5 10.8 8 17.6 8 25.2C8 32.1 13.4 36 20 36C26.6 36 32 32.1 32 25.2C32 17.6 26.5 10.8 20 4Z" stroke="currentColor" stroke-width="4" stroke-linejoin="round" />
+                            <path d="M20 13V31" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+                            <path d="M20 24C16.6 23.6 14.3 21.8 13 18.5" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+                        </svg>
+                    </span>
+                    <span class="text-left">
+                        <span class="block text-4xl font-black leading-none tracking-tight text-emerald-800">CUANTAH</span>
+                        <span class="mt-2 block text-sm font-black uppercase tracking-[0.28em] text-emerald-700/70">Cuan dari minyak jelantah</span>
+                    </span>
+                </div>
+
+                <h1 class="mt-3 text-4xl font-black tracking-tight text-emerald-950 sm:text-5xl">
+                    Mulai setor jelantah.
+                </h1>
+
+                <p class="mt-5 text-lg leading-8 text-slate-600">
+                    Daftar sebagai rumah tangga atau UMKM, pilih metode setor, lalu CUANTAH mencatat transaksi secara transparan.
+                </p>
+
+                <div class="mt-7 flex flex-wrap justify-center gap-3 lg:justify-start">
+                    <span class="rounded-full bg-white px-4 py-2 text-sm font-black text-emerald-800 shadow-sm ring-1 ring-emerald-100">Daftar</span>
+                    <span class="rounded-full bg-white px-4 py-2 text-sm font-black text-emerald-800 shadow-sm ring-1 ring-emerald-100">Setor</span>
+                    <span class="rounded-full bg-white px-4 py-2 text-sm font-black text-emerald-800 shadow-sm ring-1 ring-emerald-100">Tercatat</span>
+                </div>
+            </div>
+
+            <div class="mx-auto w-full max-w-lg">
+                <form method="post" action="{{ route('register') }}" class="rounded-[1.75rem] border border-emerald-100 bg-white p-6 shadow-xl shadow-emerald-950/10 sm:p-8">
+                    @csrf
+
+                    <div class="mb-7">
+                        <h2 class="text-2xl font-black text-emerald-950">Buat akun</h2>
+                        <p class="mt-2 text-sm leading-6 text-slate-600">Isi data berikut untuk mulai menggunakan CUANTAH.</p>
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-black text-emerald-950">Nama</label>
+                            <input name="name" value="{{ old('name') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 font-semibold text-emerald-950 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-black text-emerald-950">Email</label>
+                            <input name="email" value="{{ old('email') }}" type="email" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 font-semibold text-emerald-950 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-black text-emerald-950">No. Telepon</label>
+                            <input name="phone" value="{{ old('phone') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 font-semibold text-emerald-950 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-black text-emerald-950">Password</label>
+                            <input name="password" type="password" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 font-semibold text-emerald-950 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-black text-emerald-950">Konfirmasi Password</label>
+                            <input name="password_confirmation" type="password" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 font-semibold text-emerald-950 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                        </div>
+                    </div>
+
+                    @if($errors->any())<p class="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{{ $errors->first() }}</p>@endif
+
+                    <button class="mt-7 w-full rounded-2xl bg-emerald-700 px-4 py-3.5 font-black text-white shadow-lg shadow-emerald-950/15 transition hover:bg-emerald-800">Buat Akun</button>
+
+                    <p class="mt-6 text-center text-sm text-slate-600">
+                        Sudah punya akun?
+                        <a class="font-black text-emerald-700 hover:text-emerald-800" href="{{ route('login') }}">Login</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </section>
+</x-layouts.public>

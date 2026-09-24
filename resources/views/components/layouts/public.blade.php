@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ $title ?? 'CUANTAH' }}</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+</head>
+<body class="bg-[#f7faf5] text-slate-900 antialiased">
+    @php
+        $publicNavItems = [
+            ['label' => 'Beranda', 'url' => route('home'), 'active' => request()->routeIs('home')],
+            ['label' => 'Tentang', 'url' => route('public.page', 'tentang'), 'active' => request()->is('tentang')],
+            ['label' => 'Cara Kerja', 'url' => route('public.page', 'cara-kerja'), 'active' => request()->is('cara-kerja')],
+            ['label' => 'Harga', 'url' => route('public.page', 'harga'), 'active' => request()->is('harga')],
+            ['label' => 'Dampak', 'url' => route('public.page', 'dampak'), 'active' => request()->is('dampak')],
+            ['label' => 'Edukasi', 'url' => route('public.page', 'edukasi'), 'active' => request()->is('edukasi')],
+            ['label' => 'FAQ', 'url' => route('public.page', 'faq'), 'active' => request()->is('faq')],
+        ];
+    @endphp
+
+    <header class="sticky top-0 z-40 border-b border-emerald-950/10 bg-white/95 shadow-sm shadow-emerald-950/5 backdrop-blur">
+        <nav class="mx-auto flex max-w-[1500px] items-center justify-between gap-3 px-4 py-3 sm:gap-6 sm:py-4 lg:px-8">
+            <a href="{{ route('home') }}" class="flex min-w-0 items-center gap-3">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-700 text-white shadow-lg shadow-emerald-900/20 sm:h-12 sm:w-12">
+                    <svg class="h-7 w-7 sm:h-8 sm:w-8" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+                        <path d="M20 4C13.5 10.8 8 17.6 8 25.2C8 32.1 13.4 36 20 36C26.6 36 32 32.1 32 25.2C32 17.6 26.5 10.8 20 4Z" stroke="currentColor" stroke-width="4" stroke-linejoin="round" />
+                        <path d="M20 13V31" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+                        <path d="M20 24C16.6 23.6 14.3 21.8 13 18.5" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+                    </svg>
+                </span>
+                <span>
+                    <span class="block text-xl font-black leading-none tracking-tight text-emerald-800 sm:text-2xl">CUANTAH</span>
+                    <span class="mt-1 hidden text-[10px] font-black uppercase tracking-[0.24em] text-emerald-700/70 sm:block">Cuan dari minyak jelantah</span>
+                </span>
+            </a>
+            <div class="hidden items-center gap-7 text-sm font-bold text-slate-600 xl:flex">
+                @foreach ($publicNavItems as $item)
+                    <a
+                        href="{{ $item['url'] }}"
+                        @class([
+                            'group relative px-1 py-4 transition duration-200 hover:text-emerald-700',
+                            'text-emerald-800' => $item['active'],
+                        ])
+                    >
+                        {{ $item['label'] }}
+                        <span
+                            @class([
+                                'absolute inset-x-0 bottom-0 h-1 rounded-full bg-emerald-600 transition-all duration-300',
+                                'scale-x-100 opacity-100' => $item['active'],
+                                'scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100' => ! $item['active'],
+                            ])
+                        ></span>
+                    </a>
+                @endforeach
+            </div>
+            <div class="flex items-center gap-2">
+                @auth
+                    <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : (auth()->user()->isEmployee() ? route('employee.dashboard') : route('dashboard')) }}" class="hidden rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 sm:inline-flex">Dashboard</a>
+                @else
+                    <a href="{{ route('login') }}" class="hidden px-4 py-3 text-sm font-bold text-slate-700 xl:inline-flex">Login</a>
+                    <a href="{{ route('register') }}" class="hidden items-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-800 sm:inline-flex">
+                        <span class="hidden md:inline">Setor Sekarang</span>
+                        <span class="md:hidden">Setor</span>
+                        <span aria-hidden="true">→</span>
+                    </a>
+                @endauth
+
+                <details class="dropdown dropdown-end xl:hidden">
+                    <summary class="btn btn-ghost btn-square rounded-xl text-emerald-900" aria-label="Buka menu navigasi">
+                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M4 7H20M4 12H20M4 17H20" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+                        </svg>
+                    </summary>
+                    <div class="menu dropdown-content z-50 mt-4 w-[calc(100vw-2rem)] max-w-72 rounded-3xl border border-emerald-100 bg-white p-3 text-slate-700 shadow-2xl shadow-emerald-950/10">
+                        @foreach ($publicNavItems as $item)
+                            <a
+                                href="{{ $item['url'] }}"
+                                @class([
+                                    'rounded-2xl px-4 py-3 text-sm font-bold transition hover:bg-emerald-50 hover:text-emerald-800',
+                                    'bg-emerald-50 text-emerald-800' => $item['active'],
+                                ])
+                            >
+                                {{ $item['label'] }}
+                            </a>
+                        @endforeach
+
+                        <div class="mt-2 border-t border-emerald-100 pt-2">
+                            @auth
+                                <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : (auth()->user()->isEmployee() ? route('employee.dashboard') : route('dashboard')) }}" class="rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-black text-white hover:bg-emerald-800">Dashboard</a>
+                            @else
+                                <a href="{{ route('login') }}" class="rounded-2xl px-4 py-3 text-sm font-bold hover:bg-emerald-50 hover:text-emerald-800">Login</a>
+                            @endauth
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </nav>
+    </header>
+    <main>{{ $slot }}</main>
+</body>
+</html>
