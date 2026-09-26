@@ -18,6 +18,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => EnsureAdmin::class,
             'employee' => EnsureEmployee::class,
         ]);
+
+        // CATATAN: jangan aktifkan trustProxies selama aplikasi dilayani
+        // langsung oleh web server (mis. shared hosting cPanel). Mempercayai
+        // proxy sembarangan membuat $request->ip() diambil dari header
+        // X-Forwarded-For yang bisa dipalsukan, sehingga throttle login pada
+        // LoginRequest bisa dilewati. Aktifkan hanya bila benar-benar ada
+        // proxy di depan, dan sebutkan IP proxy tersebut secara eksplisit:
+        // $middleware->trustProxies(at: ['10.0.0.1']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

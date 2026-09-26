@@ -38,9 +38,15 @@ return new class extends Migration
         });
 
         DB::table('transactions')
-            ->join('pickups', 'pickups.transaction_id', '=', 'transactions.id')
-            ->whereNotNull('pickups.partner_id')
-            ->update(['transactions.partner_id' => DB::raw('pickups.partner_id')]);
+            ->whereExists(function ($query) {
+                $query->selectRaw('1')
+                    ->from('pickups')
+                    ->whereColumn('pickups.transaction_id', 'transactions.id')
+                    ->whereNotNull('pickups.partner_id');
+            })
+            ->update([
+                'partner_id' => DB::raw('(select pickups.partner_id from pickups where pickups.transaction_id = transactions.id and pickups.partner_id is not null limit 1)'),
+            ]);
 
         $partnerIds = DB::table('partners')->pluck('id');
         $staffIds = DB::table('users')->whereIn('role', ['admin', 'employee'])->pluck('id');

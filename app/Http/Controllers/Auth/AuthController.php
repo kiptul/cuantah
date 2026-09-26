@@ -19,9 +19,7 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request)
     {
-        if (! Auth::attempt($request->validated(), $request->boolean('remember'))) {
-            return back()->withErrors(['email' => 'Email atau password tidak sesuai.'])->onlyInput('email');
-        }
+        $request->authenticate();
 
         $request->session()->regenerate();
 

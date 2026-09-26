@@ -13,14 +13,16 @@ class AdminDashboardService
     {
         $user = auth()->user();
 
+        $monthExpression = $this->monthExpression();
+
         $monthly = Transaction::query()
             ->visibleTo($user)
-            ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month')
+            ->selectRaw("{$monthExpression} as month")
             ->selectRaw('COALESCE(SUM(actual_liter), 0) as volume')
             ->selectRaw('COUNT(*) as count')
             ->selectRaw('COALESCE(SUM(total_value), 0) as value')
             ->where('created_at', '>=', now()->subMonths(11)->startOfMonth())
-            ->groupBy(DB::raw('DATE_FORMAT(created_at, "%Y-%m")'))
+            ->groupBy(DB::raw($monthExpression))
             ->orderBy('month')
             ->get();
 
@@ -33,5 +35,20 @@ class AdminDashboardService
             'completed_transactions' => Transaction::visibleTo($user)->where('status', Transaction::STATUS_COMPLETED)->count(),
             'monthly' => $monthly,
         ];
+    }
+
+    /**
+     * Ekspresi SQL untuk mengelompokkan transaksi per bulan (format: YYYY-MM).
+     *
+     * Setiap driver punya fungsi format tanggalnya sendiri, jadi dipilih
+     * berdasarkan koneksi aktif agar query berjalan di MySQL maupun SQLite.
+     */
+    private function monthExpression(): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "strftime('%Y-%m', created_at)",
+            'pgsql' => "to_char(created_at, 'YYYY-MM')",
+            default => 'DATE_FORMAT(created_at, "%Y-%m")',
+        };
     }
 }
