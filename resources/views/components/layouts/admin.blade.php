@@ -5,7 +5,7 @@
     <div class="grid gap-4 lg:grid-cols-[220px_1fr] lg:gap-6">
         {{-- min-w-0 wajib: tanpa itu grid item memakai min-width auto, sehingga
              kolom melar mengikuti lebar konten dan overflow-x-auto tidak memotong. --}}
-        <aside class="h-fit min-w-0 overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 lg:p-3">
+        <aside class="h-fit min-w-0 overflow-x-auto rounded-2xl border border-emerald-100 bg-white p-2 shadow-sm shadow-emerald-950/5 lg:p-3">
             {{-- Membungkus, bukan menggulir. Dengan min-w-max, menu di layar kecil
                  terpotong sesudah "Pickup" dan empat sisanya tidak pernah terlihat
                  karena tidak ada isyarat bahwa area ini bisa digeser. --}}

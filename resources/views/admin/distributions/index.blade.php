@@ -1,18 +1,33 @@
 <x-layouts.admin title="Penyaluran">
-    <h1 class="mb-5 text-2xl font-black sm:text-3xl">Penyaluran</h1>
-    <form method="post" action="{{ route('admin.distributions.store') }}" class="mb-6 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-4">
+    <x-page-header eyebrow="Operasional" title="Penyaluran">
+        Catatan jelantah yang sudah diteruskan mitra ke tujuan pengolahan.
+    </x-page-header>
+
+    <form method="post" action="{{ route('admin.distributions.store') }}" class="mb-6 rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm shadow-emerald-950/5">
         @csrf
-        <select name="partner_id" class="rounded-md border border-slate-300 px-3 py-2" required>@foreach($partners as $partner)<option value="{{ $partner->id }}">{{ $partner->name }}</option>@endforeach</select>
-        <input name="volume_liter" type="number" step="0.01" placeholder="Volume liter" class="rounded-md border border-slate-300 px-3 py-2" required>
-        <input name="destination" placeholder="Tujuan" class="rounded-md border border-slate-300 px-3 py-2" required>
-        <input name="distributed_at" type="date" class="rounded-md border border-slate-300 px-3 py-2" required>
-        <textarea name="notes" placeholder="Catatan" class="rounded-md border border-slate-300 px-3 py-2 md:col-span-4"></textarea>
-        <button class="rounded-md bg-emerald-700 px-4 py-2 font-bold text-white md:col-span-4">Catat Penyaluran</button>
+        <p class="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">Catat Penyaluran</p>
+        <div class="mt-4 grid gap-3 md:grid-cols-4">
+            <select name="partner_id" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                @foreach($partners as $partner)<option value="{{ $partner->id }}">{{ $partner->name }}</option>@endforeach
+            </select>
+            <input name="volume_liter" type="number" step="0.01" placeholder="Volume liter" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            <input name="destination" placeholder="Tujuan penyaluran" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            <input name="distributed_at" type="date" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            <textarea name="notes" rows="2" placeholder="Catatan (opsional)" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 md:col-span-4"></textarea>
+            <button class="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-emerald-800 md:col-span-4">Catat Penyaluran</button>
+        </div>
     </form>
-    <div class="rounded-lg border border-slate-200 bg-white">
-        @foreach($distributions as $distribution)
-            <div class="border-b border-slate-100 p-4"><p class="font-black">{{ $distribution->destination }}</p><p class="text-sm text-slate-600">{{ $distribution->partner->name }} · {{ number_format($distribution->volume_liter, 2, ',', '.') }} L · {{ $distribution->distributed_at->format('d M Y') }}</p></div>
-        @endforeach
+
+    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        @forelse($distributions as $distribution)
+            <div @class(['p-4', 'border-b border-slate-100' => ! $loop->last])>
+                <p class="font-black tracking-tight text-emerald-950">{{ $distribution->destination }}</p>
+                <p class="mt-0.5 text-sm text-slate-600">{{ $distribution->partner->name }} · {{ number_format($distribution->volume_liter, 2, ',', '.') }} L · {{ $distribution->distributed_at->format('d M Y') }}</p>
+            </div>
+        @empty
+            <div class="p-4"><x-empty-state title="Belum ada penyaluran" /></div>
+        @endforelse
     </div>
+
     <div class="mt-4">{{ $distributions->links() }}</div>
 </x-layouts.admin>
