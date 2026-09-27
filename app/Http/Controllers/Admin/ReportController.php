@@ -21,7 +21,7 @@ class ReportController extends Controller
         $metricsByEmployee = Pickup::query()
             ->join('transactions', 'transactions.id', '=', 'pickups.transaction_id')
             ->whereIn('transactions.partner_id', $partnerIds)
-            ->where('pickups.status', 'completed')
+            ->where('pickups.status', Pickup::STATUS_COMPLETED)
             ->whereNotNull('pickups.assigned_user_id')
             ->groupBy('pickups.assigned_user_id')
             ->selectRaw('pickups.assigned_user_id')

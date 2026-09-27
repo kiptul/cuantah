@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\OilPrice;
 use App\Models\Partner;
+use App\Models\Pickup;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -116,7 +117,7 @@ class TransactionFlowTest extends TestCase
             'address' => 'Jl. Pickup',
             'latitude' => -6.3055,
             'longitude' => 107.3053,
-            'status' => 'assigned',
+            'status' => Pickup::STATUS_ASSIGNED,
         ]);
 
         $this->actingAs($admin)->post(route('admin.transactions.verify', $transaction), [

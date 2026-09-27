@@ -31,7 +31,7 @@ class AdminDashboardService
             'total_liter' => Transaction::visibleTo($user)->where('status', Transaction::STATUS_COMPLETED)->sum('actual_liter'),
             'total_transactions' => Transaction::visibleTo($user)->count(),
             'total_value' => Transaction::visibleTo($user)->where('status', Transaction::STATUS_COMPLETED)->sum('total_value'),
-            'pending_pickups' => Pickup::visibleTo($user)->where('status', 'pending')->count(),
+            'pending_pickups' => Pickup::visibleTo($user)->where('status', Pickup::STATUS_PENDING)->count(),
             'completed_transactions' => Transaction::visibleTo($user)->where('status', Transaction::STATUS_COMPLETED)->count(),
             'monthly' => $monthly,
         ];

@@ -57,7 +57,7 @@ class TransactionService
                 'longitude' => $longitude,
                 'pickup_date' => $isPickup ? $data['pickup_date'] : null,
                 'pickup_time' => $isPickup ? $data['pickup_time'] : null,
-                'status' => $isPickup ? 'pending' : 'awaiting_dropoff',
+                'status' => $isPickup ? Pickup::STATUS_PENDING : Pickup::STATUS_AWAITING_DROP_OFF,
             ]);
 
             Notification::create([
@@ -76,7 +76,7 @@ class TransactionService
         return DB::transaction(function () use ($pickup, $employeeId) {
             $pickup->update([
                 'assigned_user_id' => $employeeId,
-                'status' => 'assigned',
+                'status' => Pickup::STATUS_ASSIGNED,
                 'assigned_at' => now(),
             ]);
 
@@ -98,7 +98,7 @@ class TransactionService
         return DB::transaction(function () use ($pickup) {
             $pickup->update([
                 'assigned_user_id' => null,
-                'status' => $pickup->transaction->method === Transaction::METHOD_DROP_OFF ? 'scanned' : 'pending',
+                'status' => $pickup->transaction->method === Transaction::METHOD_DROP_OFF ? Pickup::STATUS_SCANNED : Pickup::STATUS_PENDING,
                 'assigned_at' => null,
             ]);
 
@@ -121,7 +121,7 @@ class TransactionService
                 })
                 ->update([
                     'assigned_user_id' => $employee->id,
-                    'status' => 'assigned',
+                    'status' => Pickup::STATUS_ASSIGNED,
                     'assigned_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -156,7 +156,7 @@ class TransactionService
             $transaction->pickup->update([
                 'scanned_at' => now(),
                 'assigned_user_id' => $transaction->pickup->assigned_user_id ?: $employee->id,
-                'status' => 'assigned',
+                'status' => Pickup::STATUS_ASSIGNED,
                 'assigned_at' => $transaction->pickup->assigned_at ?: now(),
             ]);
 
@@ -182,7 +182,7 @@ class TransactionService
                 'notes' => $data['notes'] ?? $transaction->notes,
             ]);
 
-            $transaction->pickup?->update(['status' => 'completed']);
+            $transaction->pickup?->update(['status' => Pickup::STATUS_COMPLETED]);
 
             Notification::create([
                 'user_id' => $transaction->user_id,
@@ -199,7 +199,7 @@ class TransactionService
     {
         return DB::transaction(function () use ($transaction) {
             $transaction->update(['status' => Transaction::STATUS_PICKED_UP]);
-            $transaction->pickup?->update(['status' => 'picked_up']);
+            $transaction->pickup?->update(['status' => Pickup::STATUS_PICKED_UP]);
 
             return $transaction->refresh()->load('user', 'pickup.partner');
         });
@@ -209,7 +209,7 @@ class TransactionService
     {
         return DB::transaction(function () use ($transaction) {
             $transaction->update(['status' => Transaction::STATUS_VERIFICATION]);
-            $transaction->pickup?->update(['status' => 'verification']);
+            $transaction->pickup?->update(['status' => Pickup::STATUS_VERIFICATION]);
 
             return $transaction->refresh()->load('user', 'pickup.partner');
         });
@@ -219,7 +219,7 @@ class TransactionService
     {
         return DB::transaction(function () use ($transaction) {
             $transaction->update(['status' => Transaction::STATUS_REJECTED]);
-            $transaction->pickup?->update(['status' => 'rejected']);
+            $transaction->pickup?->update(['status' => Pickup::STATUS_REJECTED]);
 
             Notification::create([
                 'user_id' => $transaction->user_id,
