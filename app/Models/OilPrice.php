@@ -16,12 +16,21 @@ class OilPrice extends Model
         ];
     }
 
+    /**
+     * Harga yang sedang berlaku.
+     *
+     * Urutan kedua berdasarkan id diperlukan: bila admin mengoreksi harga
+     * pada tanggal yang sama, tanpa penentu ini baris mana yang terpilih
+     * bergantung pada urutan bawaan basis data, sehingga koreksi bisa
+     * diabaikan tanpa pesan apa pun.
+     */
     public static function current(): ?self
     {
         return self::query()
             ->where('is_active', true)
             ->whereDate('effective_date', '<=', now())
             ->latest('effective_date')
+            ->latest('id')
             ->first();
     }
 }
