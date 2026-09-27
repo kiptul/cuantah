@@ -1,7 +1,6 @@
 <x-layouts.app title="Setor Jelantah">
     <x-slot:head>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        @vite('resources/js/leaflet.js')
     </x-slot:head>
 
     <div class="mb-5">
@@ -95,7 +94,9 @@
     @endif
 
     @if($price && $partners->isNotEmpty())
-        <script>
+        {{-- type="module" wajib: @vite memuat leaflet.js sebagai modul yang
+             ditunda, jadi window.L belum ada bila skrip ini diurai sinkron. --}}
+        <script type="module">
             const price = {{ (int) ($price?->price_per_liter ?? 0) }};
             const partners = @json($partners->values());
             const colors = ['#059669', '#2563eb', '#f59e0b', '#dc2626', '#7c3aed'];

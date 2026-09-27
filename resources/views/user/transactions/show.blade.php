@@ -1,7 +1,6 @@
 <x-layouts.app title="Detail Transaksi">
     <x-slot:head>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        @vite('resources/js/leaflet.js')
     </x-slot:head>
     <div class="mb-5"><a href="{{ route('transactions.index') }}" class="text-sm font-bold text-emerald-700">Kembali</a><h1 class="mt-2 text-3xl font-black">{{ $transaction->code }}</h1></div>
     <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
@@ -103,7 +102,9 @@
         </aside>
     </div>
     @if($transaction->pickup)
-        <script>
+        {{-- type="module" wajib: @vite memuat leaflet.js sebagai modul yang
+             ditunda, jadi window.L belum ada bila skrip ini diurai sinkron. --}}
+        <script type="module">
             const lat = {{ $transaction->pickup->latitude }};
             const lng = {{ $transaction->pickup->longitude }};
             const map = L.map('map').setView([lat, lng], 14);

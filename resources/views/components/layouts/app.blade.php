@@ -7,7 +7,6 @@
     <title>{{ $title ?? 'CUANTAH App' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     {{ $head ?? '' }}
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
     <header class="border-b border-slate-200 bg-white">

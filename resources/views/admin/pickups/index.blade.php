@@ -1,7 +1,6 @@
 <x-layouts.admin title="Pickup & Assignment">
     <x-slot:head>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        @vite('resources/js/leaflet.js')
     </x-slot:head>
 
     <div class="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">

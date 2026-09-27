@@ -1,4 +1,8 @@
 <x-layouts.admin title="Admin Dashboard">
+    <x-slot:head>
+        @vite('resources/js/chart.js')
+    </x-slot:head>
+
     <div class="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
             <p class="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Ringkasan operasional</p>
@@ -56,11 +60,10 @@
             </div>
         </aside>
     </section>
-    {{-- Versi mayor dipatok. Tanpa patokan, CDN melayani rilis terbaru
-         sehingga breaking change pada Chart.js mematikan grafik ini
-         tanpa ada perubahan kode sama sekali. --}}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    <script>
+    {{-- type="module" wajib: @vite memuat chart.js sebagai modul yang ditunda,
+         jadi window.Chart belum ada bila skrip ini diurai secara sinkron.
+         Modul dijalankan berurutan sesudah DOM selesai diurai. --}}
+    <script type="module">
         const monthly = @json($monthly);
         new Chart(document.getElementById('monthlyChart'), {
             type: 'bar',
