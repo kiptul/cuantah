@@ -16,7 +16,10 @@
         <h2 class="font-black">Tren bulanan</h2>
         <canvas id="monthlyChart" class="mt-4 max-h-[360px]"></canvas>
     </section>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {{-- Versi mayor dipatok. Tanpa patokan, CDN melayani rilis terbaru
+         sehingga breaking change pada Chart.js mematikan grafik ini
+         tanpa ada perubahan kode sama sekali. --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <script>
         const monthly = @json($monthly);
         new Chart(document.getElementById('monthlyChart'), {

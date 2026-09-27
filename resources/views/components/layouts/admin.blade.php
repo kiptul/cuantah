@@ -6,7 +6,10 @@
         {{-- min-w-0 wajib: tanpa itu grid item memakai min-width auto, sehingga
              kolom melar mengikuti lebar konten dan overflow-x-auto tidak memotong. --}}
         <aside class="h-fit min-w-0 overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 lg:p-3">
-            <div class="flex min-w-max gap-1 lg:block lg:min-w-0">
+            {{-- Membungkus, bukan menggulir. Dengan min-w-max, menu di layar kecil
+                 terpotong sesudah "Pickup" dan empat sisanya tidak pernah terlihat
+                 karena tidak ada isyarat bahwa area ini bisa digeser. --}}
+            <div class="flex flex-wrap gap-1 lg:block">
             @foreach([
                 ['Admin Dashboard', route('admin.dashboard')],
                 ['User', route('admin.users.index')],
