@@ -3,7 +3,9 @@
         {{ $head ?? '' }}
     </x-slot:head>
     <div class="grid gap-4 lg:grid-cols-[220px_1fr] lg:gap-6">
-        <aside class="h-fit overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 lg:p-3">
+        {{-- min-w-0 wajib: tanpa itu grid item memakai min-width auto, sehingga
+             kolom melar mengikuti lebar konten dan overflow-x-auto tidak memotong. --}}
+        <aside class="h-fit min-w-0 overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 lg:p-3">
             <div class="flex min-w-max gap-1 lg:block lg:min-w-0">
             @foreach([
                 ['Admin Dashboard', route('admin.dashboard')],
@@ -19,6 +21,6 @@
             @endforeach
             </div>
         </aside>
-        <section>{{ $slot }}</section>
+        <section class="min-w-0">{{ $slot }}</section>
     </div>
 </x-layouts.app>
