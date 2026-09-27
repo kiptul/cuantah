@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\VerifyTransactionRequest;
 use App\Models\Pickup;
 use App\Models\Transaction;
 use App\Services\TransactionService;
@@ -27,7 +28,7 @@ class PickupController extends Controller
 
     public function claim(Pickup $pickup, TransactionService $service)
     {
-        abort_unless(auth()->user()->canAccessPartnerId($pickup->transaction->partner_id), 403);
+        $this->authorize('claim', $pickup->transaction);
 
         $claimed = $service->claimPickup($pickup, auth()->user());
 
@@ -68,7 +69,7 @@ class PickupController extends Controller
 
     public function show(Transaction $transaction)
     {
-        abort_unless($transaction->pickup?->assigned_user_id === auth()->id() || auth()->user()->isAdmin(), 403);
+        $this->authorize('handle', $transaction);
 
         return view('employee.transactions.show', [
             'transaction' => $transaction->load('user', 'pickup.partner', 'pickup.assignedUser'),
@@ -77,7 +78,7 @@ class PickupController extends Controller
 
     public function markPickedUp(Transaction $transaction, TransactionService $service)
     {
-        $this->ensureAssigned($transaction);
+        $this->authorize('handle', $transaction);
         $service->markPickedUp($transaction);
 
         return back()->with('success', 'Status diubah menjadi dijemput.');
@@ -85,33 +86,19 @@ class PickupController extends Controller
 
     public function markVerification(Transaction $transaction, TransactionService $service)
     {
-        $this->ensureAssigned($transaction);
+        $this->authorize('handle', $transaction);
         $service->markVerification($transaction);
 
         return back()->with('success', 'Status diubah menjadi verifikasi.');
     }
 
-    public function verify(Request $request, Transaction $transaction, TransactionService $service)
+    public function verify(VerifyTransactionRequest $request, Transaction $transaction, TransactionService $service)
     {
-        $this->ensureAssigned($transaction);
-
-        $data = $request->validate([
-            'actual_liter' => ['required', 'numeric', 'min:0.1', 'max:500'],
-            'payment_method' => ['required', 'in:cash,transfer'],
-            'payment_status' => ['required', 'in:paid,unpaid'],
-            'notes' => ['nullable', 'string', 'max:700'],
-        ]);
-
-        $service->verify($transaction, $data);
+        $service->verify($transaction, $request->validated());
 
         return redirect()
             ->route('employee.dashboard')
             ->with('success', 'Transaksi selesai diverifikasi.')
             ->with('transaction_completed', 'Transaksi selesai.');
-    }
-
-    private function ensureAssigned(Transaction $transaction): void
-    {
-        abort_unless($transaction->pickup?->assigned_user_id === auth()->id() || auth()->user()->isAdmin(), 403);
     }
 }

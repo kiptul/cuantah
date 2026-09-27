@@ -33,7 +33,7 @@ class PickupController extends Controller
 
     public function assign(AssignPickupRequest $request, Pickup $pickup, TransactionService $service)
     {
-        abort_unless(auth()->user()->canAccessPartnerId($pickup->transaction->partner_id), 403);
+        $this->authorize('manage', $pickup->transaction);
 
         $employee = User::findOrFail($request->validated('assigned_user_id'));
         abort_unless($employee->canAccessPartnerId($pickup->transaction->partner_id), 403);
@@ -45,7 +45,7 @@ class PickupController extends Controller
 
     public function unassign(Pickup $pickup, TransactionService $service)
     {
-        abort_unless(auth()->user()->canAccessPartnerId($pickup->transaction->partner_id), 403);
+        $this->authorize('manage', $pickup->transaction);
 
         $service->unassignPickup($pickup);
 

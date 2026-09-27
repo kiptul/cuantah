@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\VerifyTransactionRequest;
+use App\Http\Requests\VerifyTransactionRequest;
 use App\Models\Transaction;
 use App\Services\TransactionService;
 
@@ -21,7 +21,7 @@ class TransactionController extends Controller
 
     public function show(Transaction $transaction)
     {
-        $this->ensureVisible($transaction);
+        $this->authorize('manage', $transaction);
 
         return view('admin.transactions.show', [
             'transaction' => $transaction->load('user', 'partner', 'pickup.assignedUser'),
@@ -30,7 +30,6 @@ class TransactionController extends Controller
 
     public function verify(VerifyTransactionRequest $request, Transaction $transaction, TransactionService $service)
     {
-        $this->ensureVisible($transaction);
         $service->verify($transaction, $request->validated());
 
         return back()->with('success', 'Transaksi selesai diverifikasi.');
@@ -38,7 +37,7 @@ class TransactionController extends Controller
 
     public function markPickedUp(Transaction $transaction, TransactionService $service)
     {
-        $this->ensureVisible($transaction);
+        $this->authorize('manage', $transaction);
         $service->markPickedUp($transaction);
 
         return back()->with('success', 'Status transaksi diubah menjadi dijemput.');
@@ -46,7 +45,7 @@ class TransactionController extends Controller
 
     public function markVerification(Transaction $transaction, TransactionService $service)
     {
-        $this->ensureVisible($transaction);
+        $this->authorize('manage', $transaction);
         $service->markVerification($transaction);
 
         return back()->with('success', 'Status transaksi diubah menjadi verifikasi.');
@@ -54,14 +53,9 @@ class TransactionController extends Controller
 
     public function reject(Transaction $transaction, TransactionService $service)
     {
-        $this->ensureVisible($transaction);
+        $this->authorize('manage', $transaction);
         $service->reject($transaction);
 
         return back()->with('success', 'Transaksi ditolak.');
-    }
-
-    private function ensureVisible(Transaction $transaction): void
-    {
-        abort_unless(auth()->user()->canAccessPartnerId($transaction->partner_id), 403);
     }
 }
