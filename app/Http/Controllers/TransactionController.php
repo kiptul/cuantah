@@ -6,6 +6,7 @@ use App\Models\Notification;
 use App\Models\Transaction;
 use App\Services\TransactionService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
@@ -59,5 +60,27 @@ class TransactionController extends Controller
         $service->cancel($transaction);
 
         return redirect()->route('transactions.index')->with('success', 'Setoran dibatalkan.');
+    }
+
+    /**
+     * Penyetor menyanggah takaran volume.
+     *
+     * Verifikasi sebelumnya sepenuhnya satu arah: angka karyawan langsung
+     * menjadi dasar bayaran tanpa ada cara membantahnya.
+     */
+    public function dispute(Request $request, Transaction $transaction, TransactionService $service): RedirectResponse
+    {
+        $this->authorize('dispute', $transaction);
+
+        $data = $request->validate([
+            'dispute_reason' => ['required', 'string', 'min:10', 'max:500'],
+        ], [
+            'dispute_reason.required' => 'Jelaskan keberatanmu agar mitra bisa menindaklanjuti.',
+            'dispute_reason.min' => 'Keterangan terlalu singkat untuk bisa ditindaklanjuti.',
+        ]);
+
+        $service->dispute($transaction, $data['dispute_reason']);
+
+        return back()->with('success', 'Keberatanmu sudah dikirim ke mitra.');
     }
 }

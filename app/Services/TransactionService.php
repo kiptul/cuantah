@@ -257,6 +257,50 @@ class TransactionService
      * Sebelumnya tidak ada jalan mundur sama sekali: salah pilih mitra atau
      * salah isi volume hanya bisa diakhiri lewat penolakan admin.
      */
+    /**
+     * Mencatat keberatan penyetor atas volume hasil takaran.
+     */
+    public function dispute(Transaction $transaction, string $reason): Transaction
+    {
+        return DB::transaction(function () use ($transaction, $reason) {
+            $transaction->update([
+                'disputed_at' => now(),
+                'dispute_reason' => $reason,
+            ]);
+
+            Notification::create([
+                'user_id' => $transaction->user_id,
+                'title' => 'Keberatan terkirim',
+                'message' => 'Keberatanmu atas takaran transaksi '.$transaction->code.' sudah diteruskan ke mitra.',
+                'type' => 'transaction',
+            ]);
+
+            return $transaction->refresh();
+        });
+    }
+
+    /**
+     * Staff mitra menutup sanggahan dengan keterangan penyelesaiannya.
+     */
+    public function resolveDispute(Transaction $transaction, string $resolution): Transaction
+    {
+        return DB::transaction(function () use ($transaction, $resolution) {
+            $transaction->update([
+                'dispute_resolved_at' => now(),
+                'dispute_resolution' => $resolution,
+            ]);
+
+            Notification::create([
+                'user_id' => $transaction->user_id,
+                'title' => 'Keberatan ditanggapi',
+                'message' => 'Mitra menanggapi keberatanmu pada '.$transaction->code.': '.$resolution,
+                'type' => 'transaction',
+            ]);
+
+            return $transaction->refresh();
+        });
+    }
+
     public function cancel(Transaction $transaction): Transaction
     {
         return DB::transaction(function () use ($transaction) {

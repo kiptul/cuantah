@@ -36,4 +36,28 @@ class TransactionPolicy
         return $transaction->user_id === $user->id
             && $transaction->status === Transaction::STATUS_PENDING;
     }
+
+    /**
+     * Penyetor boleh menyanggah takaran selama tiga hari sesudah transaksi
+     * selesai. Batas waktu dipakai supaya sanggahan datang selagi jelantahnya
+     * masih dapat ditelusuri, bukan berbulan kemudian.
+     */
+    public function dispute(User $user, Transaction $transaction): bool
+    {
+        return $transaction->user_id === $user->id
+            && $transaction->status === Transaction::STATUS_COMPLETED
+            && $transaction->disputed_at === null
+            && $transaction->updated_at?->gt(now()->subDays(3));
+    }
+
+    /**
+     * Hanya staff mitra terkait yang boleh menutup sanggahan.
+     */
+    public function resolveDispute(User $user, Transaction $transaction): bool
+    {
+        return $user->isStaff()
+            && $user->canAccessPartnerId($transaction->partner_id)
+            && $transaction->disputed_at !== null
+            && $transaction->dispute_resolved_at === null;
+    }
 }

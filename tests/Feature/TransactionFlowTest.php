@@ -541,4 +541,63 @@ class TransactionFlowTest extends TestCase
 
         $this->assertNotNull($notifikasi->fresh()->read_at);
     }
+
+    public function test_depositor_can_dispute_the_measured_volume(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $transaction = Transaction::factory()->completed(6)->create(['user_id' => $user->id]);
+
+        $this->actingAs($user)->post(route('transactions.dispute', $transaction), [
+            'dispute_reason' => 'Saya menyetor sekitar sepuluh liter, tetapi tercatat enam liter.',
+        ])->assertSessionHas('success');
+
+        $this->assertNotNull($transaction->fresh()->disputed_at);
+    }
+
+    public function test_dispute_closes_after_three_days(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $transaction = Transaction::factory()->completed(6)->create(['user_id' => $user->id]);
+        $transaction->forceFill(['updated_at' => now()->subDays(4)])->saveQuietly();
+
+        $this->actingAs($user)->post(route('transactions.dispute', $transaction), [
+            'dispute_reason' => 'Keberatan yang diajukan terlambat sesudah batas waktu.',
+        ])->assertForbidden();
+
+        $this->assertNull($transaction->fresh()->disputed_at);
+    }
+
+    public function test_dispute_cannot_be_filed_twice(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $transaction = Transaction::factory()->completed(6)->create(['user_id' => $user->id]);
+        $alasan = ['dispute_reason' => 'Takaran tidak sesuai dengan yang saya serahkan.'];
+
+        $this->actingAs($user)->post(route('transactions.dispute', $transaction), $alasan);
+        $this->actingAs($user)->post(route('transactions.dispute', $transaction), $alasan)->assertForbidden();
+    }
+
+    public function test_only_staff_of_the_same_partner_can_answer_a_dispute(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $transaction = Transaction::factory()->completed(6)->create(['user_id' => $user->id]);
+        $transaction->update(['disputed_at' => now(), 'dispute_reason' => 'Takaran tidak sesuai.']);
+
+        $mitraLain = Partner::factory()->create();
+        $adminLain = User::factory()->create(['role' => 'admin']);
+        $adminLain->partners()->attach($mitraLain->id);
+
+        $this->actingAs($adminLain)
+            ->post(route('admin.transactions.resolve-dispute', $transaction), ['dispute_resolution' => 'Sudah kami telusuri ulang.'])
+            ->assertForbidden();
+
+        $adminBenar = User::factory()->create(['role' => 'admin']);
+        $adminBenar->partners()->attach($transaction->partner_id);
+
+        $this->actingAs($adminBenar)
+            ->post(route('admin.transactions.resolve-dispute', $transaction), ['dispute_resolution' => 'Sudah kami telusuri ulang, selisih diganti.'])
+            ->assertSessionHas('success');
+
+        $this->assertNotNull($transaction->fresh()->dispute_resolved_at);
+    }
 }

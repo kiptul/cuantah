@@ -48,6 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/transaksi/{transaction}/barcode', [BarcodeController::class, 'show'])->name('transactions.barcode');
     Route::post('/transaksi/{transaction}/konfirmasi-bayar', [TransactionController::class, 'confirmPayment'])->name('transactions.confirm-payment');
     Route::post('/transaksi/{transaction}/batal', [TransactionController::class, 'cancel'])->name('transactions.cancel');
+    Route::post('/transaksi/{transaction}/sanggah', [TransactionController::class, 'dispute'])->name('transactions.dispute');
 });
 
 Route::middleware(['auth', 'employee'])->prefix('employee')->name('employee.')->group(function () {
@@ -71,6 +72,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/transactions/{transaction}/verification', [AdminTransactionController::class, 'markVerification'])->name('transactions.verification');
     Route::post('/transactions/{transaction}/verify', [AdminTransactionController::class, 'verify'])->name('transactions.verify');
     Route::post('/transactions/{transaction}/reject', [AdminTransactionController::class, 'reject'])->name('transactions.reject');
+    Route::post('/transactions/{transaction}/resolve-dispute', [AdminTransactionController::class, 'resolveDispute'])->name('transactions.resolve-dispute');
 
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');

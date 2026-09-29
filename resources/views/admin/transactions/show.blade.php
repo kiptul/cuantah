@@ -43,6 +43,32 @@
                 <textarea name="notes" rows="3" placeholder="Catatan" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">{{ old('notes', $transaction->notes) }}</textarea>
                 <button class="w-full rounded-md bg-emerald-700 px-4 py-3 font-bold text-white">Selesaikan Transaksi</button>
             </form>
+            {{-- Keberatan penyetor atas takaran. Ditaruh paling menonjol karena
+                 menuntut tindakan, bukan sekadar catatan. --}}
+            @if($transaction->disputed_at)
+                <div class="mt-5 rounded-xl border border-amber-300 bg-amber-50 p-4">
+                    <p class="text-xs font-black uppercase tracking-[0.12em] text-amber-700">Keberatan penyetor</p>
+                    <p class="mt-1.5 text-sm leading-6 text-amber-900">{{ $transaction->dispute_reason }}</p>
+                    <p class="mt-2 text-xs text-amber-700">{{ $transaction->disputed_at->format('d M Y H:i') }}</p>
+
+                    @if($transaction->dispute_resolved_at)
+                        <div class="mt-3 border-t border-amber-200 pt-3">
+                            <p class="text-xs font-black uppercase tracking-[0.12em] text-emerald-700">Sudah ditanggapi</p>
+                            <p class="mt-1.5 text-sm leading-6 text-emerald-900">{{ $transaction->dispute_resolution }}</p>
+                        </div>
+                    @else
+                        <form method="post" action="{{ route('admin.transactions.resolve-dispute', $transaction) }}" class="mt-3 border-t border-amber-200 pt-3">
+                            @csrf
+                            <textarea name="dispute_resolution" rows="2" required minlength="10" maxlength="500"
+                                      placeholder="Jelaskan hasil penelusuran dan tindakan yang diambil."
+                                      class="w-full rounded-xl border border-amber-300 px-3 py-2.5 text-sm outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100">{{ old('dispute_resolution') }}</textarea>
+                            @error('dispute_resolution')<p class="mt-2 text-sm font-semibold text-rose-700">{{ $message }}</p>@enderror
+                            <button class="mt-3 w-full rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-amber-800">Kirim Tanggapan</button>
+                        </form>
+                    @endif
+                </div>
+            @endif
+
             {{-- Alasan diwajibkan supaya penolakan tidak berhenti sebagai
                  pesan generik yang tidak bisa ditindaklanjuti penyetor. --}}
             <form method="post" action="{{ route('admin.transactions.reject', $transaction) }}" class="mt-5 border-t border-slate-100 pt-5">

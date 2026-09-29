@@ -48,6 +48,10 @@ class Transaction extends Model
         'paid_at',
         'payment_confirmed_at',
         'rejection_reason',
+        'disputed_at',
+        'dispute_reason',
+        'dispute_resolved_at',
+        'dispute_resolution',
         'notes',
     ];
 
@@ -58,6 +62,8 @@ class Transaction extends Model
             'actual_liter' => 'decimal:2',
             'paid_at' => 'datetime',
             'payment_confirmed_at' => 'datetime',
+            'disputed_at' => 'datetime',
+            'dispute_resolved_at' => 'datetime',
         ];
     }
 

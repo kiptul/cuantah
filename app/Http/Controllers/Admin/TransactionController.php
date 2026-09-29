@@ -75,4 +75,17 @@ class TransactionController extends Controller
     {
         abort_unless(auth()->user()->canAccessPartnerId($transaction->partner_id), 403);
     }
+
+    public function resolveDispute(Request $request, Transaction $transaction, TransactionService $service)
+    {
+        $this->authorize('resolveDispute', $transaction);
+
+        $data = $request->validate([
+            'dispute_resolution' => ['required', 'string', 'min:10', 'max:500'],
+        ]);
+
+        $service->resolveDispute($transaction, $data['dispute_resolution']);
+
+        return back()->with('success', 'Tanggapan atas keberatan sudah dikirim ke penyetor.');
+    }
 }
