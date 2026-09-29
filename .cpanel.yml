@@ -2,6 +2,16 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/eltg1461/public_html/cuantah
+    # Biner PHP disebut eksplisit. Shell deploy cPanel memakai PATH terbatas
+    # yang belum tentu menunjuk ke versi yang sama dengan Terminal.
+    - export PHPBIN=$(command -v php || echo /opt/cpanel/ea-php83/root/usr/bin/php)
     - /bin/mkdir -p $DEPLOYPATH
     - /bin/cp -rf ./* $DEPLOYPATH/
     - /bin/cp -f .env.example $DEPLOYPATH/
+    # Cache dibersihkan lebih dulu supaya config dan view lama tidak
+    # menutupi berkas yang baru saja disalin.
+    - cd $DEPLOYPATH && $PHPBIN artisan optimize:clear
+    # Tanpa langkah ini, migrasi baru ikut tersalin sebagai berkas tetapi
+    # tidak pernah dijalankan, sehingga kolom yang ditulis kode belum ada.
+    - cd $DEPLOYPATH && $PHPBIN artisan migrate --force
+    - cd $DEPLOYPATH && $PHPBIN artisan optimize
