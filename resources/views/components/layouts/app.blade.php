@@ -18,10 +18,20 @@
                     default => route('dashboard'),
                 };
             @endphp
-            <a href="{{ $homeRoute }}" class="font-black text-emerald-800">CUANTAH</a>
+            <a href="{{ $homeRoute }}" class="flex items-center gap-2.5 font-black text-emerald-800">
+                @if(auth()->user()?->isAdmin())
+                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-700 text-white shadow-sm shadow-emerald-900/20">C</span>
+                @endif
+                <span>
+                    <span class="block leading-none">CUANTAH</span>
+                    @if(auth()->user()?->isAdmin())
+                        <span class="mt-1 block text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700/70">Admin panel</span>
+                    @endif
+                </span>
+            </a>
             <div class="flex max-w-full items-center gap-2 overflow-x-auto text-sm">
                 @if(auth()->user()?->isAdmin())
-                    <a href="{{ route('admin.dashboard') }}" class="rounded-md px-3 py-2 font-semibold text-slate-700 hover:bg-slate-100">Admin</a>
+                    <span class="hidden rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 sm:inline-flex">Admin CUANTAH</span>
                 @elseif(auth()->user()?->isEmployee())
                     <a href="{{ route('employee.dashboard') }}" class="rounded-md bg-emerald-700 px-3 py-2 font-semibold text-white">Karyawan</a>
                     <a href="{{ route('employee.scan') }}" class="rounded-md px-3 py-2 font-semibold text-slate-700 hover:bg-slate-100">Scan</a>
@@ -33,7 +43,7 @@
                 @endif
                 <form method="post" action="{{ route('logout') }}">
                     @csrf
-                    <button class="rounded-md px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Logout</button>
+                    <button class="rounded-xl px-3 py-2 font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">Logout</button>
                 </form>
             </div>
         </nav>

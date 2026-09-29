@@ -99,5 +99,45 @@
         </nav>
     </header>
     <main>{{ $slot }}</main>
+
+    <footer class="border-t border-emerald-900/10 bg-emerald-950 text-emerald-50">
+            <div class="mx-auto max-w-[1500px] px-4 py-10 sm:py-12 lg:px-8">
+                <div class="grid gap-10 lg:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)] lg:gap-20">
+                    <div class="max-w-sm">
+                        <a href="{{ route('home') }}" class="inline-flex items-center gap-3">
+                            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-lg shadow-black/15 sm:h-11 sm:w-11 sm:rounded-2xl">
+                                <svg class="h-6 w-6 sm:h-7 sm:w-7" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+                                    <path d="M20 4C13.5 10.8 8 17.6 8 25.2C8 32.1 13.4 36 20 36C26.6 36 32 32.1 32 25.2C32 17.6 26.5 10.8 20 4Z" stroke="currentColor" stroke-width="4" stroke-linejoin="round" />
+                                    <path d="M20 13V31" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+                                    <path d="M20 24C16.6 23.6 14.3 21.8 13 18.5" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+                                </svg>
+                            </span>
+                            <span>
+                                <span class="block text-xl font-black leading-none tracking-tight sm:text-2xl">CUANTAH</span>
+                                <span class="mt-1 block text-[10px] font-black uppercase tracking-[0.2em] text-emerald-200">Cuan dari minyak jelantah</span>
+                            </span>
+                        </a>
+                        <p class="mt-5 text-sm leading-6 text-emerald-100/75">
+                            Menghubungkan rumah tangga dan UMKM dengan pengelolaan minyak jelantah yang lebih mudah, transparan, dan terorganisir.
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-200">Jelajahi CUANTAH</p>
+                        <nav class="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3 lg:grid-cols-4" aria-label="Navigasi footer">
+                            @foreach ($publicNavItems as $item)
+                                <a href="{{ $item['url'] }}" class="rounded-lg py-2 text-sm font-semibold text-emerald-100/75 transition hover:bg-white/10 hover:px-2 hover:text-white">
+                                    {{ $item['label'] }}
+                                </a>
+                            @endforeach
+                        </nav>
+                    </div>
+                </div>
+
+                <div class="mt-9 border-t border-white/15 pt-5 text-xs font-semibold text-emerald-100/60">
+                    <p>&copy; 2026 CUANTAH. Seluruh hak cipta dilindungi.</p>
+                </div>
+            </div>
+    </footer>
 </body>
 </html>
