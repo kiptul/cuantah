@@ -10,14 +10,51 @@ use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $transactions = Transaction::with('user', 'partner', 'pickup.assignedUser')
-            ->visibleTo(auth()->user())
-            ->latest()
-            ->paginate(12);
+        $filters = [
+            'q' => is_string($q = $request->query('q')) ? trim($q) : '',
+            'status' => $this->onlyAllowed($request->query('status'), Transaction::statuses()),
+            'method' => $this->onlyAllowed($request->query('method'), Transaction::methods()),
+        ];
 
-        return view('admin.transactions.index', compact('transactions'));
+        $transactions = Transaction::with('user', 'partner', 'pickup.assignedUser')
+            ->visibleTo($request->user())
+            ->search($filters['q'])
+            ->when($filters['status'], fn ($query, string $status) => $query->where('status', $status))
+            ->when($filters['method'], fn ($query, string $method) => $query->where('method', $method))
+            ->latest()
+            ->paginate(12)
+            /**
+             * Tanpa withQueryString, tautan halaman 2 kehilangan filternya dan
+             * admin dikembalikan ke seluruh transaksi tanpa pemberitahuan.
+             */
+            ->withQueryString();
+
+        return view('admin.transactions.index', [
+            'transactions' => $transactions,
+            'filters' => $filters,
+            'statusLabels' => Transaction::STATUS_LABELS,
+            'methodLabels' => [
+                Transaction::METHOD_PICKUP => 'Jemput',
+                Transaction::METHOD_DROP_OFF => 'Antar',
+            ],
+        ]);
+    }
+
+    /**
+     * Meneruskan nilai query string hanya bila termasuk daftar yang sah.
+     *
+     * Nilai asing diabaikan alih-alih ditolak dengan error. Penyaring ini
+     * dikendalikan select, jadi nilai aneh hanya datang dari URL yang diubah
+     * tangan, dan halaman yang tetap terbuka lebih berguna daripada redirect
+     * yang berisiko berputar kembali ke URL yang sama.
+     *
+     * @param  array<int, string>  $allowed
+     */
+    private function onlyAllowed(mixed $value, array $allowed): ?string
+    {
+        return is_string($value) && in_array($value, $allowed, true) ? $value : null;
     }
 
     public function show(Transaction $transaction)

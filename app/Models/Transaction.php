@@ -130,6 +130,56 @@ class Transaction extends Model
         return self::STATUS_LABELS[$this->status] ?? $this->status;
     }
 
+    /**
+     * Seluruh status transaksi yang sah, berurutan sesuai alur.
+     *
+     * Diturunkan dari STATUS_LABELS agar tidak ada dua daftar status yang
+     * bisa berbeda diam-diam. Dipakai menyaring status yang datang dari query
+     * string: nilai di luar daftar ini diabaikan, bukan diteruskan ke where,
+     * supaya URL yang diketik tangan tidak menghasilkan daftar kosong yang
+     * membingungkan.
+     *
+     * @return array<int, string>
+     */
+    public static function statuses(): array
+    {
+        return array_keys(self::STATUS_LABELS);
+    }
+
+    /**
+     * Seluruh metode setoran yang sah.
+     *
+     * @return array<int, string>
+     */
+    public static function methods(): array
+    {
+        return [self::METHOD_PICKUP, self::METHOD_DROP_OFF];
+    }
+
+    /**
+     * Mencari transaksi berdasarkan kode atau nama penyetor.
+     */
+    public function scopeSearch(Builder $query, ?string $term): Builder
+    {
+        $term = trim((string) $term);
+
+        if ($term === '') {
+            return $query;
+        }
+
+        /**
+         * Wildcard LIKE di-escape lebih dulu. Tanpa ini, admin yang mengetik
+         * "%" mendapat seluruh transaksi alih-alih transaksi yang kodenya
+         * benar-benar memuat karakter itu.
+         */
+        $escaped = addcslashes($term, '%_\\');
+
+        return $query->where(function (Builder $query) use ($escaped) {
+            $query->where('code', 'like', "%{$escaped}%")
+                ->orWhereHas('user', fn (Builder $user) => $user->where('name', 'like', "%{$escaped}%"));
+        });
+    }
+
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
         if (! $user->isStaff()) {
