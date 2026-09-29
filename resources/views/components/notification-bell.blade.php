@@ -27,7 +27,10 @@
          dan tidak ada yang menandai bahwa fokus sedang berpindah. --}}
     <div class="fixed inset-x-0 bottom-0 z-40 hidden bg-slate-950/40 sm:hidden" data-bell-backdrop aria-hidden="true"></div>
 
-    <div class="fixed inset-x-3 z-50 hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/25 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[22rem] sm:shadow-xl sm:shadow-slate-950/10"
+    {{-- Panel dipasang fixed di semua lebar layar, bukan absolute. Bilah nav
+         induknya memakai overflow-x-auto, sehingga panel yang absolute ikut
+         terpotong setinggi bilah itu dan hanya terlihat sepotong. --}}
+    <div class="fixed inset-x-3 z-50 hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/25 sm:inset-x-auto sm:w-[22rem] sm:shadow-xl sm:shadow-slate-950/10"
          data-bell-panel role="menu">
         <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <p class="text-sm font-black text-slate-900">Notifikasi</p>
@@ -68,7 +71,34 @@
         const panel = root.querySelector('[data-bell-panel]');
         const dot = root.querySelector('[data-bell-dot]');
         const backdrop = root.querySelector('[data-bell-backdrop]');
+        const layarKecil = () => window.matchMedia('(max-width: 639px)').matches;
         let sudahDitandai = false;
+
+        const terbuka = () => !panel.classList.contains('hidden');
+
+        // Posisi dihitung ulang setiap kali dibuka, diubah ukurannya, atau
+        // digulir, sebab header ikut bergerak bersama halaman.
+        const posisikan = () => {
+            if (layarKecil()) {
+                const header = document.querySelector('header');
+                const bawah = header ? Math.round(header.getBoundingClientRect().bottom) : 64;
+                panel.style.left = '';
+                panel.style.top = Math.max(bawah + 8, 8) + 'px';
+                backdrop.style.top = Math.max(bawah, 0) + 'px';
+                return;
+            }
+
+            const tombol = toggle.getBoundingClientRect();
+            const lebar = panel.offsetWidth;
+            // Rata kanan terhadap lonceng, tetapi tidak sampai keluar layar.
+            const kiri = Math.min(
+                Math.max(8, tombol.right - lebar),
+                window.innerWidth - lebar - 8
+            );
+            panel.style.left = Math.round(kiri) + 'px';
+            panel.style.top = Math.round(tombol.bottom + 8) + 'px';
+            backdrop.style.top = '';
+        };
 
         const tutup = () => {
             panel.classList.add('hidden');
@@ -79,24 +109,14 @@
 
         toggle.addEventListener('click', (event) => {
             event.stopPropagation();
-            const terbuka = !panel.classList.contains('hidden');
-            if (terbuka) return tutup();
-
-            if (window.matchMedia('(max-width: 639px)').matches) {
-                const header = document.querySelector('header');
-                const bawah = header ? Math.round(header.getBoundingClientRect().bottom) : 64;
-                panel.style.top = (bawah + 8) + 'px';
-                backdrop.style.top = bawah + 'px';
-            } else {
-                panel.style.top = '';
-                backdrop.style.top = '';
-            }
+            if (terbuka()) return tutup();
 
             panel.classList.remove('hidden');
             backdrop.classList.remove('hidden');
+            posisikan();
             // Gulir halaman dikunci selama panel terbuka di layar kecil,
             // supaya latar tidak bergeser di belakang panel.
-            if (window.matchMedia('(max-width: 639px)').matches) {
+            if (layarKecil()) {
                 document.body.classList.add('overflow-hidden');
             }
             toggle.setAttribute('aria-expanded', 'true');
@@ -121,8 +141,9 @@
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') tutup();
         });
-        // Lebar layar berubah saat panel terbuka membuat posisi dan kunci
-        // guliran tidak lagi sesuai, jadi panel ditutup saja.
+        // Lebar layar berubah saat panel terbuka membuat kunci guliran tidak
+        // lagi sesuai, jadi panel ditutup saja.
         window.addEventListener('resize', tutup);
+        window.addEventListener('scroll', () => { if (terbuka()) posisikan(); }, { passive: true });
     })();
 </script>
