@@ -85,8 +85,11 @@
                     <div class="flex justify-between border-t border-slate-200 pt-3"><dt>Estimasi CUAN</dt><dd id="estimatedTotal" class="font-black text-emerald-800">Rp{{ number_format($price->price_per_liter, 0, ',', '.') }}</dd></div>
                 </dl>
                 <p id="distanceInfo" class="mt-3 text-sm text-slate-500"></p>
+                {{-- Ongkir dipotong dari penerimaan. Bila volumenya terlalu kecil,
+                     user perlu tahu sebelum menekan tombol, bukan setelah ditolak. --}}
+                <p id="feeWarning" class="mt-3 hidden rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm font-semibold leading-5 text-amber-900"></p>
                 <a id="navLink" href="https://www.google.com/maps?q={{ $partners[0]['latitude'] }},{{ $partners[0]['longitude'] }}" target="_blank" class="mt-5 block rounded-md border border-slate-300 px-4 py-2 text-center text-sm font-bold text-slate-700">Buka Navigasi</a>
-                <button class="mt-3 w-full rounded-md bg-emerald-700 px-4 py-3 font-bold text-white">Konfirmasi Setor</button>
+                <button id="submitDeposit" class="mt-3 w-full rounded-md bg-emerald-700 px-4 py-3 font-bold text-white transition disabled:cursor-not-allowed disabled:bg-slate-300">Konfirmasi Setor</button>
             </aside>
         </form>
     @endif
@@ -149,6 +152,19 @@
                 document.getElementById('pickupFee').textContent = rupiah(fee);
                 document.getElementById('estimatedTotal').textContent = rupiah(Math.max(gross - fee, 0));
                 document.getElementById('distanceInfo').textContent = isPickup ? `Jarak ke mitra sekitar ${distance.toFixed(2)} km.` : '';
+
+                // Setoran jemput yang nilainya tidak melampaui ongkir akan ditolak
+                // server. Tahan di sini supaya user tidak kehilangan waktu.
+                const tidakMenghasilkan = isPickup && liter > 0 && gross <= fee;
+                const warning = document.getElementById('feeWarning');
+                const submit = document.getElementById('submitDeposit');
+                const minimal = Math.ceil((fee + 1) / price * 2) / 2;
+
+                warning.classList.toggle('hidden', !tidakMenghasilkan);
+                submit.disabled = tidakMenghasilkan;
+                if (tidakMenghasilkan) {
+                    warning.textContent = `Ongkir jemput ${rupiah(fee)} lebih besar daripada nilai setoranmu, jadi kamu tidak menerima apa pun. Naikkan volume ke minimal ${minimal} liter, atau pilih Antar Sendiri supaya tanpa ongkir.`;
+                }
             }
 
             function clearCircles() {

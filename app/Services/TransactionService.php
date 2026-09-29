@@ -10,6 +10,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class TransactionService
 {
@@ -34,6 +35,22 @@ class TransactionService
                 ? $partner->deliveryFeeForDistance($this->distanceKm((float) $partner->latitude, (float) $partner->longitude, $latitude, $longitude))
                 : 0;
             $grossTotal = (int) round($estimatedLiter * $price->price_per_liter);
+
+            // Ongkir dipotong dari penerimaan user. Tanpa penjagaan ini setoran
+            // jemput bervolume kecil bisa lolos dengan nominal nol: user sudah
+            // menunggu, karyawan sudah berangkat, lalu tidak ada yang diterima.
+            if ($isPickup && $grossTotal <= $pickupFee) {
+                $minimumLiter = ceil(($pickupFee + 1) / $price->price_per_liter * 2) / 2;
+
+                throw ValidationException::withMessages([
+                    'estimated_liter' => sprintf(
+                        'Dengan ongkir jemput Rp%s, setoran %s liter belum menghasilkan apa pun. Perlu minimal %s liter, atau pilih antar sendiri supaya tanpa ongkir.',
+                        number_format($pickupFee, 0, ',', '.'),
+                        rtrim(rtrim(number_format($estimatedLiter, 2, ',', '.'), '0'), ','),
+                        rtrim(rtrim(number_format($minimumLiter, 2, ',', '.'), '0'), ','),
+                    ),
+                ]);
+            }
 
             $transaction = Transaction::create([
                 'code' => 'CNT-'.now()->format('ymd').'-'.Str::upper(Str::random(6)),
