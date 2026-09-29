@@ -40,7 +40,9 @@
         </div>
     </section>
 
-    <script>
+    {{-- Modul: dieksekusi setelah app.js (yang dimuat @vite sebagai type=module),
+         sehingga window.CuantahScanner dijamin sudah tersedia saat auto-start. --}}
+    <script type="module">
         const video = document.getElementById('scannerVideo');
         const statusText = document.getElementById('scannerStatus');
         const startButton = document.getElementById('startScanner');

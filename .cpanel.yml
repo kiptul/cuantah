@@ -1,0 +1,9 @@
+---
+deployment:
+  tasks:
+    - export APPPATH=/home/eltg1461/cuantah
+    - export WEBPATH=/home/eltg1461/public_html
+    - /bin/mkdir -p $APPPATH
+    - /bin/rsync -a --exclude='.git' --exclude='.env' --exclude='public' ./ $APPPATH/
+    - /bin/rsync -a ./public/ $WEBPATH/
+    - /bin/sed -i "s#__DIR__.'/../#'$APPPATH/#g" $WEBPATH/index.php

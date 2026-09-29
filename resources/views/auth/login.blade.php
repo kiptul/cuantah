@@ -56,6 +56,10 @@
 
                     @error('email')<p class="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{{ $message }}</p>@enderror
 
+                    <p class="mt-5 text-right text-sm">
+                        <a class="font-black text-emerald-700 hover:text-emerald-800" href="{{ route('password.request') }}">Lupa password?</a>
+                    </p>
+
                     <button class="mt-7 w-full rounded-2xl bg-emerald-700 px-4 py-3.5 font-black text-white shadow-lg shadow-emerald-950/15 transition hover:bg-emerald-800">Login</button>
 
                     <p class="mt-6 text-center text-sm text-slate-600">

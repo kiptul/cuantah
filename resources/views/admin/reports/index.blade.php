@@ -1,7 +1,7 @@
 <x-layouts.admin title="Laporan">
-    <h1 class="mb-5 text-2xl font-black sm:text-3xl">Laporan Transaksi Selesai</h1>
-    <section class="mb-6 rounded-lg border border-slate-200 bg-white p-5">
-        <h2 class="font-black">Performa Karyawan</h2>
+    <x-page-header eyebrow="Laporan" title="Transaksi Selesai" />
+    <section class="mb-6 rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm shadow-emerald-950/5">
+        <h2 class="font-black tracking-tight text-emerald-950">Performa Karyawan</h2>
         <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             @forelse($employeeReports as $employee)
                 <div class="rounded-lg bg-slate-50 p-4">
@@ -19,9 +19,40 @@
             @endforelse
         </div>
     </section>
-    <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+    {{-- Layar kecil memakai kartu. Tabel laporan punya delapan kolom, jauh
+         melampaui lebar layar ponsel walau kontainernya sudah bisa digulir. --}}
+    <div class="grid gap-3 lg:hidden">
+        @forelse($transactions as $transaction)
+            <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                <div class="flex items-start justify-between gap-3">
+                    <span class="font-black text-emerald-700">{{ $transaction->code }}</span>
+                    <span class="text-xs font-bold text-slate-500">{{ $transaction->created_at->format('d M Y') }}</span>
+                </div>
+                <p class="mt-1 text-sm text-slate-600">{{ $transaction->user->name }} · {{ $transaction->partner?->name ?? '-' }}</p>
+                <p class="mt-0.5 text-xs text-slate-500">Karyawan: {{ $transaction->pickup?->assignedUser?->name ?? '-' }}</p>
+                <dl class="mt-4 grid grid-cols-3 gap-3">
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-slate-400">Volume</dt>
+                        <dd class="mt-0.5 text-sm font-bold tabular-nums">{{ number_format($transaction->actual_liter, 2, ',', '.') }} L</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-slate-400">Nilai</dt>
+                        <dd class="mt-0.5 text-sm font-bold tabular-nums">Rp{{ number_format($transaction->total_value, 0, ',', '.') }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-slate-400">Bayar</dt>
+                        <dd class="mt-0.5 text-sm font-bold">{{ str($transaction->payment_method)->title() ?: '-' }}</dd>
+                    </div>
+                </dl>
+            </div>
+        @empty
+            <div class="rounded-2xl border border-slate-200 bg-white p-4"><x-empty-state title="Belum ada transaksi selesai" /></div>
+        @endforelse
+    </div>
+
+    <div class="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white lg:block">
         <table class="min-w-[760px] w-full text-left text-sm">
-            <thead class="bg-slate-100 text-xs uppercase text-slate-500"><tr><th class="p-3">Tanggal</th><th class="p-3">ID</th><th class="p-3">Mitra</th><th class="p-3">User</th><th class="p-3">Karyawan</th><th class="p-3">Volume</th><th class="p-3">Nilai</th><th class="p-3">Bayar</th></tr></thead>
+            <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th class="p-3">Tanggal</th><th class="p-3">ID</th><th class="p-3">Mitra</th><th class="p-3">User</th><th class="p-3">Karyawan</th><th class="p-3">Volume</th><th class="p-3">Nilai</th><th class="p-3">Bayar</th></tr></thead>
             <tbody class="divide-y divide-slate-100">
                 @foreach($transactions as $transaction)
                     <tr><td class="p-3">{{ $transaction->created_at->format('d M Y') }}</td><td class="p-3">{{ $transaction->code }}</td><td class="p-3">{{ $transaction->partner?->name ?? '-' }}</td><td class="p-3">{{ $transaction->user->name }}</td><td class="p-3">{{ $transaction->pickup?->assignedUser?->name ?? '-' }}</td><td class="p-3">{{ number_format($transaction->actual_liter, 2, ',', '.') }} L</td><td class="p-3">Rp{{ number_format($transaction->total_value, 0, ',', '.') }}</td><td class="p-3">{{ str($transaction->payment_method)->title() }}</td></tr>

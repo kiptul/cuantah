@@ -6,15 +6,15 @@
 
     <div class="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
         <div>
-            <p class="text-sm font-bold uppercase text-emerald-700">Operasional</p>
-            <h1 class="text-3xl font-black tracking-tight">Pickup & Assignment Karyawan</h1>
+            <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Operasional</p>
+            <h1 class="mt-1 text-2xl font-black tracking-tight text-emerald-950 sm:text-3xl">Pickup &amp; Assignment Karyawan</h1>
             <p class="mt-2 text-sm text-slate-600">Pickup jemput muncul otomatis. Drop-off baru muncul setelah barcode discan karyawan.</p>
         </div>
     </div>
 
     <div class="grid gap-4">
         @forelse($pickups as $pickup)
-            <article class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="grid gap-0 lg:grid-cols-[1fr_320px]">
                     <div class="p-5">
                         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -34,7 +34,7 @@
                         <p class="mt-4 text-sm font-semibold text-slate-700">Lokasi</p>
                         <p class="mt-1 text-sm text-slate-600">{{ $pickup->address }}</p>
                         <div id="pickup-map-{{ $pickup->id }}" class="mt-4 h-72 rounded-lg border border-slate-200"></div>
-                        <a target="_blank" class="mt-3 inline-flex rounded-md border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50" href="https://www.google.com/maps?q={{ $pickup->latitude }},{{ $pickup->longitude }}">Buka Navigasi</a>
+                        <a target="_blank" class="mt-3 inline-flex w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 text-sm font-bold text-slate-700 hover:bg-slate-50" href="https://www.google.com/maps?q={{ $pickup->latitude }},{{ $pickup->longitude }}">Buka Navigasi</a>
                     </div>
 
                     <aside class="border-t border-slate-200 bg-slate-50 p-5 lg:border-l lg:border-t-0">

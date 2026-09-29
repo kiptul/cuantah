@@ -5,22 +5,22 @@
     </x-slot:head>
 
     <div class="mb-6">
-        <p class="text-sm font-bold uppercase text-emerald-700">Master Data</p>
-        <h1 class="text-3xl font-black">Mitra</h1>
+        <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Master Data</p>
+        <h1 class="mt-1 text-2xl font-black tracking-tight text-emerald-950 sm:text-3xl">Mitra</h1>
         <p class="mt-2 text-sm text-slate-600">Lokasi mitra dipakai untuk drop-off, radius pickup, pembatasan akses admin/karyawan, dan laporan.</p>
     </div>
 
-    <form method="post" action="{{ route('admin.partners.store') }}" class="mb-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <form method="post" action="{{ route('admin.partners.store') }}" class="mb-6 rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm shadow-emerald-950/5 shadow-sm">
         @csrf
         <p class="font-black">Tambah Mitra</p>
         <div class="mt-4 grid gap-4 md:grid-cols-3">
-            <input name="name" placeholder="Nama mitra" class="rounded-md border border-slate-300 px-3 py-2" required>
-            <input name="type" placeholder="Tipe" class="rounded-md border border-slate-300 px-3 py-2" required>
-            <input name="phone" placeholder="Telepon" class="rounded-md border border-slate-300 px-3 py-2" required>
-            <input name="capacity_liter" type="number" min="1" placeholder="Kapasitas liter" class="rounded-md border border-slate-300 px-3 py-2" required>
-            <select name="status" class="rounded-md border border-slate-300 px-3 py-2"><option value="active">Aktif</option><option value="inactive">Nonaktif</option></select>
+            <input name="name" placeholder="Nama mitra" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            <input name="type" placeholder="Tipe" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            <input name="phone" placeholder="Telepon" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            <input name="capacity_liter" type="number" min="1" placeholder="Kapasitas liter" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            <select name="status" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"><option value="active">Aktif</option><option value="inactive">Nonaktif</option></select>
             <button type="button" data-target="new" class="gps-btn rounded-md border border-slate-300 px-4 py-2 font-bold text-slate-700">Gunakan GPS</button>
-            <textarea name="address" placeholder="Alamat" class="rounded-md border border-slate-300 px-3 py-2 md:col-span-3" required></textarea>
+            <textarea name="address" placeholder="Alamat" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 md:col-span-3" required></textarea>
             <input name="latitude" id="lat-new" type="hidden" value="-6.3055">
             <input name="longitude" id="lng-new" type="hidden" value="107.3053">
         </div>
@@ -28,7 +28,7 @@
         <div class="mt-4">
             <div class="flex items-center justify-between gap-3">
                 <p class="text-sm font-bold">Aturan ongkir jemput</p>
-                <button type="button" data-fee-add="new" class="rounded-md border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700">Tambah Range</button>
+                <button type="button" data-fee-add="new" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 text-sm font-bold text-slate-700">Tambah Range</button>
             </div>
             <div data-fee-list="new" class="mt-3 grid gap-2"></div>
             <p class="mt-2 text-xs text-slate-500">Kosongkan jarak maksimal untuk range terakhir seperti di atas 10 km. Radius di bawah range pertama otomatis gratis.</p>
@@ -38,7 +38,7 @@
 
     <div class="grid gap-4">
         @foreach($partners as $partner)
-            <form method="post" action="{{ route('admin.partners.update', $partner) }}" class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <form method="post" action="{{ route('admin.partners.update', $partner) }}" class="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm shadow-emerald-950/5 shadow-sm">
                 @csrf
                 @method('put')
                 <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
@@ -50,13 +50,13 @@
                 </div>
 
                 <div class="mt-4 grid gap-4 md:grid-cols-3">
-                    <input name="name" value="{{ $partner->name }}" class="rounded-md border border-slate-300 px-3 py-2" required>
-                    <input name="type" value="{{ $partner->type }}" class="rounded-md border border-slate-300 px-3 py-2" required>
-                    <input name="phone" value="{{ $partner->phone }}" class="rounded-md border border-slate-300 px-3 py-2" required>
-                    <input name="capacity_liter" type="number" value="{{ $partner->capacity_liter }}" class="rounded-md border border-slate-300 px-3 py-2" required>
-                    <select name="status" class="rounded-md border border-slate-300 px-3 py-2"><option value="active" @selected($partner->status === 'active')>Aktif</option><option value="inactive" @selected($partner->status === 'inactive')>Nonaktif</option></select>
+                    <input name="name" value="{{ $partner->name }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    <input name="type" value="{{ $partner->type }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    <input name="phone" value="{{ $partner->phone }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    <input name="capacity_liter" type="number" value="{{ $partner->capacity_liter }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    <select name="status" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"><option value="active" @selected($partner->status === 'active')>Aktif</option><option value="inactive" @selected($partner->status === 'inactive')>Nonaktif</option></select>
                     <button type="button" data-target="{{ $partner->id }}" class="gps-btn rounded-md border border-slate-300 px-4 py-2 font-bold text-slate-700">Gunakan GPS</button>
-                    <textarea name="address" class="rounded-md border border-slate-300 px-3 py-2 md:col-span-3" required>{{ $partner->address }}</textarea>
+                    <textarea name="address" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 md:col-span-3" required>{{ $partner->address }}</textarea>
                     <input name="latitude" id="lat-{{ $partner->id }}" type="hidden" value="{{ $partner->latitude }}">
                     <input name="longitude" id="lng-{{ $partner->id }}" type="hidden" value="{{ $partner->longitude }}">
                 </div>
@@ -65,14 +65,14 @@
                 <div class="mt-4">
                     <div class="flex items-center justify-between gap-3">
                         <p class="text-sm font-bold">Aturan ongkir jemput</p>
-                        <button type="button" data-fee-add="{{ $partner->id }}" class="rounded-md border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700">Tambah Range</button>
+                        <button type="button" data-fee-add="{{ $partner->id }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 text-sm font-bold text-slate-700">Tambah Range</button>
                     </div>
                     <div data-fee-list="{{ $partner->id }}" class="mt-3 grid gap-2">
                         @foreach($partner->deliveryFees as $index => $fee)
                             <div data-fee-row class="grid gap-2 rounded-md bg-slate-50 p-3 md:grid-cols-[1fr_1fr_1fr_auto]">
-                                <input name="delivery_fees[{{ $index }}][min_distance_km]" type="number" step="0.01" min="0" value="{{ $fee->min_distance_km }}" placeholder="Min km" class="rounded-md border border-slate-300 px-3 py-2" required>
-                                <input name="delivery_fees[{{ $index }}][max_distance_km]" type="number" step="0.01" min="0" value="{{ $fee->max_distance_km }}" placeholder="Max km kosong = lebih dari" class="rounded-md border border-slate-300 px-3 py-2">
-                                <input name="delivery_fees[{{ $index }}][fee]" type="number" min="0" value="{{ $fee->fee }}" placeholder="Ongkir" class="rounded-md border border-slate-300 px-3 py-2" required>
+                                <input name="delivery_fees[{{ $index }}][min_distance_km]" type="number" step="0.01" min="0" value="{{ $fee->min_distance_km }}" placeholder="Min km" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                                <input name="delivery_fees[{{ $index }}][max_distance_km]" type="number" step="0.01" min="0" value="{{ $fee->max_distance_km }}" placeholder="Max km kosong = lebih dari" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+                                <input name="delivery_fees[{{ $index }}][fee]" type="number" min="0" value="{{ $fee->fee }}" placeholder="Ongkir" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
                                 <button type="button" data-fee-remove class="rounded-md border border-rose-300 px-3 py-2 text-sm font-bold text-rose-700">Hapus</button>
                             </div>
                         @endforeach
@@ -111,9 +111,9 @@
                 row.dataset.feeRow = '';
                 row.className = 'grid gap-2 rounded-md bg-slate-50 p-3 md:grid-cols-[1fr_1fr_1fr_auto]';
                 row.innerHTML = `
-                    <input name="delivery_fees[${index}][min_distance_km]" type="number" step="0.01" min="0" value="${values.min ?? ''}" placeholder="Min km" class="rounded-md border border-slate-300 px-3 py-2" required>
-                    <input name="delivery_fees[${index}][max_distance_km]" type="number" step="0.01" min="0" value="${values.max ?? ''}" placeholder="Max km kosong = lebih dari" class="rounded-md border border-slate-300 px-3 py-2">
-                    <input name="delivery_fees[${index}][fee]" type="number" min="0" value="${values.fee ?? ''}" placeholder="Ongkir" class="rounded-md border border-slate-300 px-3 py-2" required>
+                    <input name="delivery_fees[${index}][min_distance_km]" type="number" step="0.01" min="0" value="${values.min ?? ''}" placeholder="Min km" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    <input name="delivery_fees[${index}][max_distance_km]" type="number" step="0.01" min="0" value="${values.max ?? ''}" placeholder="Max km kosong = lebih dari" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+                    <input name="delivery_fees[${index}][fee]" type="number" min="0" value="${values.fee ?? ''}" placeholder="Ongkir" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
                     <button type="button" data-fee-remove class="rounded-md border border-rose-300 px-3 py-2 text-sm font-bold text-rose-700">Hapus</button>
                 `;
                 list.appendChild(row);
