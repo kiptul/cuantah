@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\VerifyTransactionRequest;
 use App\Models\Transaction;
 use App\Services\TransactionService;
+use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
@@ -52,12 +53,22 @@ class TransactionController extends Controller
         return back()->with('success', 'Status transaksi diubah menjadi verifikasi.');
     }
 
-    public function reject(Transaction $transaction, TransactionService $service)
+    public function reject(Request $request, Transaction $transaction, TransactionService $service)
     {
         $this->ensureVisible($transaction);
-        $service->reject($transaction);
 
-        return back()->with('success', 'Transaksi ditolak.');
+        // Alasan diwajibkan. Penolakan tanpa keterangan membuat penyetor
+        // tidak tahu apa yang perlu diperbaiki pada setoran berikutnya.
+        $data = $request->validate([
+            'rejection_reason' => ['required', 'string', 'min:5', 'max:500'],
+        ], [
+            'rejection_reason.required' => 'Sebutkan alasan penolakan agar penyetor tahu apa yang perlu diperbaiki.',
+            'rejection_reason.min' => 'Alasan terlalu singkat untuk bisa dipahami penyetor.',
+        ]);
+
+        $service->reject($transaction, $data['rejection_reason']);
+
+        return back()->with('success', 'Transaksi ditolak beserta alasannya.');
     }
 
     private function ensureVisible(Transaction $transaction): void

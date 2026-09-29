@@ -20,7 +20,14 @@ class PickupController extends Controller
                     $query->whereHas('transaction', fn ($transaction) => $transaction->where('method', Transaction::METHOD_PICKUP))
                         ->orWhereNotNull('scanned_at');
                 })
-                ->latest()
+                // Diurutkan menurut jadwal yang dipilih penyetor, bukan waktu
+                // pendaftaran. Dengan urutan terbaru lebih dulu, permintaan yang
+                // dijadwalkan besok pagi bisa kalah oleh yang baru masuk sore ini.
+                // Drop-off tidak berjadwal, jadi ditempatkan setelah yang berjadwal.
+                ->orderByRaw('pickup_date is null')
+                ->orderBy('pickup_date')
+                ->orderBy('pickup_time')
+                ->oldest()
                 ->paginate(10),
         ]);
     }

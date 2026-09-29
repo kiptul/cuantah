@@ -42,6 +42,7 @@ class Transaction extends Model
         'payment_status',
         'paid_at',
         'payment_confirmed_at',
+        'rejection_reason',
         'notes',
     ];
 

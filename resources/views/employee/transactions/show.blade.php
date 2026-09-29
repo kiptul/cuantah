@@ -22,6 +22,18 @@
         <aside class="rounded-lg border border-slate-200 bg-white p-5">
             <dl class="mb-5 space-y-3 text-sm">
                 <div class="flex justify-between gap-3"><dt>Mitra</dt><dd class="text-right font-bold">{{ $transaction->partner?->name ?? '-' }}</dd></div>
+                {{-- Jadwal yang dipilih penyetor. Sebelumnya hanya admin yang
+                     melihatnya, padahal karyawanlah yang harus menepatinya. --}}
+                <div class="flex justify-between gap-3">
+                    <dt>Jadwal jemput</dt>
+                    <dd class="text-right font-bold">
+                        @if($transaction->pickup?->pickup_date)
+                            {{ $transaction->pickup->pickup_date->translatedFormat('d M Y') }}@if($transaction->pickup->pickup_time)<span class="block text-xs font-semibold text-slate-500">pukul {{ \Illuminate\Support\Str::of($transaction->pickup->pickup_time)->substr(0, 5) }}</span>@endif
+                        @else
+                            <span class="text-slate-500">Tanpa jadwal</span>
+                        @endif
+                    </dd>
+                </div>
                 <div class="flex justify-between"><dt>Estimasi liter</dt><dd class="font-bold">{{ number_format($transaction->estimated_liter, 2, ',', '.') }} L</dd></div>
                 <div class="flex justify-between"><dt>Ongkir jemput</dt><dd class="font-bold">Rp{{ number_format($transaction->pickup_fee, 0, ',', '.') }}</dd></div>
                 <div class="flex justify-between"><dt>Estimasi total</dt><dd class="font-black text-emerald-800">Rp{{ number_format($transaction->estimated_total, 0, ',', '.') }}</dd></div>

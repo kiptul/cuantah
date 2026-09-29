@@ -232,16 +232,27 @@ class TransactionService
         });
     }
 
-    public function reject(Transaction $transaction): Transaction
+    /**
+     * Menolak transaksi disertai alasannya.
+     *
+     * Sebelumnya penyetor hanya menerima pesan generik, sehingga ia tidak
+     * pernah tahu apa yang perlu diperbaiki pada setoran berikutnya.
+     */
+    public function reject(Transaction $transaction, ?string $reason = null): Transaction
     {
-        return DB::transaction(function () use ($transaction) {
-            $transaction->update(['status' => Transaction::STATUS_REJECTED]);
+        return DB::transaction(function () use ($transaction, $reason) {
+            $transaction->update([
+                'status' => Transaction::STATUS_REJECTED,
+                'rejection_reason' => $reason,
+            ]);
             $transaction->pickup?->update(['status' => 'rejected']);
 
             Notification::create([
                 'user_id' => $transaction->user_id,
                 'title' => 'Transaksi ditolak',
-                'message' => 'Transaksi '.$transaction->code.' tidak dapat diproses.',
+                'message' => $reason
+                    ? 'Transaksi '.$transaction->code.' ditolak. Alasan: '.$reason
+                    : 'Transaksi '.$transaction->code.' tidak dapat diproses.',
                 'type' => 'transaction',
             ]);
 

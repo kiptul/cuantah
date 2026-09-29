@@ -43,7 +43,17 @@
                 <textarea name="notes" rows="3" placeholder="Catatan" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">{{ old('notes', $transaction->notes) }}</textarea>
                 <button class="w-full rounded-md bg-emerald-700 px-4 py-3 font-bold text-white">Selesaikan Transaksi</button>
             </form>
-            <form method="post" action="{{ route('admin.transactions.reject', $transaction) }}" class="mt-3">@csrf<button class="w-full rounded-md border border-rose-300 px-4 py-2 font-bold text-rose-700">Tolak</button></form>
+            {{-- Alasan diwajibkan supaya penolakan tidak berhenti sebagai
+                 pesan generik yang tidak bisa ditindaklanjuti penyetor. --}}
+            <form method="post" action="{{ route('admin.transactions.reject', $transaction) }}" class="mt-5 border-t border-slate-100 pt-5">
+                @csrf
+                <label class="text-sm font-bold text-slate-700">Alasan penolakan</label>
+                <textarea name="rejection_reason" rows="2" required minlength="5" maxlength="500"
+                          placeholder="Contoh: jelantah tercampur air, tidak bisa diolah."
+                          class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-rose-400 focus:ring-4 focus:ring-rose-100">{{ old('rejection_reason') }}</textarea>
+                @error('rejection_reason')<p class="mt-2 text-sm font-semibold text-rose-700">{{ $message }}</p>@enderror
+                <button class="mt-3 w-full rounded-xl border border-rose-300 px-4 py-2.5 text-sm font-black text-rose-700 transition hover:bg-rose-50">Tolak Transaksi</button>
+            </form>
         </aside>
     </div>
 </x-layouts.admin>

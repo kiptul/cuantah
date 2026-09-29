@@ -51,6 +51,24 @@ class Partner extends Model
         return $query->whereIn('id', $partnerIds);
     }
 
+    /**
+     * Liter yang sudah terkumpul di mitra ini tetapi belum disalurkan.
+     *
+     * Dipakai untuk menahan pencatatan penyaluran yang melebihi jumlah yang
+     * benar-benar pernah masuk. Tanpa ini, volume keluar dapat diisi bebas
+     * sehingga laporan rantai pasok kehilangan artinya.
+     */
+    public function availableLiter(): float
+    {
+        $terkumpul = (float) $this->transactions()
+            ->where('status', Transaction::STATUS_COMPLETED)
+            ->sum('actual_liter');
+
+        $tersalur = (float) $this->distributions()->sum('volume_liter');
+
+        return round($terkumpul - $tersalur, 2);
+    }
+
     public function deliveryFeeForDistance(float $distanceKm): int
     {
         $rule = $this->deliveryFees

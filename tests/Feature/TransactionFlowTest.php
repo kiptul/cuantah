@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Distribution;
 use App\Models\OilPrice;
 use App\Models\Partner;
 use App\Models\Pickup;
@@ -319,5 +320,128 @@ class TransactionFlowTest extends TestCase
             ->assertForbidden();
 
         $this->assertNull($transaction->fresh()->payment_confirmed_at);
+    }
+
+    public function test_distribution_cannot_exceed_collected_volume(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $partner = $this->partnerWithPickupFee();
+        $admin->partners()->attach($partner->id);
+
+        // Mitra ini baru mengumpulkan 5 liter dari satu transaksi selesai.
+        $user = User::factory()->create(['role' => 'user']);
+        Transaction::create([
+            'code' => 'CNT-STOK-1', 'user_id' => $user->id, 'partner_id' => $partner->id,
+            'oil_price_id' => OilPrice::create(['price_per_liter' => 4000, 'effective_date' => now()->toDateString(), 'is_active' => true])->id,
+            'estimated_liter' => 5, 'actual_liter' => 5, 'price_per_liter' => 4000,
+            'estimated_total' => 20000, 'total_value' => 20000,
+            'method' => Transaction::METHOD_DROP_OFF, 'status' => Transaction::STATUS_COMPLETED,
+        ]);
+
+        $this->actingAs($admin)->post(route('admin.distributions.store'), [
+            'partner_id' => $partner->id,
+            'volume_liter' => 50,
+            'destination' => 'Pabrik Uji',
+            'distributed_at' => now()->toDateString(),
+        ])->assertSessionHasErrors('volume_liter');
+
+        $this->assertSame(0, Distribution::count(), 'Penyaluran melebihi stok tidak boleh tercatat.');
+    }
+
+    public function test_distribution_within_collected_volume_succeeds_and_reduces_stock(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $partner = $this->partnerWithPickupFee();
+        $admin->partners()->attach($partner->id);
+
+        $user = User::factory()->create(['role' => 'user']);
+        Transaction::create([
+            'code' => 'CNT-STOK-2', 'user_id' => $user->id, 'partner_id' => $partner->id,
+            'oil_price_id' => OilPrice::create(['price_per_liter' => 4000, 'effective_date' => now()->toDateString(), 'is_active' => true])->id,
+            'estimated_liter' => 10, 'actual_liter' => 10, 'price_per_liter' => 4000,
+            'estimated_total' => 40000, 'total_value' => 40000,
+            'method' => Transaction::METHOD_DROP_OFF, 'status' => Transaction::STATUS_COMPLETED,
+        ]);
+
+        $this->assertSame(10.0, $partner->availableLiter());
+
+        $this->actingAs($admin)->post(route('admin.distributions.store'), [
+            'partner_id' => $partner->id,
+            'volume_liter' => 4,
+            'destination' => 'Pabrik Uji',
+            'distributed_at' => now()->toDateString(),
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(6.0, $partner->fresh()->availableLiter(), 'Sisa stok berkurang sebesar yang disalurkan.');
+    }
+
+    public function test_rejecting_a_transaction_requires_a_reason(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create(['role' => 'user']);
+        $transaction = $this->paidTransactionFor($user);
+        $admin->partners()->attach($transaction->partner_id);
+
+        $this->actingAs($admin)
+            ->post(route('admin.transactions.reject', $transaction), ['rejection_reason' => ''])
+            ->assertSessionHasErrors('rejection_reason');
+
+        $this->assertSame(Transaction::STATUS_COMPLETED, $transaction->fresh()->status);
+    }
+
+    public function test_rejection_reason_is_stored_and_sent_to_the_depositor(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create(['role' => 'user']);
+        $transaction = $this->paidTransactionFor($user);
+        $admin->partners()->attach($transaction->partner_id);
+
+        $alasan = 'Jelantah tercampur air sehingga tidak bisa diolah.';
+
+        $this->actingAs($admin)
+            ->post(route('admin.transactions.reject', $transaction), ['rejection_reason' => $alasan])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(Transaction::STATUS_REJECTED, $transaction->fresh()->status);
+        $this->assertSame($alasan, $transaction->fresh()->rejection_reason);
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $user->id,
+            'message' => 'Transaksi '.$transaction->code.' ditolak. Alasan: '.$alasan,
+        ]);
+    }
+
+    public function test_available_pickups_are_ordered_by_schedule_not_by_newest(): void
+    {
+        $employee = User::factory()->create(['role' => 'employee']);
+        $partner = $this->partnerWithPickupFee();
+        $employee->partners()->attach($partner->id);
+        $price = OilPrice::create(['price_per_liter' => 4000, 'effective_date' => now()->toDateString(), 'is_active' => true]);
+        $user = User::factory()->create(['role' => 'user']);
+
+        // Dibuat terbalik: yang didaftarkan belakangan justru berjadwal lebih awal.
+        foreach ([['LAMBAT', 5], ['CEPAT', 1]] as [$kode, $hari]) {
+            $transaction = Transaction::create([
+                'code' => 'CNT-'.$kode, 'user_id' => $user->id, 'partner_id' => $partner->id,
+                'oil_price_id' => $price->id, 'estimated_liter' => 8, 'price_per_liter' => 4000,
+                'estimated_total' => 32000, 'method' => Transaction::METHOD_PICKUP,
+                'status' => Transaction::STATUS_PENDING,
+            ]);
+            Pickup::create([
+                'transaction_id' => $transaction->id, 'partner_id' => $partner->id,
+                'address' => 'Jl. Uji', 'latitude' => -6.3, 'longitude' => 107.3,
+                'pickup_date' => now()->addDays($hari)->toDateString(),
+                'pickup_time' => '08:00', 'status' => 'pending',
+            ]);
+        }
+
+        $urutan = $this->actingAs($employee)
+            ->get(route('employee.pickups.available'))
+            ->assertOk()
+            ->viewData('pickups')
+            ->pluck('transaction.code')
+            ->all();
+
+        $this->assertSame(['CNT-CEPAT', 'CNT-LAMBAT'], $urutan,
+            'Jadwal terdekat harus di atas, bukan pendaftaran terbaru.');
     }
 }

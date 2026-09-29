@@ -7,8 +7,12 @@
         @csrf
         <p class="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">Catat Penyaluran</p>
         <div class="mt-4 grid gap-3 md:grid-cols-4">
+            {{-- Sisa liter disebut di tiap pilihan supaya admin tahu batasnya
+                 sebelum mengisi, bukan setelah pencatatannya ditolak. --}}
             <select name="partner_id" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                @foreach($partners as $partner)<option value="{{ $partner->id }}">{{ $partner->name }}</option>@endforeach
+                @foreach($partners as $partner)
+                    <option value="{{ $partner->id }}">{{ $partner->name }} — sisa {{ rtrim(rtrim(number_format($partner->available_liter, 2, ',', '.'), '0'), ',') }} L</option>
+                @endforeach
             </select>
             <input name="volume_liter" type="number" step="0.01" placeholder="Volume liter" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
             <input name="destination" placeholder="Tujuan penyaluran" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>

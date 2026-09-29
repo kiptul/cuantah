@@ -28,6 +28,15 @@
                 <div class="flex justify-between"><dt>Status bayar</dt><dd>{{ $transaction->payment_status ? '' : '-' }}@if($transaction->payment_status)<x-status-badge :status="$transaction->payment_status" />@endif</dd></div>
                 <div class="flex justify-between"><dt>Karyawan</dt><dd class="font-bold">{{ $transaction->pickup?->assignedUser?->name ?? '-' }}</dd></div>
             </dl>
+            {{-- Alasan penolakan ditampilkan kepada penyetor. Tanpa ini ia hanya
+                 melihat lencana "rejected" tanpa tahu apa yang perlu diperbaiki. --}}
+            @if($transaction->status === 'rejected' && $transaction->rejection_reason)
+                <div class="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+                    <p class="text-xs font-black uppercase tracking-[0.12em] text-rose-700">Alasan penolakan</p>
+                    <p class="mt-1.5 text-sm leading-6 text-rose-900">{{ $transaction->rejection_reason }}</p>
+                </div>
+            @endif
+
             {{-- Konfirmasi dari penyetor. Tanpa ini, status lunas sepenuhnya
                  bersandar pada pengakuan karyawan. --}}
             @if($transaction->payment_status === 'paid')
