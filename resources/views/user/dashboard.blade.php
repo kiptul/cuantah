@@ -1,112 +1,84 @@
 <x-layouts.app title="Dashboard CUANTAH">
-    <div class="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-            <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Dashboard</p>
-            <h1 class="mt-1 text-2xl font-black tracking-tight text-emerald-950 sm:text-3xl">Halo, {{ auth()->user()->name }}</h1>
-        </div>
+    <div class="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <h1 class="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Halo, {{ auth()->user()->name }}</h1>
         <div class="grid gap-2 sm:flex">
-            <a href="{{ route('deposits.create') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-emerald-900/15 transition hover:bg-emerald-800">
-                Setor Jelantah <span aria-hidden="true">&rarr;</span>
+            <a href="{{ route('deposits.create') }}" class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800">
+                Setor Jelantah
             </a>
-            <a href="{{ route('transactions.index') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-sm font-black text-slate-700 transition hover:border-emerald-400 hover:text-emerald-800">
-                Lihat Transaksi
+            <a href="{{ route('transactions.index') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-400">
+                Riwayat
             </a>
         </div>
     </div>
 
-    {{-- CUAN diterima adalah angka yang paling dicari penyetor, jadi ia
-         mendapat kartu sendiri. Sebelumnya ketiganya tampil sama rata. --}}
-    <section class="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <div class="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-6 shadow-sm shadow-emerald-950/5">
-            <p class="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Total CUAN diterima</p>
-            <p class="mt-3 text-4xl font-black tracking-tight text-emerald-950 sm:text-5xl">Rp{{ number_format($total_value, 0, ',', '.') }}</p>
-            <p class="mt-2 text-sm text-emerald-800/80">Dari transaksi yang sudah selesai diverifikasi.</p>
-        </div>
-
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-            <div class="rounded-2xl border border-slate-200 bg-white p-5">
-                <p class="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Total liter disetor</p>
-                <p class="mt-2 text-2xl font-black tracking-tight text-slate-900">{{ number_format($total_liter, 2, ',', '.') }} L</p>
+    {{-- Satu angka yang dibesarkan, sisanya dibiarkan tenang. Sebelumnya
+         ketiganya berukuran sama sehingga tidak ada yang menonjol. --}}
+    <section class="border-y border-slate-200 py-7">
+        <div class="grid gap-7 sm:grid-cols-[1.6fr_1fr_1fr] sm:gap-4 sm:divide-x sm:divide-slate-200">
+            <div class="sm:pr-4">
+                <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">CUAN diterima</p>
+                <p class="mt-2 text-4xl font-black tracking-tight tabular-nums text-emerald-800 sm:text-5xl">Rp{{ number_format($total_value, 0, ',', '.') }}</p>
             </div>
-            <div class="rounded-2xl border border-slate-200 bg-white p-5">
-                <p class="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Total transaksi</p>
-                <p class="mt-2 text-2xl font-black tracking-tight text-slate-900">{{ $total_transactions }}</p>
+            <div class="sm:px-4">
+                <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Liter disetor</p>
+                <p class="mt-2 text-2xl font-black tracking-tight tabular-nums text-slate-900">{{ number_format($total_liter, 2, ',', '.') }}</p>
+            </div>
+            <div class="sm:px-4">
+                <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Transaksi</p>
+                <p class="mt-2 text-2xl font-black tracking-tight tabular-nums text-slate-900">{{ $total_transactions }}</p>
             </div>
         </div>
     </section>
 
-    {{-- Hanya muncul bila memang ada yang menunggu. Tanpa bagian ini,
-         konfirmasi pembayaran dan tenggat sanggahan terlewat tanpa terlihat. --}}
+    {{-- Hanya muncul bila memang ada yang menunggu. Penanda merah kecil
+         dipakai, bukan latar berwarna, supaya tidak bersaing dengan angka utama. --}}
     @if($needs_action->isNotEmpty())
-        <section class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-            <p class="text-xs font-black uppercase tracking-[0.16em] text-amber-700">Perlu tindakanmu</p>
-            <div class="mt-4 grid gap-2">
+        <section class="mt-8">
+            <h2 class="flex items-center gap-2 text-sm font-black uppercase tracking-[0.14em] text-slate-500">
+                <span class="h-1.5 w-1.5 rounded-full bg-red-600" aria-hidden="true"></span>
+                Perlu tindakanmu
+            </h2>
+            <div class="mt-3 divide-y divide-slate-200 border-y border-slate-200">
                 @foreach($needs_action as $item)
                     <a href="{{ route('transactions.show', $item['transaction']) }}"
-                       class="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-white px-4 py-3 transition hover:border-amber-400">
+                       class="flex items-center justify-between gap-4 py-4 transition hover:bg-slate-50">
                         <div class="min-w-0">
-                            <p class="font-black text-emerald-950">{{ $item['label'] }}</p>
+                            <p class="font-bold text-slate-900">{{ $item['label'] }}</p>
                             <p class="mt-0.5 text-sm text-slate-600">{{ $item['hint'] }}</p>
                         </div>
-                        <span class="shrink-0 text-sm font-black text-amber-800" aria-hidden="true">&rarr;</span>
+                        <span class="shrink-0 font-mono text-sm text-slate-400">{{ $item['transaction']->code }}</span>
                     </a>
                 @endforeach
             </div>
         </section>
     @endif
 
-    <section class="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-            <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
-                <h2 class="font-black tracking-tight text-emerald-950">Transaksi terbaru</h2>
-                <a href="{{ route('transactions.index') }}" class="text-sm font-bold text-emerald-700 hover:text-emerald-800">Semua</a>
-            </div>
-            <div class="divide-y divide-slate-100">
-                @forelse($latest_transactions as $transaction)
-                    <a href="{{ route('transactions.show', $transaction) }}" class="block px-5 py-4 transition hover:bg-slate-50">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <p class="font-black text-emerald-700">{{ $transaction->code }}</p>
-                                <p class="mt-0.5 text-sm text-slate-500">
-                                    {{ $transaction->created_at->translatedFormat('d M Y') }} · {{ $transaction->method === 'pickup' ? 'Jemput' : 'Antar Sendiri' }}
-                                </p>
-                            </div>
-                            <x-status-badge :status="$transaction->status" class="shrink-0" />
-                        </div>
-                        <p class="mt-2 text-sm font-bold text-slate-700">
-                            {{ number_format($transaction->actual_liter ?? $transaction->estimated_liter, 2, ',', '.') }} L
-                            <span class="font-semibold text-slate-400">·</span>
-                            Rp{{ number_format($transaction->total_value ?? $transaction->estimated_total, 0, ',', '.') }}
-                        </p>
-                    </a>
-                @empty
-                    <div class="p-5"><x-empty-state title="Belum ada transaksi" body="Buat pengajuan setor pertama kamu." /></div>
-                @endforelse
-            </div>
+    <section class="mt-8">
+        <div class="flex items-center justify-between gap-3">
+            <h2 class="text-sm font-black uppercase tracking-[0.14em] text-slate-500">Transaksi terbaru</h2>
+            <a href="{{ route('transactions.index') }}" class="text-sm font-bold text-emerald-700 hover:text-emerald-800">Lihat semua</a>
         </div>
 
-        <div class="h-fit overflow-hidden rounded-2xl border border-slate-200 bg-white">
-            <div class="border-b border-slate-100 px-5 py-4">
-                <h2 class="font-black tracking-tight text-emerald-950">Notifikasi</h2>
-            </div>
-            <div class="divide-y divide-slate-100">
-                @forelse($notifications as $notification)
-                    {{-- Yang belum terbaca diberi latar dan lencana supaya terlihat
-                         berbeda pada kunjungan yang pertama kali memunculkannya. --}}
-                    <div @class(['px-5 py-4', 'bg-emerald-50/60' => $notification->read_at === null])>
-                        <div class="flex items-start justify-between gap-3">
-                            <p class="font-bold text-emerald-950">{{ $notification->title }}</p>
-                            @if($notification->read_at === null)
-                                <span class="shrink-0 rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Baru</span>
-                            @endif
+        <div class="mt-3 divide-y divide-slate-200 border-y border-slate-200">
+            @forelse($latest_transactions as $transaction)
+                <a href="{{ route('transactions.show', $transaction) }}" class="block py-4 transition hover:bg-slate-50">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="min-w-0">
+                            <p class="font-mono text-sm font-bold text-slate-900">{{ $transaction->code }}</p>
+                            <p class="mt-1 text-sm text-slate-500">
+                                {{ $transaction->created_at->translatedFormat('d M Y') }} · {{ $transaction->method === 'pickup' ? 'Jemput' : 'Antar Sendiri' }}
+                            </p>
                         </div>
-                        <p class="mt-1 text-sm leading-6 text-slate-600">{{ $notification->message }}</p>
-                        <p class="mt-1 text-xs text-slate-400">{{ $notification->created_at->diffForHumans() }}</p>
+                        <div class="shrink-0 text-right">
+                            <p class="font-bold tabular-nums text-slate-900">Rp{{ number_format($transaction->total_value ?? $transaction->estimated_total, 0, ',', '.') }}</p>
+                            <p class="mt-1 text-sm tabular-nums text-slate-500">{{ number_format($transaction->actual_liter ?? $transaction->estimated_liter, 2, ',', '.') }} L</p>
+                        </div>
                     </div>
-                @empty
-                    <div class="p-5"><x-empty-state title="Belum ada notifikasi" /></div>
-                @endforelse
-            </div>
+                    <div class="mt-2"><x-status-badge :status="$transaction->status" /></div>
+                </a>
+            @empty
+                <div class="py-6"><x-empty-state title="Belum ada transaksi" body="Buat pengajuan setor pertama kamu." /></div>
+            @endforelse
         </div>
     </section>
 </x-layouts.app>

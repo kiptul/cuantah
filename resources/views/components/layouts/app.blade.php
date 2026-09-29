@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="id">
 <head>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? 'CUANTAH App' }}</title>
@@ -41,6 +42,9 @@
                     <a href="{{ route('deposits.create') }}" class="rounded-md bg-emerald-700 px-3 py-2 font-semibold text-white">Setor</a>
                     <a href="{{ route('transactions.index') }}" class="rounded-md px-3 py-2 font-semibold text-slate-700 hover:bg-slate-100">Transaksi</a>
                 @endif
+                @auth
+                    <x-notification-bell />
+                @endauth
                 <form method="post" action="{{ route('logout') }}">
                     @csrf
                     <button class="rounded-xl px-3 py-2 font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">Logout</button>

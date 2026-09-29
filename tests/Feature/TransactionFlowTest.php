@@ -524,7 +524,7 @@ class TransactionFlowTest extends TestCase
         $this->assertSame(Transaction::STATUS_PENDING, $transaction->fresh()->status);
     }
 
-    public function test_unread_notifications_are_marked_read_after_the_dashboard_shows_them(): void
+    public function test_notifications_are_marked_read_only_when_the_bell_is_opened(): void
     {
         $user = User::factory()->create(['role' => 'user']);
         $notifikasi = $user->notifications()->create([
@@ -533,12 +533,12 @@ class TransactionFlowTest extends TestCase
             'type' => 'transaction',
         ]);
 
-        $this->assertNull($notifikasi->read_at);
-
-        // Kunjungan pertama masih menampilkannya sebagai baru, tetapi sesudahnya
-        // sudah tertandai sehingga kunjungan berikutnya tidak mengulang lencana.
+        // Membuka dasbor saja tidak menandainya, supaya titik merah pada
+        // lonceng hanya hilang ketika isinya benar-benar dilihat.
         $this->actingAs($user)->get(route('dashboard'))->assertOk();
+        $this->assertNull($notifikasi->fresh()->read_at);
 
+        $this->actingAs($user)->post(route('notifications.read'))->assertOk();
         $this->assertNotNull($notifikasi->fresh()->read_at);
     }
 
