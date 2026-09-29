@@ -22,7 +22,10 @@
         @endif
     </button>
 
-    <div class="absolute right-0 z-50 mt-2 hidden w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl shadow-slate-950/10"
+    {{-- Di layar kecil panel dilepas dari tombol dan direntangkan ke lebar
+         layar. Menempel pada tombol membuat tepi kirinya keluar layar, sebab
+         loncengnya sendiri tidak berada di tepi kanan viewport. --}}
+    <div class="fixed inset-x-3 top-[4.5rem] z-50 hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl shadow-slate-950/10 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[22rem]"
          data-bell-panel role="menu">
         <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <p class="text-sm font-black text-slate-900">Notifikasi</p>
