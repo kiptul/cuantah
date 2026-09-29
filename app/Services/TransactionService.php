@@ -27,6 +27,19 @@ class TransactionService
                 ->firstOrFail();
             abort_if($partner->latitude === null || $partner->longitude === null, 422, 'Lokasi mitra belum tersedia.');
 
+            // Kapasitas mitra sebelumnya hanya disimpan dan ditampilkan tanpa
+            // pernah dipakai, sehingga mitra yang sudah penuh tetap menerima
+            // setoran dan penyetor menunggu untuk sesuatu yang tidak muat.
+            if ($partner->availableLiter() >= $partner->capacity_liter) {
+                throw ValidationException::withMessages([
+                    'partner_id' => sprintf(
+                        'Mitra %s sedang penuh, kapasitasnya %s L dan belum ada penyaluran keluar. Pilih mitra lain dulu.',
+                        $partner->name,
+                        number_format($partner->capacity_liter, 0, ',', '.'),
+                    ),
+                ]);
+            }
+
             $isPickup = $data['method'] === Transaction::METHOD_PICKUP;
             $latitude = $isPickup ? (float) $data['latitude'] : (float) $partner->latitude;
             $longitude = $isPickup ? (float) $data['longitude'] : (float) $partner->longitude;
@@ -238,6 +251,29 @@ class TransactionService
      * Sebelumnya penyetor hanya menerima pesan generik, sehingga ia tidak
      * pernah tahu apa yang perlu diperbaiki pada setoran berikutnya.
      */
+    /**
+     * Pembatalan oleh penyetor sendiri.
+     *
+     * Sebelumnya tidak ada jalan mundur sama sekali: salah pilih mitra atau
+     * salah isi volume hanya bisa diakhiri lewat penolakan admin.
+     */
+    public function cancel(Transaction $transaction): Transaction
+    {
+        return DB::transaction(function () use ($transaction) {
+            $transaction->update(['status' => Transaction::STATUS_CANCELLED]);
+            $transaction->pickup?->update(['status' => 'cancelled']);
+
+            Notification::create([
+                'user_id' => $transaction->user_id,
+                'title' => 'Setoran dibatalkan',
+                'message' => 'Kamu membatalkan transaksi '.$transaction->code.'.',
+                'type' => 'transaction',
+            ]);
+
+            return $transaction->refresh();
+        });
+    }
+
     public function reject(Transaction $transaction, ?string $reason = null): Transaction
     {
         return DB::transaction(function () use ($transaction, $reason) {

@@ -444,4 +444,101 @@ class TransactionFlowTest extends TestCase
         $this->assertSame(['CNT-CEPAT', 'CNT-LAMBAT'], $urutan,
             'Jadwal terdekat harus di atas, bukan pendaftaran terbaru.');
     }
+
+    public function test_deposit_is_blocked_when_partner_is_already_full(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        OilPrice::factory()->create();
+        $partner = Partner::factory()->atKarawang()->create(['capacity_liter' => 10]);
+
+        // Sudah terkumpul 12 L dan belum ada penyaluran keluar, jadi melampaui kapasitas.
+        Transaction::factory()->completed(12)->create(['partner_id' => $partner->id]);
+
+        $this->actingAs($user)->post(route('deposits.store'), [
+            'partner_id' => $partner->id,
+            'method' => Transaction::METHOD_DROP_OFF,
+            'estimated_liter' => 3,
+            'address' => 'Jl. Mitra',
+            'latitude' => -6.3055,
+            'longitude' => 107.3053,
+        ])->assertSessionHasErrors('partner_id');
+    }
+
+    public function test_deposit_is_allowed_again_after_partner_distributes_its_stock(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        OilPrice::factory()->create();
+        $partner = Partner::factory()->atKarawang()->create(['capacity_liter' => 10]);
+        Transaction::factory()->completed(12)->create(['partner_id' => $partner->id]);
+
+        // Penyaluran keluar mengosongkan kembali ruang mitra.
+        Distribution::factory()->create(['partner_id' => $partner->id, 'volume_liter' => 12]);
+
+        $this->actingAs($user)->post(route('deposits.store'), [
+            'partner_id' => $partner->id,
+            'method' => Transaction::METHOD_DROP_OFF,
+            'estimated_liter' => 3,
+            'address' => 'Jl. Mitra',
+            'latitude' => -6.3055,
+            'longitude' => 107.3053,
+        ])->assertSessionHasNoErrors();
+    }
+
+    public function test_depositor_can_cancel_while_still_pending(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $transaction = Transaction::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user)
+            ->post(route('transactions.cancel', $transaction))
+            ->assertRedirect(route('transactions.index'));
+
+        $this->assertSame(Transaction::STATUS_CANCELLED, $transaction->fresh()->status);
+    }
+
+    public function test_cancellation_is_refused_once_someone_is_working_on_it(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $transaction = Transaction::factory()->create([
+            'user_id' => $user->id,
+            'status' => Transaction::STATUS_SCHEDULED,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('transactions.cancel', $transaction))
+            ->assertForbidden();
+
+        $this->assertSame(Transaction::STATUS_SCHEDULED, $transaction->fresh()->status);
+    }
+
+    public function test_nobody_else_can_cancel_someone_elses_deposit(): void
+    {
+        $pemilik = User::factory()->create(['role' => 'user']);
+        $oranglain = User::factory()->create(['role' => 'user']);
+        $transaction = Transaction::factory()->create(['user_id' => $pemilik->id]);
+
+        $this->actingAs($oranglain)
+            ->post(route('transactions.cancel', $transaction))
+            ->assertForbidden();
+
+        $this->assertSame(Transaction::STATUS_PENDING, $transaction->fresh()->status);
+    }
+
+    public function test_unread_notifications_are_marked_read_after_the_dashboard_shows_them(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $notifikasi = $user->notifications()->create([
+            'title' => 'Pengajuan setor diterima',
+            'message' => 'Menunggu proses berikutnya.',
+            'type' => 'transaction',
+        ]);
+
+        $this->assertNull($notifikasi->read_at);
+
+        // Kunjungan pertama masih menampilkannya sebagai baru, tetapi sesudahnya
+        // sudah tertandai sehingga kunjungan berikutnya tidak mengulang lencana.
+        $this->actingAs($user)->get(route('dashboard'))->assertOk();
+
+        $this->assertNotNull($notifikasi->fresh()->read_at);
+    }
 }

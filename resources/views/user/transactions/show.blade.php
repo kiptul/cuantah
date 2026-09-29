@@ -28,6 +28,18 @@
                 <div class="flex justify-between"><dt>Status bayar</dt><dd>{{ $transaction->payment_status ? '' : '-' }}@if($transaction->payment_status)<x-status-badge :status="$transaction->payment_status" />@endif</dd></div>
                 <div class="flex justify-between"><dt>Karyawan</dt><dd class="font-bold">{{ $transaction->pickup?->assignedUser?->name ?? '-' }}</dd></div>
             </dl>
+            {{-- Pembatalan hanya selama status masih pending. Sesudah itu karyawan
+                 sudah terkunci atau sudah berangkat, sehingga pembatalan sepihak
+                 merugikan pihak lain. --}}
+            @can('cancel', $transaction)
+                <form method="post" action="{{ route('transactions.cancel', $transaction) }}" class="mt-5 border-t border-slate-100 pt-5"
+                      onsubmit="return confirm('Batalkan setoran ini? Tindakan ini tidak bisa dibatalkan kembali.')">
+                    @csrf
+                    <p class="mb-3 text-sm leading-6 text-slate-600">Belum ada karyawan yang mengerjakan setoran ini, jadi kamu masih bisa membatalkannya.</p>
+                    <button class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-black text-slate-700 transition hover:border-rose-300 hover:text-rose-700">Batalkan Setoran</button>
+                </form>
+            @endcan
+
             {{-- Alasan penolakan ditampilkan kepada penyetor. Tanpa ini ia hanya
                  melihat lencana "rejected" tanpa tahu apa yang perlu diperbaiki. --}}
             @if($transaction->status === 'rejected' && $transaction->rejection_reason)

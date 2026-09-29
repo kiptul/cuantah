@@ -48,9 +48,17 @@
         <div class="border-b border-slate-200 p-4"><h2 class="font-black">Notifikasi</h2></div>
         <div class="divide-y divide-slate-100">
             @forelse($notifications as $notification)
-                <div class="p-4">
-                    <p class="font-bold">{{ $notification->title }}</p>
+                {{-- Yang belum terbaca diberi latar dan lencana supaya terlihat
+                     berbeda pada kunjungan yang pertama kali memunculkannya. --}}
+                <div @class(['p-4', 'bg-emerald-50/60' => $notification->read_at === null])>
+                    <div class="flex items-start justify-between gap-3">
+                        <p class="font-bold">{{ $notification->title }}</p>
+                        @if($notification->read_at === null)
+                            <span class="shrink-0 rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Baru</span>
+                        @endif
+                    </div>
                     <p class="mt-1 text-sm text-slate-600">{{ $notification->message }}</p>
+                    <p class="mt-1 text-xs text-slate-400">{{ $notification->created_at->diffForHumans() }}</p>
                 </div>
             @empty
                 <div class="p-4"><x-empty-state title="Belum ada notifikasi" /></div>

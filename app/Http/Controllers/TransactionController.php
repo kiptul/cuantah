@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Notification;
 use App\Models\Transaction;
+use App\Services\TransactionService;
 use Illuminate\Http\RedirectResponse;
 
 class TransactionController extends Controller
@@ -49,5 +50,14 @@ class TransactionController extends Controller
         ]);
 
         return back()->with('success', 'Terima kasih, konfirmasi penerimaan pembayaran sudah dicatat.');
+    }
+
+    public function cancel(Transaction $transaction, TransactionService $service): RedirectResponse
+    {
+        $this->authorize('cancel', $transaction);
+
+        $service->cancel($transaction);
+
+        return redirect()->route('transactions.index')->with('success', 'Setoran dibatalkan.');
     }
 }

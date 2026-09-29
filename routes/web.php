@@ -47,6 +47,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/transaksi/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
     Route::get('/transaksi/{transaction}/barcode', [BarcodeController::class, 'show'])->name('transactions.barcode');
     Route::post('/transaksi/{transaction}/konfirmasi-bayar', [TransactionController::class, 'confirmPayment'])->name('transactions.confirm-payment');
+    Route::post('/transaksi/{transaction}/batal', [TransactionController::class, 'cancel'])->name('transactions.cancel');
 });
 
 Route::middleware(['auth', 'employee'])->prefix('employee')->name('employee.')->group(function () {

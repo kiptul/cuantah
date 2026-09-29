@@ -24,4 +24,16 @@ class TransactionPolicy
             && $transaction->payment_status === 'paid'
             && $transaction->payment_confirmed_at === null;
     }
+
+    /**
+     * Penyetor boleh membatalkan selama belum ada yang mengerjakannya.
+     *
+     * Sesudah status berpindah dari pending, karyawan sudah terkunci atau
+     * sudah berangkat, sehingga pembatalan sepihak merugikan pihak lain.
+     */
+    public function cancel(User $user, Transaction $transaction): bool
+    {
+        return $transaction->user_id === $user->id
+            && $transaction->status === Transaction::STATUS_PENDING;
+    }
 }

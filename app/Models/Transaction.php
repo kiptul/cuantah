@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Transaction extends Model
 {
+    use HasFactory;
+
     public const METHOD_DROP_OFF = 'drop_off';
 
     public const METHOD_PICKUP = 'pickup';
@@ -24,6 +27,8 @@ class Transaction extends Model
     public const STATUS_COMPLETED = 'completed';
 
     public const STATUS_REJECTED = 'rejected';
+
+    public const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
         'code',

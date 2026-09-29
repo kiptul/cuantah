@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class OilPrice extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['price_per_liter', 'effective_date', 'is_active', 'notes'];
 
     protected function casts(): array
