@@ -49,6 +49,16 @@ class Pickup extends Model
         return $this->belongsTo(User::class, 'assigned_user_id');
     }
 
+    /**
+     * Pickup yang sudah selesai atau ditolak tidak lagi bisa dipindah
+     * karyawannya. Tanpa penjaga ini daftar admin menawarkan tombol
+     * assign pada pickup yang perjalanannya sudah berakhir.
+     */
+    public function isAssignable(): bool
+    {
+        return ! in_array($this->status, ['completed', 'rejected'], true);
+    }
+
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
         if (! $user->isStaff()) {
