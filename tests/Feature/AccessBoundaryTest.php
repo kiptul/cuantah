@@ -1,0 +1,182 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\OilPrice;
+use App\Models\Partner;
+use App\Models\Pickup;
+use App\Models\Transaction;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+/**
+ * Batas wewenang yang tidak terlihat dari daftar rute.
+ *
+ * Rute karyawan terbuka bagi admin, dan halaman pengguna melayani semua
+ * admin. Keduanya sempat melewatkan pemeriksaan mitra, sehingga admin satu
+ * mitra dapat menjangkau data dan akun mitra lain.
+ */
+class AccessBoundaryTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        if (! extension_loaded('pdo_sqlite')) {
+            $this->markTestSkipped('pdo_sqlite extension is required for in-memory feature tests.');
+        }
+
+        parent::setUp();
+    }
+
+    /**
+     * Satu transaksi milik mitra lain, lengkap dengan pickup-nya.
+     */
+    private function transaksiMitraLain(): Transaction
+    {
+        $harga = OilPrice::factory()->create();
+        $mitraLain = Partner::factory()->create(['name' => 'Mitra Lain']);
+
+        $transaksi = Transaction::factory()->create([
+            'partner_id' => $mitraLain->id,
+            'oil_price_id' => $harga->id,
+            'status' => Transaction::STATUS_VERIFICATION,
+        ]);
+
+        Pickup::factory()->create([
+            'transaction_id' => $transaksi->id,
+            'partner_id' => $mitraLain->id,
+            'status' => 'verification',
+        ]);
+
+        return $transaksi;
+    }
+
+    private function adminMitraSendiri(): User
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $admin->partners()->attach(Partner::factory()->create(['name' => 'Mitra Sendiri'])->id);
+
+        return $admin;
+    }
+
+    public function test_admin_cannot_open_another_partners_transaction_through_the_employee_route(): void
+    {
+        $transaksi = $this->transaksiMitraLain();
+
+        $this->actingAs($this->adminMitraSendiri())
+            ->get(route('employee.transactions.show', $transaksi))
+            ->assertForbidden();
+    }
+
+    public function test_admin_cannot_verify_another_partners_transaction_through_the_employee_route(): void
+    {
+        $transaksi = $this->transaksiMitraLain();
+
+        $this->actingAs($this->adminMitraSendiri())
+            ->post(route('employee.transactions.verify', $transaksi), [
+                'actual_liter' => 9,
+                'payment_method' => 'cash',
+                'payment_status' => 'paid',
+            ])
+            ->assertForbidden();
+
+        $this->assertSame(Transaction::STATUS_VERIFICATION, $transaksi->fresh()->status);
+    }
+
+    public function test_employee_assigned_to_the_pickup_still_reaches_their_own_transaction(): void
+    {
+        $harga = OilPrice::factory()->create();
+        $mitra = Partner::factory()->create();
+        $karyawan = User::factory()->create(['role' => 'employee']);
+        $karyawan->partners()->attach($mitra->id);
+
+        $transaksi = Transaction::factory()->create([
+            'partner_id' => $mitra->id,
+            'oil_price_id' => $harga->id,
+            'status' => Transaction::STATUS_VERIFICATION,
+        ]);
+        Pickup::factory()->create([
+            'transaction_id' => $transaksi->id,
+            'partner_id' => $mitra->id,
+            'assigned_user_id' => $karyawan->id,
+            'status' => 'verification',
+        ]);
+
+        $this->actingAs($karyawan)
+            ->get(route('employee.transactions.show', $transaksi))
+            ->assertOk();
+    }
+
+    public function test_user_list_hides_staff_of_other_partners(): void
+    {
+        $admin = $this->adminMitraSendiri();
+
+        $adminLain = User::factory()->create(['role' => 'admin', 'name' => 'Admin Mitra Lain']);
+        $adminLain->partners()->attach(Partner::factory()->create()->id);
+
+        $penyetor = User::factory()->create(['role' => 'user', 'name' => 'Penyetor Umum']);
+
+        $terlihat = $this->actingAs($admin)
+            ->get(route('admin.users.index'))
+            ->assertOk()
+            ->viewData('users')
+            ->pluck('id');
+
+        $this->assertTrue($terlihat->contains($admin->id), 'Admin harus melihat dirinya sendiri.');
+        $this->assertTrue($terlihat->contains($penyetor->id), 'Penyetor tidak terikat mitra, jadi tetap tampil.');
+        $this->assertFalse($terlihat->contains($adminLain->id), 'Admin mitra lain tidak boleh tampil.');
+    }
+
+    public function test_admin_cannot_change_the_account_of_another_partners_admin(): void
+    {
+        $admin = $this->adminMitraSendiri();
+
+        $korban = User::factory()->create(['role' => 'admin', 'email' => 'korban@cuantah.test']);
+        $mitraKorban = Partner::factory()->create();
+        $korban->partners()->attach($mitraKorban->id);
+
+        $this->actingAs($admin)
+            ->put(route('admin.users.update', $korban), [
+                'name' => 'Diambil Alih',
+                'email' => 'penyerang@contoh.test',
+                'role' => 'admin',
+                'partner_ids' => [$mitraKorban->id],
+            ])
+            ->assertForbidden();
+
+        $this->assertSame('korban@cuantah.test', $korban->fresh()->email);
+    }
+
+    public function test_admin_cannot_demote_themselves(): void
+    {
+        $admin = $this->adminMitraSendiri();
+
+        $this->actingAs($admin)
+            ->put(route('admin.users.update', $admin), [
+                'name' => $admin->name,
+                'email' => $admin->email,
+                'role' => 'user',
+            ])
+            ->assertSessionHasErrors('role');
+
+        $this->assertTrue($admin->fresh()->isAdmin());
+    }
+
+    public function test_staff_account_cannot_be_saved_without_a_partner(): void
+    {
+        $admin = $this->adminMitraSendiri();
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.store'), [
+                'name' => 'Karyawan Tanpa Mitra',
+                'email' => 'tanpa.mitra@cuantah.test',
+                'role' => 'employee',
+                'password' => 'rahasia-sekali',
+            ])
+            ->assertSessionHasErrors('partner_ids');
+
+        $this->assertDatabaseMissing('users', ['email' => 'tanpa.mitra@cuantah.test']);
+    }
+}

@@ -75,7 +75,7 @@ class PickupController extends Controller
 
     public function show(Transaction $transaction)
     {
-        abort_unless($transaction->pickup?->assigned_user_id === auth()->id() || auth()->user()->isAdmin(), 403);
+        $this->ensureAssigned($transaction);
 
         return view('employee.transactions.show', [
             'transaction' => $transaction->load('user', 'pickup.partner', 'pickup.assignedUser'),
@@ -117,8 +117,19 @@ class PickupController extends Controller
             ->with('transaction_completed', 'Transaksi selesai.');
     }
 
+    /**
+     * Rute karyawan juga terbuka bagi admin, tetapi admin tetap terikat pada
+     * mitranya sendiri. Tanpa pengikatan itu, admin mitra A bisa membuka dan
+     * memverifikasi transaksi mitra B lewat jalur ini, padahal rute admin
+     * sendiri sudah menutupnya.
+     */
     private function ensureAssigned(Transaction $transaction): void
     {
-        abort_unless($transaction->pickup?->assigned_user_id === auth()->id() || auth()->user()->isAdmin(), 403);
+        $user = auth()->user();
+
+        $ditugaskan = $transaction->pickup?->assigned_user_id === $user->id;
+        $adminMitraIni = $user->isAdmin() && $user->canAccessPartnerId($transaction->partner_id);
+
+        abort_unless($ditugaskan || $adminMitraIni, 403);
     }
 }

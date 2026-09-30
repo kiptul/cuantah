@@ -6,6 +6,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -73,6 +74,43 @@ class User extends Authenticatable
     }
 
     /**
+     * Daftar pengguna yang boleh dikelola oleh seorang admin.
+     *
+     * Sejalan dengan UserPolicy::update: penyetor biasa terbuka untuk admin
+     * mana pun, sedangkan staff hanya tampil bagi admin yang berbagi mitra.
+     * Sebelumnya halaman pengguna menampilkan seluruh akun lintas mitra,
+     * termasuk email admin mitra lain.
+     */
+    public function scopeManageableBy(Builder $query, self $actor): Builder
+    {
+        if (! $actor->isAdmin()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $partnerIds = $actor->accessiblePartnerIds();
+
+        return $query->where(function (Builder $query) use ($actor, $partnerIds): void {
+            $query->whereNotIn('role', ['admin', 'employee'])
+                ->orWhereKey($actor->id)
+                ->when($partnerIds !== [], fn (Builder $query) => $query->orWhereHas(
+                    'partners',
+                    fn (Builder $partner) => $partner->whereIn('partners.id', $partnerIds),
+                ));
+        });
+    }
+
+    /**
+     * Id mitra yang boleh diakses, dihitung sekali per instans.
+     *
+     * canAccessPartnerId() dipanggil berkali-kali dalam satu permintaan,
+     * antara lain di dalam perulangan. Tanpa penyimpanan ini setiap panggilan
+     * menambah satu query pivot.
+     *
+     * @var array<int>|null
+     */
+    private ?array $cachedPartnerIds = null;
+
+    /**
      * @return array<int>
      */
     public function accessiblePartnerIds(): array
@@ -81,7 +119,15 @@ class User extends Authenticatable
             return [];
         }
 
-        return $this->partners()->pluck('partners.id')->all();
+        return $this->cachedPartnerIds ??= $this->partners()->pluck('partners.id')->all();
+    }
+
+    /**
+     * Membuang id mitra yang tersimpan, dipakai sesudah pivot berubah.
+     */
+    public function forgetAccessiblePartnerIds(): void
+    {
+        $this->cachedPartnerIds = null;
     }
 
     public function canAccessPartnerId(?int $partnerId): bool

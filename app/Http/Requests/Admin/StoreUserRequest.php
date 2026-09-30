@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreUserRequest extends FormRequest
 {
@@ -22,6 +23,19 @@ class StoreUserRequest extends FormRequest
             'password' => ['required', 'string', 'min:8'],
             'partner_ids' => ['nullable', 'array'],
             'partner_ids.*' => ['integer', Rule::exists('partners', 'id')],
+        ];
+    }
+
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                // Seluruh data admin dan karyawan disaring lewat keterkaitan
+                // mitra. Akun staff tanpa mitra akan masuk ke panel kosong.
+                if (in_array($this->input('role'), ['admin', 'employee'], true) && blank($this->input('partner_ids'))) {
+                    $validator->errors()->add('partner_ids', 'Pilih minimal satu mitra, sebab admin dan karyawan hanya melihat data mitranya.');
+                }
+            },
         ];
     }
 }

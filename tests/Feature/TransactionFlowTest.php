@@ -253,6 +253,28 @@ class TransactionFlowTest extends TestCase
         ]);
     }
 
+    /**
+     * Transaksi yang masih berjalan, dipakai untuk menguji aksi yang hanya
+     * boleh terjadi sebelum status akhir.
+     */
+    private function pendingTransactionFor(User $user): Transaction
+    {
+        $price = OilPrice::create(['price_per_liter' => 4000, 'effective_date' => now()->toDateString(), 'is_active' => true]);
+        $partner = $this->partnerWithPickupFee();
+
+        return Transaction::create([
+            'code' => 'CNT-TEST-2',
+            'user_id' => $user->id,
+            'oil_price_id' => $price->id,
+            'partner_id' => $partner->id,
+            'estimated_liter' => 5,
+            'price_per_liter' => 4000,
+            'estimated_total' => 20000,
+            'method' => Transaction::METHOD_DROP_OFF,
+            'status' => Transaction::STATUS_PENDING,
+        ]);
+    }
+
     public function test_depositor_can_confirm_receiving_the_payment(): void
     {
         $user = User::factory()->create(['role' => 'user']);
@@ -379,21 +401,21 @@ class TransactionFlowTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $user = User::factory()->create(['role' => 'user']);
-        $transaction = $this->paidTransactionFor($user);
+        $transaction = $this->pendingTransactionFor($user);
         $admin->partners()->attach($transaction->partner_id);
 
         $this->actingAs($admin)
             ->post(route('admin.transactions.reject', $transaction), ['rejection_reason' => ''])
             ->assertSessionHasErrors('rejection_reason');
 
-        $this->assertSame(Transaction::STATUS_COMPLETED, $transaction->fresh()->status);
+        $this->assertSame(Transaction::STATUS_PENDING, $transaction->fresh()->status);
     }
 
     public function test_rejection_reason_is_stored_and_sent_to_the_depositor(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $user = User::factory()->create(['role' => 'user']);
-        $transaction = $this->paidTransactionFor($user);
+        $transaction = $this->pendingTransactionFor($user);
         $admin->partners()->attach($transaction->partner_id);
 
         $alasan = 'Jelantah tercampur air sehingga tidak bisa diolah.';

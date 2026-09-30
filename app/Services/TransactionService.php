@@ -103,6 +103,8 @@ class TransactionService
 
     public function assignPickupToEmployee(Pickup $pickup, int $employeeId): Pickup
     {
+        $this->pastikanBelumFinal($pickup->transaction, 'di-assign ke karyawan');
+
         return DB::transaction(function () use ($pickup, $employeeId) {
             $pickup->update([
                 'assigned_user_id' => $employeeId,
@@ -125,6 +127,8 @@ class TransactionService
 
     public function unassignPickup(Pickup $pickup): Pickup
     {
+        $this->pastikanBelumFinal($pickup->transaction, 'dilepas dari karyawan');
+
         return DB::transaction(function () use ($pickup) {
             $pickup->update([
                 'assigned_user_id' => null,
@@ -144,7 +148,8 @@ class TransactionService
             $updated = Pickup::query()
                 ->whereKey($pickup->id)
                 ->whereNull('assigned_user_id')
-                ->whereHas('transaction', fn ($transaction) => $transaction->visibleTo($employee))
+                ->whereHas('transaction', fn ($transaction) => $transaction->visibleTo($employee)
+                    ->whereNotIn('status', Transaction::FINAL_STATUSES))
                 ->where(function ($query) {
                     $query->whereNotNull('scanned_at')
                         ->orWhereHas('transaction', fn ($transaction) => $transaction->where('method', Transaction::METHOD_PICKUP));
@@ -170,6 +175,7 @@ class TransactionService
             $transaction = Transaction::query()
                 ->where('code', $code)
                 ->where('method', Transaction::METHOD_DROP_OFF)
+                ->whereNotIn('status', Transaction::FINAL_STATUSES)
                 ->visibleTo($employee)
                 ->with('pickup')
                 ->lockForUpdate()
@@ -198,6 +204,8 @@ class TransactionService
 
     public function verify(Transaction $transaction, array $data): Transaction
     {
+        $this->pastikanBelumFinal($transaction, 'diverifikasi');
+
         return DB::transaction(function () use ($transaction, $data) {
             $actualLiter = (float) $data['actual_liter'];
             $total = max((int) round($actualLiter * $transaction->price_per_liter) - (int) $transaction->pickup_fee, 0);
@@ -227,6 +235,8 @@ class TransactionService
 
     public function markPickedUp(Transaction $transaction): Transaction
     {
+        $this->pastikanBelumFinal($transaction, 'ditandai dijemput');
+
         return DB::transaction(function () use ($transaction) {
             $transaction->update(['status' => Transaction::STATUS_PICKED_UP]);
             $transaction->pickup?->update(['status' => 'picked_up']);
@@ -237,6 +247,8 @@ class TransactionService
 
     public function markVerification(Transaction $transaction): Transaction
     {
+        $this->pastikanBelumFinal($transaction, 'dikembalikan ke verifikasi');
+
         return DB::transaction(function () use ($transaction) {
             $transaction->update(['status' => Transaction::STATUS_VERIFICATION]);
             $transaction->pickup?->update(['status' => 'verification']);
@@ -320,6 +332,8 @@ class TransactionService
 
     public function reject(Transaction $transaction, ?string $reason = null): Transaction
     {
+        $this->pastikanBelumFinal($transaction, 'ditolak');
+
         return DB::transaction(function () use ($transaction, $reason) {
             $transaction->update([
                 'status' => Transaction::STATUS_REJECTED,
@@ -338,6 +352,31 @@ class TransactionService
 
             return $transaction->refresh();
         });
+    }
+
+    /**
+     * Menolak tindakan atas transaksi yang sudah mencapai status akhir.
+     *
+     * Tanpa ini, transaksi selesai masih bisa diverifikasi ulang atau
+     * ditolak. Bila liternya sudah tercatat sebagai stok mitra dan sudah
+     * ada penyaluran atasnya, stok mitra berubah menjadi negatif.
+     *
+     * @throws ValidationException
+     */
+    private function pastikanBelumFinal(Transaction $transaction, string $tindakan): void
+    {
+        if (! $transaction->isFinal()) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'status' => sprintf(
+                'Transaksi %s sudah %s, jadi tidak bisa %s lagi.',
+                $transaction->code,
+                $transaction->statusLabel(),
+                $tindakan,
+            ),
+        ]);
     }
 
     private function distanceKm(float $originLatitude, float $originLongitude, float $destinationLatitude, float $destinationLongitude): float
