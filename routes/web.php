@@ -15,6 +15,7 @@ use App\Http\Controllers\DepositController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\PickupController as EmployeePickupController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +44,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/notifikasi/dibaca', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::get('/akun', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/akun', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/akun/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
     Route::get('/setor', [DepositController::class, 'create'])->name('deposits.create');
     Route::post('/setor', [DepositController::class, 'store'])->name('deposits.store');
     Route::get('/transaksi', [TransactionController::class, 'index'])->name('transactions.index');

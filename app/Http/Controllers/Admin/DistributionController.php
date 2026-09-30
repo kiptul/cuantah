@@ -19,6 +19,7 @@ class DistributionController extends Controller
                 ->paginate(10),
             'partners' => Partner::where('status', 'active')
                 ->accessibleTo(auth()->user())
+                ->withAvailableLiter()
                 ->orderBy('name')
                 ->get()
                 ->map(fn (Partner $partner) => tap($partner, fn () => $partner->setAttribute('available_liter', $partner->availableLiter()))),

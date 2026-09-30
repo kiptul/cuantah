@@ -6,6 +6,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Session\Middleware\AuthenticateSession;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -14,6 +15,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Mengikat sesi pada kata sandi yang sedang berlaku. Tanpa ini,
+        // mengganti kata sandi tidak memutus sesi yang sudah terbuka di
+        // perangkat lain, padahal justru itu alasan orang menggantinya.
+        $middleware->web(append: [
+            AuthenticateSession::class,
+        ]);
+
         $middleware->alias([
             'admin' => EnsureAdmin::class,
             'employee' => EnsureEmployee::class,

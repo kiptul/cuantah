@@ -7,26 +7,48 @@ use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\Partner;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    public function index()
+    /**
+     * Daftar pengguna yang boleh dikelola admin ini.
+     *
+     * Pencarian dan saringan peran ditambahkan karena daftar ini tumbuh
+     * seiring jumlah penyetor: tanpa keduanya, menemukan satu karyawan
+     * berarti membuka halaman demi halaman.
+     */
+    public function index(Request $request)
     {
-        $admin = auth()->user();
+        $admin = $request->user();
+        $keyword = trim((string) $request->query('cari'));
+        $role = $request->query('peran');
 
         $partners = Partner::query()
             ->accessibleTo($admin)
             ->orderBy('name')
             ->get();
 
+        $users = User::with('partners')
+            ->manageableBy($admin)
+            ->when($keyword !== '', fn (Builder $query) => $query->where(
+                fn (Builder $query) => $query->where('name', 'like', '%'.$keyword.'%')
+                    ->orWhere('email', 'like', '%'.$keyword.'%')
+                    ->orWhere('phone', 'like', '%'.$keyword.'%'),
+            ))
+            ->when(in_array($role, ['user', 'employee', 'admin'], true), fn (Builder $query) => $query->where('role', $role))
+            ->withCount(['transactions' => fn ($transaction) => $transaction->visibleTo($admin)])
+            ->latest()
+            ->paginate(12)
+            ->withQueryString();
+
         return view('admin.users.index', [
-            'users' => User::with('partners')
-                ->manageableBy($admin)
-                ->withCount(['transactions' => fn ($transaction) => $transaction->visibleTo($admin)])
-                ->latest()
-                ->paginate(12),
+            'users' => $users,
             'partners' => $partners,
+            'keyword' => $keyword,
+            'peran' => $role,
         ]);
     }
 

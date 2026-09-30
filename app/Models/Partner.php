@@ -55,6 +55,22 @@ class Partner extends Model
     }
 
     /**
+     * Menghitung stok tiap mitra dalam satu query, bukan dua query per mitra.
+     *
+     * Halaman penyaluran menampilkan seluruh mitra sekaligus; tanpa ini
+     * jumlah query tumbuh sebanding dengan jumlah mitra.
+     */
+    public function scopeWithAvailableLiter(Builder $query): Builder
+    {
+        return $query
+            ->withSum(
+                ['transactions as collected_liter' => fn (Builder $transaction) => $transaction->where('status', Transaction::STATUS_COMPLETED)],
+                'actual_liter',
+            )
+            ->withSum('distributions as distributed_liter', 'volume_liter');
+    }
+
+    /**
      * Liter yang sudah terkumpul di mitra ini tetapi belum disalurkan.
      *
      * Dipakai untuk menahan pencatatan penyaluran yang melebihi jumlah yang
@@ -63,6 +79,10 @@ class Partner extends Model
      */
     public function availableLiter(): float
     {
+        if (array_key_exists('collected_liter', $this->attributes)) {
+            return round((float) $this->attributes['collected_liter'] - (float) ($this->attributes['distributed_liter'] ?? 0), 2);
+        }
+
         $terkumpul = (float) $this->transactions()
             ->where('status', Transaction::STATUS_COMPLETED)
             ->sum('actual_liter');

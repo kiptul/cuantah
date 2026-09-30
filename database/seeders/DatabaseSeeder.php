@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,19 +19,21 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $password = $this->passwordAkunContoh();
+
         $admin = User::updateOrCreate(
             ['email' => 'admin@cuantah.test'],
-            ['name' => 'Admin CUANTAH', 'phone' => '081200000001', 'role' => 'admin', 'password' => Hash::make('password')]
+            ['name' => 'Admin CUANTAH', 'phone' => '081200000001', 'role' => 'admin', 'password' => Hash::make($password)]
         );
 
         User::updateOrCreate(
             ['email' => 'user@cuantah.test'],
-            ['name' => 'Rumah Tangga Demo', 'phone' => '081200000002', 'role' => 'user', 'password' => Hash::make('password')]
+            ['name' => 'Rumah Tangga Demo', 'phone' => '081200000002', 'role' => 'user', 'password' => Hash::make($password)]
         );
 
         $employee = User::updateOrCreate(
             ['email' => 'karyawan@cuantah.test'],
-            ['name' => 'Karyawan Pickup Demo', 'phone' => '081200000004', 'role' => 'employee', 'password' => Hash::make('password')]
+            ['name' => 'Karyawan Pickup Demo', 'phone' => '081200000004', 'role' => 'employee', 'password' => Hash::make($password)]
         );
 
         OilPrice::updateOrCreate(
@@ -60,5 +63,34 @@ class DatabaseSeeder extends Seeder
 
         $admin->partners()->syncWithoutDetaching([$partner->id]);
         $employee->partners()->syncWithoutDetaching([$partner->id]);
+    }
+
+    /**
+     * Kata sandi untuk ketiga akun contoh.
+     *
+     * Sebelumnya nilainya tertulis sebagai "password" di dalam berkas ini.
+     * Begitu seeder dijalankan di server, tiga akun termasuk admin terbuka
+     * bagi siapa pun yang pernah membaca repositori ini. Sekarang nilainya
+     * diambil dari SEED_PASSWORD, dan bila tidak diisi dibuatkan acak lalu
+     * ditampilkan sekali di layar.
+     */
+    private function passwordAkunContoh(): string
+    {
+        $dariEnv = trim((string) config('cuantah.seed_password'));
+
+        if ($dariEnv !== '') {
+            return $dariEnv;
+        }
+
+        $acak = Str::password(16, symbols: false);
+
+        $this->command?->getOutput()->writeln(
+            "  <fg=yellow>Password akun contoh (admin/karyawan/user@cuantah.test): <options=bold>{$acak}</></>"
+        );
+        $this->command?->getOutput()->writeln(
+            '  <fg=gray>Catat sekarang, nilainya tidak disimpan. Atur SEED_PASSWORD di .env untuk menentukan sendiri.</>'
+        );
+
+        return $acak;
     }
 }
