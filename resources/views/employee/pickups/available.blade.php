@@ -11,7 +11,7 @@
                 $hariIni = $terjadwal && $pickup->pickup_date->isToday();
             @endphp
             <article @class([
-                'rounded-2xl border bg-white p-4',
+                'rounded-2xl border bg-white p-4 shadow-sm shadow-slate-950/5',
                 'border-rose-200' => $lewatJadwal,
                 'border-amber-200' => $hariIni,
                 'border-slate-200' => ! $lewatJadwal && ! $hariIni,
