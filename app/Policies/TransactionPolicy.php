@@ -14,18 +14,6 @@ class TransactionPolicy
     }
 
     /**
-     * Hanya penyetor yang boleh membenarkan bahwa uangnya sudah diterima.
-     * Staff sengaja dikecualikan, sebab inti dari konfirmasi ini adalah
-     * memberi suara kepada pihak yang selama ini hanya bisa menonton.
-     */
-    public function confirmPayment(User $user, Transaction $transaction): bool
-    {
-        return $transaction->user_id === $user->id
-            && $transaction->payment_status === 'paid'
-            && $transaction->payment_confirmed_at === null;
-    }
-
-    /**
      * Penyetor boleh membatalkan selama belum ada yang mengerjakannya.
      *
      * Sesudah status berpindah dari pending, karyawan sudah terkunci atau

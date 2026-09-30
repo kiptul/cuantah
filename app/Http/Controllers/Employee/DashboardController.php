@@ -3,30 +3,12 @@
 namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
-use App\Models\Pickup;
-use App\Models\Transaction;
+use App\Services\DashboardService;
 
 class DashboardController extends Controller
 {
-    public function __invoke()
+    public function __invoke(DashboardService $dashboard)
     {
-        $user = auth()->user();
-        $assigned = Pickup::query()
-            ->with('transaction.user')
-            ->where('assigned_user_id', $user->id);
-        $completedTransactions = Transaction::query()
-            ->where('status', Transaction::STATUS_COMPLETED)
-            ->whereHas('pickup', fn ($pickup) => $pickup->where('assigned_user_id', $user->id));
-
-        return view('employee.dashboard', [
-            'active_pickups' => (clone $assigned)->whereNotIn('status', ['completed', 'rejected'])->count(),
-            'completed_pickups' => (clone $assigned)->where('status', 'completed')->count(),
-            'completed_liter' => (clone $completedTransactions)->sum('actual_liter'),
-            'pickup_count' => (clone $completedTransactions)->where('method', Transaction::METHOD_PICKUP)->count(),
-            'pickup_liter' => (clone $completedTransactions)->where('method', Transaction::METHOD_PICKUP)->sum('actual_liter'),
-            'drop_off_count' => (clone $completedTransactions)->where('method', Transaction::METHOD_DROP_OFF)->count(),
-            'drop_off_liter' => (clone $completedTransactions)->where('method', Transaction::METHOD_DROP_OFF)->sum('actual_liter'),
-            'latest_pickups' => (clone $assigned)->latest()->limit(5)->get(),
-        ]);
+        return view('employee.dashboard', $dashboard->employeeSummary(auth()->user()));
     }
 }

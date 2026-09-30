@@ -52,7 +52,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/transaksi', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transaksi/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
     Route::get('/transaksi/{transaction}/barcode', [BarcodeController::class, 'show'])->name('transactions.barcode');
-    Route::post('/transaksi/{transaction}/konfirmasi-bayar', [TransactionController::class, 'confirmPayment'])->name('transactions.confirm-payment');
     Route::post('/transaksi/{transaction}/batal', [TransactionController::class, 'cancel'])->name('transactions.cancel');
     Route::post('/transaksi/{transaction}/sanggah', [TransactionController::class, 'dispute'])->name('transactions.dispute');
 });
@@ -65,8 +64,6 @@ Route::middleware(['auth', 'employee'])->prefix('employee')->name('employee.')->
     Route::post('/pickups/{pickup}/claim', [EmployeePickupController::class, 'claim'])->name('pickups.claim');
     Route::get('/transactions', [EmployeePickupController::class, 'transactions'])->name('transactions.index');
     Route::get('/transactions/{transaction}', [EmployeePickupController::class, 'show'])->name('transactions.show');
-    Route::post('/transactions/{transaction}/picked-up', [EmployeePickupController::class, 'markPickedUp'])->name('transactions.picked-up');
-    Route::post('/transactions/{transaction}/verification', [EmployeePickupController::class, 'markVerification'])->name('transactions.verification');
     Route::post('/transactions/{transaction}/verify', [EmployeePickupController::class, 'verify'])->name('transactions.verify');
 });
 
@@ -74,10 +71,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/dashboard', App\Http\Controllers\Admin\DashboardController::class)->name('dashboard');
     Route::get('/transactions', [AdminTransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transactions/{transaction}', [AdminTransactionController::class, 'show'])->name('transactions.show');
-    Route::post('/transactions/{transaction}/picked-up', [AdminTransactionController::class, 'markPickedUp'])->name('transactions.picked-up');
-    Route::post('/transactions/{transaction}/verification', [AdminTransactionController::class, 'markVerification'])->name('transactions.verification');
     Route::post('/transactions/{transaction}/verify', [AdminTransactionController::class, 'verify'])->name('transactions.verify');
     Route::post('/transactions/{transaction}/reject', [AdminTransactionController::class, 'reject'])->name('transactions.reject');
+    Route::post('/transactions/{transaction}/mark-paid', [AdminTransactionController::class, 'markPaid'])->name('transactions.mark-paid');
     Route::post('/transactions/{transaction}/resolve-dispute', [AdminTransactionController::class, 'resolveDispute'])->name('transactions.resolve-dispute');
 
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');

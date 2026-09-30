@@ -275,73 +275,103 @@ class TransactionFlowTest extends TestCase
         ]);
     }
 
-    public function test_depositor_can_confirm_receiving_the_payment(): void
+    public function test_employee_completes_an_assigned_pickup_with_a_single_form(): void
+    {
+        $employee = User::factory()->create(['role' => 'employee']);
+        $transaction = Transaction::factory()->pickup()->create(['status' => Transaction::STATUS_SCHEDULED, 'price_per_liter' => 4000]);
+        $employee->partners()->attach($transaction->partner_id);
+        Pickup::factory()->assignedTo($employee)->create([
+            'transaction_id' => $transaction->id,
+            'partner_id' => $transaction->partner_id,
+        ]);
+
+        $this->actingAs($employee)
+            ->get(route('employee.transactions.show', $transaction))
+            ->assertOk()
+            ->assertSee('Form penjemputan')
+            ->assertDontSee('Dijemput</button>', false);
+
+        // Tanpa langkah "Dijemput" dan "Verifikasi": form penjemputan langsung
+        // menutup transaksi dari status dijadwalkan.
+        $this->actingAs($employee)
+            ->post(route('employee.transactions.verify', $transaction), [
+                'actual_liter' => 7.5,
+                'payment_method' => 'cash',
+                'payment_status' => 'paid',
+            ])
+            ->assertRedirect(route('employee.dashboard'))
+            ->assertSessionHas('success');
+
+        $transaction->refresh();
+        $this->assertSame(Transaction::STATUS_COMPLETED, $transaction->status);
+        $this->assertSame('paid', $transaction->payment_status);
+        $this->assertSame(30000, $transaction->total_value);
+        $this->assertSame('completed', $transaction->pickup->status);
+    }
+
+    public function test_depositor_is_not_asked_to_reconfirm_a_completed_payment(): void
     {
         $user = User::factory()->create(['role' => 'user']);
         $transaction = $this->paidTransactionFor($user);
 
         $this->actingAs($user)
-            ->post(route('transactions.confirm-payment', $transaction))
-            ->assertSessionHas('success');
+            ->get(route('transactions.show', $transaction))
+            ->assertOk()
+            ->assertDontSee('Saya sudah terima pembayaran');
 
-        $this->assertNotNull($transaction->fresh()->payment_confirmed_at);
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('Konfirmasi pembayaran');
     }
 
-    public function test_someone_else_cannot_confirm_a_payment_that_is_not_theirs(): void
-    {
-        $owner = User::factory()->create(['role' => 'user']);
-        $penyusup = User::factory()->create(['role' => 'user']);
-        $transaction = $this->paidTransactionFor($owner);
-
-        $this->actingAs($penyusup)
-            ->post(route('transactions.confirm-payment', $transaction))
-            ->assertForbidden();
-
-        $this->assertNull($transaction->fresh()->payment_confirmed_at);
-    }
-
-    public function test_staff_cannot_confirm_payment_on_behalf_of_the_depositor(): void
+    public function test_admin_can_settle_a_transaction_that_was_paid_later(): void
     {
         $user = User::factory()->create(['role' => 'user']);
         $transaction = $this->paidTransactionFor($user);
+        $transaction->update(['payment_status' => 'unpaid', 'paid_at' => null]);
         $admin = User::factory()->create(['role' => 'admin']);
         $admin->partners()->attach($transaction->partner_id);
 
-        // Admin boleh melihat transaksi ini, tetapi tidak boleh membenarkan
-        // penerimaan uang milik orang lain. Itulah inti konfirmasinya.
         $this->actingAs($admin)
-            ->post(route('transactions.confirm-payment', $transaction))
-            ->assertForbidden();
+            ->post(route('admin.transactions.mark-paid', $transaction))
+            ->assertSessionHas('success');
 
-        $this->assertNull($transaction->fresh()->payment_confirmed_at);
+        $transaction->refresh();
+        $this->assertSame('paid', $transaction->payment_status);
+        $this->assertNotNull($transaction->paid_at);
+        $this->assertTrue($user->notifications()->where('title', 'Pembayaran diterima')->exists());
     }
 
-    public function test_payment_cannot_be_confirmed_twice(): void
+    public function test_a_paid_transaction_cannot_be_settled_twice(): void
     {
         $user = User::factory()->create(['role' => 'user']);
         $transaction = $this->paidTransactionFor($user);
+        $paidAt = $transaction->paid_at;
+        $admin = User::factory()->create(['role' => 'admin']);
+        $admin->partners()->attach($transaction->partner_id);
 
-        $this->actingAs($user)->post(route('transactions.confirm-payment', $transaction));
-        $waktuPertama = $transaction->fresh()->payment_confirmed_at;
+        $this->actingAs($admin)
+            ->post(route('admin.transactions.mark-paid', $transaction))
+            ->assertSessionHasErrors('payment_status');
 
-        $this->actingAs($user)
-            ->post(route('transactions.confirm-payment', $transaction))
-            ->assertForbidden();
-
-        $this->assertEquals($waktuPertama, $transaction->fresh()->payment_confirmed_at);
+        $this->assertEquals($paidAt, $transaction->fresh()->paid_at);
     }
 
-    public function test_unpaid_transaction_cannot_be_confirmed(): void
+    public function test_a_dispute_is_reported_to_the_partner_admins(): void
     {
         $user = User::factory()->create(['role' => 'user']);
-        $transaction = $this->paidTransactionFor($user);
-        $transaction->update(['payment_status' => 'unpaid']);
+        $transaction = Transaction::factory()->completed(6)->create(['user_id' => $user->id]);
+        $adminMitra = User::factory()->create(['role' => 'admin']);
+        $adminMitra->partners()->attach($transaction->partner_id);
+        $adminLain = User::factory()->create(['role' => 'admin']);
 
-        $this->actingAs($user)
-            ->post(route('transactions.confirm-payment', $transaction))
-            ->assertForbidden();
+        $this->actingAs($user)->post(route('transactions.dispute', $transaction), [
+            'dispute_reason' => 'Saya menyetor sekitar sepuluh liter, tetapi tercatat enam liter.',
+        ]);
 
-        $this->assertNull($transaction->fresh()->payment_confirmed_at);
+        $this->assertTrue($adminMitra->notifications()->where('title', 'Keberatan takaran baru')->exists());
+        $this->assertFalse($adminLain->notifications()->exists());
     }
 
     public function test_distribution_cannot_exceed_collected_volume(): void

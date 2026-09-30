@@ -202,6 +202,16 @@ class TransactionService
         });
     }
 
+    /**
+     * Menutup transaksi dengan hasil takaran dan pembayarannya.
+     *
+     * Satu form ini sekaligus menjadi akhir transaksi. Dulu karyawan harus
+     * menekan "Dijemput" lalu "Verifikasi" lebih dulu, dan penyetor masih
+     * diminta membenarkan pembayarannya, padahal semua itu terjadi di tempat
+     * yang sama pada saat yang sama.
+     *
+     * @param  array{actual_liter: float|string, payment_method: string, payment_status: string, notes?: string|null}  $data
+     */
     public function verify(Transaction $transaction, array $data): Transaction
     {
         $this->pastikanBelumFinal($transaction, 'diverifikasi');
@@ -225,7 +235,13 @@ class TransactionService
             Notification::create([
                 'user_id' => $transaction->user_id,
                 'title' => 'Transaksi selesai',
-                'message' => 'Transaksi '.$transaction->code.' selesai. Total nilai Rp'.number_format($total, 0, ',', '.').'.',
+                'message' => sprintf(
+                    'Transaksi %s selesai: %s L, total Rp%s%s.',
+                    $transaction->code,
+                    number_format($actualLiter, 2, ',', '.'),
+                    number_format($total, 0, ',', '.'),
+                    $data['payment_status'] === 'paid' ? ' sudah dibayar' : ' akan dibayarkan menyusul',
+                ),
                 'type' => 'payment',
             ]);
 
@@ -233,44 +249,11 @@ class TransactionService
         });
     }
 
-    public function markPickedUp(Transaction $transaction): Transaction
-    {
-        $this->pastikanBelumFinal($transaction, 'ditandai dijemput');
-
-        return DB::transaction(function () use ($transaction) {
-            $transaction->update(['status' => Transaction::STATUS_PICKED_UP]);
-            $transaction->pickup?->update(['status' => 'picked_up']);
-
-            return $transaction->refresh()->load('user', 'pickup.partner');
-        });
-    }
-
-    public function markVerification(Transaction $transaction): Transaction
-    {
-        $this->pastikanBelumFinal($transaction, 'dikembalikan ke verifikasi');
-
-        return DB::transaction(function () use ($transaction) {
-            $transaction->update(['status' => Transaction::STATUS_VERIFICATION]);
-            $transaction->pickup?->update(['status' => 'verification']);
-
-            return $transaction->refresh()->load('user', 'pickup.partner');
-        });
-    }
-
-    /**
-     * Menolak transaksi disertai alasannya.
-     *
-     * Sebelumnya penyetor hanya menerima pesan generik, sehingga ia tidak
-     * pernah tahu apa yang perlu diperbaiki pada setoran berikutnya.
-     */
-    /**
-     * Pembatalan oleh penyetor sendiri.
-     *
-     * Sebelumnya tidak ada jalan mundur sama sekali: salah pilih mitra atau
-     * salah isi volume hanya bisa diakhiri lewat penolakan admin.
-     */
     /**
      * Mencatat keberatan penyetor atas volume hasil takaran.
+     *
+     * Admin mitra ikut diberi tahu. Sebelumnya keberatan hanya tercatat di
+     * transaksinya, sehingga admin baru tahu bila kebetulan membuka detailnya.
      */
     public function dispute(Transaction $transaction, string $reason): Transaction
     {
@@ -286,6 +269,12 @@ class TransactionService
                 'message' => 'Keberatanmu atas takaran transaksi '.$transaction->code.' sudah diteruskan ke mitra.',
                 'type' => 'transaction',
             ]);
+
+            $this->notifyPartnerAdmins(
+                $transaction,
+                'Keberatan takaran baru',
+                'Penyetor menyanggah takaran transaksi '.$transaction->code.'. Mohon ditanggapi.',
+            );
 
             return $transaction->refresh();
         });
@@ -313,6 +302,9 @@ class TransactionService
         });
     }
 
+    /**
+     * Pembatalan oleh penyetor sendiri selama belum ada yang mengerjakannya.
+     */
     public function cancel(Transaction $transaction): Transaction
     {
         return DB::transaction(function () use ($transaction) {
@@ -330,6 +322,12 @@ class TransactionService
         });
     }
 
+    /**
+     * Menolak transaksi disertai alasannya.
+     *
+     * Sebelumnya penyetor hanya menerima pesan generik, sehingga ia tidak
+     * pernah tahu apa yang perlu diperbaiki pada setoran berikutnya.
+     */
     public function reject(Transaction $transaction, ?string $reason = null): Transaction
     {
         $this->pastikanBelumFinal($transaction, 'ditolak');
@@ -352,6 +350,57 @@ class TransactionService
 
             return $transaction->refresh();
         });
+    }
+
+    /**
+     * Melunasi transaksi selesai yang saat ditutup dicatat belum dibayar.
+     *
+     * Sebelumnya status "belum dibayar" tidak punya jalan keluar: transaksi
+     * selesai tidak bisa diubah lagi, sehingga utang ke penyetor tercatat
+     * selamanya meski uangnya sudah diserahkan.
+     *
+     * @throws ValidationException
+     */
+    public function markPaid(Transaction $transaction): Transaction
+    {
+        if ($transaction->status !== Transaction::STATUS_COMPLETED || $transaction->payment_status !== 'unpaid') {
+            throw ValidationException::withMessages([
+                'payment_status' => 'Hanya transaksi selesai yang belum dibayar yang bisa ditandai lunas.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($transaction) {
+            $transaction->update([
+                'payment_status' => 'paid',
+                'paid_at' => now(),
+            ]);
+
+            Notification::create([
+                'user_id' => $transaction->user_id,
+                'title' => 'Pembayaran diterima',
+                'message' => 'Pembayaran transaksi '.$transaction->code.' sebesar Rp'.number_format((int) $transaction->total_value, 0, ',', '.').' sudah dilunasi.',
+                'type' => 'payment',
+            ]);
+
+            return $transaction->refresh();
+        });
+    }
+
+    /**
+     * Mengirim notifikasi ke seluruh admin yang terhubung dengan mitra transaksi.
+     */
+    private function notifyPartnerAdmins(Transaction $transaction, string $title, string $message): void
+    {
+        User::query()
+            ->where('role', 'admin')
+            ->whereHas('partners', fn ($partner) => $partner->whereKey($transaction->partner_id))
+            ->pluck('id')
+            ->each(fn (int $adminId) => Notification::create([
+                'user_id' => $adminId,
+                'title' => $title,
+                'message' => $message,
+                'type' => 'transaction',
+            ]));
     }
 
     /**

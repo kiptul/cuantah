@@ -82,22 +82,6 @@ class PickupController extends Controller
         ]);
     }
 
-    public function markPickedUp(Transaction $transaction, TransactionService $service)
-    {
-        $this->ensureAssigned($transaction);
-        $service->markPickedUp($transaction);
-
-        return back()->with('success', 'Status diubah menjadi dijemput.');
-    }
-
-    public function markVerification(Transaction $transaction, TransactionService $service)
-    {
-        $this->ensureAssigned($transaction);
-        $service->markVerification($transaction);
-
-        return back()->with('success', 'Status diubah menjadi verifikasi.');
-    }
-
     public function verify(Request $request, Transaction $transaction, TransactionService $service)
     {
         $this->ensureAssigned($transaction);
@@ -109,12 +93,16 @@ class PickupController extends Controller
             'notes' => ['nullable', 'string', 'max:700'],
         ]);
 
-        $service->verify($transaction, $data);
+        $transaction = $service->verify($transaction, $data);
 
         return redirect()
             ->route('employee.dashboard')
-            ->with('success', 'Transaksi selesai diverifikasi.')
-            ->with('transaction_completed', 'Transaksi selesai.');
+            ->with('success', sprintf(
+                'Transaksi %s selesai: %s L, Rp%s.',
+                $transaction->code,
+                number_format((float) $transaction->actual_liter, 2, ',', '.'),
+                number_format((int) $transaction->total_value, 0, ',', '.'),
+            ));
     }
 
     /**

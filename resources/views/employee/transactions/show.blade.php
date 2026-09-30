@@ -57,52 +57,79 @@
                 <div class="flex justify-between"><dt>Estimasi total</dt><dd class="font-black text-emerald-800">Rp{{ number_format($transaction->estimated_total, 0, ',', '.') }}</dd></div>
             </dl>
 
-            @php
-                $isDropOff = $transaction->method === \App\Models\Transaction::METHOD_DROP_OFF;
-                $isPickup = $transaction->method === \App\Models\Transaction::METHOD_PICKUP;
-                $canMarkPickedUp = $isPickup && $transaction->status === \App\Models\Transaction::STATUS_SCHEDULED;
-                $canMarkVerification = ($isPickup && $transaction->status === \App\Models\Transaction::STATUS_PICKED_UP)
-                    || ($isDropOff && $transaction->status === \App\Models\Transaction::STATUS_SCHEDULED);
-                $canComplete = $transaction->status === \App\Models\Transaction::STATUS_VERIFICATION;
-            @endphp
-
-            @if($canMarkPickedUp)
-                <form method="post" action="{{ route('employee.transactions.picked-up', $transaction) }}">
-                    @csrf
-                    <button class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-bold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-800">Dijemput</button>
-                </form>
-            @endif
-
-            @if($canMarkVerification)
-                <form method="post" action="{{ route('employee.transactions.verification', $transaction) }}" class="{{ $canMarkPickedUp ? 'mt-2' : '' }}">
-                    @csrf
-                    <button class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-bold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-800">Verifikasi</button>
-                </form>
-            @endif
-
-            @if($canComplete)
-                <form method="post" action="{{ route('employee.transactions.verify', $transaction) }}" class="space-y-4">
-                    @csrf
-                    <div>
-                        <label class="text-sm font-bold">Volume aktual (L)</label>
-                        <input name="actual_liter" type="number" step="0.01" min="0.1" max="500" value="{{ old('actual_liter', $transaction->actual_liter) }}" class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                        <p class="mt-1.5 text-xs text-slate-500">Estimasi penyetor {{ number_format($transaction->estimated_liter, 2, ',', '.') }} L.</p>
-                    </div>
-                    <div><label class="text-sm font-bold">Metode pembayaran</label><select name="payment_method" class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"><option value="cash" @selected(old('payment_method', $transaction->payment_method) === 'cash')>Tunai</option><option value="transfer" @selected(old('payment_method', $transaction->payment_method) === 'transfer')>Transfer</option></select></div>
-                    <div><label class="text-sm font-bold">Status pembayaran</label><select name="payment_status" class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"><option value="paid" @selected(old('payment_status', $transaction->payment_status) === 'paid')>Sudah dibayar</option><option value="unpaid" @selected(old('payment_status', $transaction->payment_status) === 'unpaid')>Belum dibayar</option></select></div>
-                    <textarea name="notes" rows="3" maxlength="700" placeholder="Catatan" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">{{ old('notes', $transaction->notes) }}</textarea>
-                    <button class="w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-black text-white shadow-sm shadow-emerald-900/20 transition hover:bg-emerald-800">Selesaikan Transaksi</button>
-                </form>
-            @endif
-
-            @if(! $canMarkPickedUp && ! $canMarkVerification && ! $canComplete)
-                <div class="rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
+            {{-- Satu form langsung menutup transaksi. Tombol "Dijemput" dan
+                 "Verifikasi" dihapus karena ketiganya terjadi di tempat dan
+                 waktu yang sama, dan penyetor tidak lagi perlu mengonfirmasi
+                 ulang pembayaran yang diserahkan karyawan di depannya. --}}
+            @if($transaction->isFinal())
+                <div @class([
+                    'rounded-xl px-4 py-4 text-sm',
+                    'bg-emerald-50 text-emerald-900 ring-1 ring-emerald-900/10' => $transaction->status === \App\Models\Transaction::STATUS_COMPLETED,
+                    'bg-slate-50 text-slate-600' => $transaction->status !== \App\Models\Transaction::STATUS_COMPLETED,
+                ])>
                     @if($transaction->status === \App\Models\Transaction::STATUS_COMPLETED)
-                        Transaksi ini sudah selesai.
+                        <p class="font-black">Transaksi selesai</p>
+                        <p class="mt-1 tabular-nums">{{ number_format($transaction->actual_liter, 2, ',', '.') }} L &middot; Rp{{ number_format($transaction->total_value, 0, ',', '.') }} &middot; {{ $transaction->payment_status === 'paid' ? 'sudah dibayar' : 'belum dibayar' }}</p>
                     @else
-                        Belum ada aksi lanjutan untuk status saat ini.
+                        Transaksi ini sudah {{ $transaction->statusLabel() }}.
                     @endif
                 </div>
+            @else
+                <form method="post" action="{{ route('employee.transactions.verify', $transaction) }}" class="space-y-4 border-t border-slate-100 pt-5"
+                      data-complete-form data-price="{{ $transaction->price_per_liter }}" data-fee="{{ $transaction->pickup_fee }}">
+                    @csrf
+                    <div>
+                        <p class="text-xs font-black uppercase tracking-[0.12em] text-emerald-700">Form penjemputan</p>
+                        <p class="mt-1 text-sm leading-6 text-slate-600">Takar jelantahnya, serahkan pembayaran, lalu kirim. Transaksi langsung selesai.</p>
+                    </div>
+                    <div>
+                        <label for="actual_liter" class="text-sm font-bold">Volume aktual (L)</label>
+                        <input id="actual_liter" name="actual_liter" type="number" inputmode="decimal" step="0.01" min="0.1" max="500" value="{{ old('actual_liter', $transaction->actual_liter) }}" class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-lg font-bold tabular-nums outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required data-liter>
+                        <p class="mt-1.5 text-xs text-slate-500">Estimasi penyetor {{ number_format($transaction->estimated_liter, 2, ',', '.') }} L.</p>
+                    </div>
+
+                    <fieldset>
+                        <legend class="text-sm font-bold">Pembayaran</legend>
+                        <div class="mt-2 grid grid-cols-2 gap-2">
+                            @foreach(['cash' => 'Tunai', 'transfer' => 'Transfer'] as $value => $label)
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="payment_method" value="{{ $value }}" class="peer sr-only" @checked(old('payment_method', $transaction->payment_method ?? 'cash') === $value)>
+                                    <span class="block rounded-xl border border-slate-300 px-3 py-2.5 text-center text-sm font-bold text-slate-600 transition peer-checked:border-emerald-600 peer-checked:bg-emerald-50 peer-checked:text-emerald-800 peer-focus-visible:ring-4 peer-focus-visible:ring-emerald-100">{{ $label }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                        <label class="mt-3 flex items-start gap-2.5 text-sm text-slate-700">
+                            <input type="hidden" name="payment_status" value="unpaid">
+                            <input type="checkbox" name="payment_status" value="paid" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-500" @checked(old('payment_status', $transaction->payment_status ?? 'paid') === 'paid')>
+                            <span>Uang sudah diserahkan ke penyetor. <span class="text-slate-500">Kosongkan bila dibayar menyusul; admin bisa melunasinya nanti.</span></span>
+                        </label>
+                    </fieldset>
+
+                    <textarea name="notes" rows="2" maxlength="700" placeholder="Catatan (opsional)" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">{{ old('notes', $transaction->notes) }}</textarea>
+
+                    <div class="flex items-baseline justify-between rounded-xl bg-emerald-50 px-4 py-3">
+                        <span class="text-sm font-bold text-emerald-900">Diterima penyetor</span>
+                        <span class="text-lg font-black tabular-nums text-emerald-800" data-total>Rp{{ number_format($transaction->estimated_total, 0, ',', '.') }}</span>
+                    </div>
+
+                    <button class="w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-black text-white shadow-sm shadow-emerald-900/20 transition hover:bg-emerald-800">Kirim &amp; Selesaikan</button>
+                </form>
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const form = document.querySelector('[data-complete-form]');
+                        const liter = form.querySelector('[data-liter]');
+                        const total = form.querySelector('[data-total]');
+                        const price = Number(form.dataset.price);
+                        const fee = Number(form.dataset.fee);
+                        const render = () => {
+                            const value = parseFloat(liter.value);
+                            if (Number.isNaN(value)) return;
+                            total.textContent = 'Rp' + Math.max(Math.round(value * price) - fee, 0).toLocaleString('id-ID');
+                        };
+                        liter.addEventListener('input', render);
+                        render();
+                    });
+                </script>
             @endif
         </aside>
     </div>

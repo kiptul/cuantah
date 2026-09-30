@@ -80,22 +80,6 @@
                 </div>
             @endif
 
-            {{-- Konfirmasi dari penyetor. Tanpa ini, status lunas sepenuhnya
-                 bersandar pada pengakuan karyawan. --}}
-            @if($transaction->payment_status === 'paid')
-                @if($transaction->payment_confirmed_at)
-                    <p class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">
-                        Kamu sudah mengonfirmasi menerima pembayaran ini pada {{ $transaction->payment_confirmed_at->format('d M Y, H:i') }}.
-                    </p>
-                @else
-                    <form method="post" action="{{ route('transactions.confirm-payment', $transaction) }}" class="mt-5">
-                        @csrf
-                        <p class="mb-3 text-sm leading-6 text-slate-600">Mitra menandai transaksi ini sudah dibayar. Benarkan bila uangnya memang sudah kamu terima.</p>
-                        <button class="w-full rounded-xl bg-emerald-700 px-4 py-3 font-black text-white transition hover:bg-emerald-800">Saya sudah terima pembayaran</button>
-                    </form>
-                @endif
-            @endif
-
             @if($transaction->method === 'drop_off')
                 <a href="{{ route('transactions.barcode', $transaction) }}" class="mt-5 block rounded-md bg-emerald-700 px-4 py-3 text-center font-bold text-white">Lihat Barcode</a>
             @endif

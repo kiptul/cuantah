@@ -74,20 +74,15 @@ class TransactionController extends Controller
         return back()->with('success', 'Transaksi selesai diverifikasi.');
     }
 
-    public function markPickedUp(Transaction $transaction, TransactionService $service)
+    /**
+     * Melunasi transaksi selesai yang sebelumnya dicatat belum dibayar.
+     */
+    public function markPaid(Transaction $transaction, TransactionService $service)
     {
         $this->ensureVisible($transaction);
-        $service->markPickedUp($transaction);
+        $service->markPaid($transaction);
 
-        return back()->with('success', 'Status transaksi diubah menjadi dijemput.');
-    }
-
-    public function markVerification(Transaction $transaction, TransactionService $service)
-    {
-        $this->ensureVisible($transaction);
-        $service->markVerification($transaction);
-
-        return back()->with('success', 'Status transaksi diubah menjadi verifikasi.');
+        return back()->with('success', 'Transaksi '.$transaction->code.' ditandai lunas.');
     }
 
     public function reject(Request $request, Transaction $transaction, TransactionService $service)

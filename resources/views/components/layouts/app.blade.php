@@ -62,12 +62,5 @@
         @endif
         {{ $slot }}
     </main>
-    @if(session('transaction_completed'))
-        <script>
-            window.addEventListener('DOMContentLoaded', () => {
-                alert(@json(session('transaction_completed')));
-            });
-        </script>
-    @endif
 </body>
 </html>

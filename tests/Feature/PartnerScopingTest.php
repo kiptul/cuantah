@@ -98,8 +98,7 @@ class PartnerScopingTest extends TestCase
         $admin->partners()->attach($mitraA->id);
 
         $aksi = [
-            ['admin.transactions.picked-up', []],
-            ['admin.transactions.verification', []],
+            ['admin.transactions.mark-paid', []],
             ['admin.transactions.reject', ['rejection_reason' => 'Alasan uji coba.']],
             ['admin.transactions.verify', ['actual_liter' => 3, 'payment_method' => 'cash', 'payment_status' => 'paid']],
         ];

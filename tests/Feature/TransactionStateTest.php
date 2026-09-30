@@ -88,7 +88,7 @@ class TransactionStateTest extends TestCase
         }
     }
 
-    public function test_cancelled_transaction_cannot_be_revived_by_marking_it_picked_up(): void
+    public function test_cancelled_transaction_cannot_be_revived_by_completing_it(): void
     {
         $harga = OilPrice::factory()->create();
         $transaksi = Transaction::factory()->create([
@@ -99,7 +99,7 @@ class TransactionStateTest extends TestCase
         $this->expectException(ValidationException::class);
 
         try {
-            $this->service()->markPickedUp($transaksi);
+            $this->service()->verify($transaksi, ['actual_liter' => 5, 'payment_method' => 'cash', 'payment_status' => 'paid']);
         } finally {
             $this->assertSame(Transaction::STATUS_CANCELLED, $transaksi->fresh()->status);
         }

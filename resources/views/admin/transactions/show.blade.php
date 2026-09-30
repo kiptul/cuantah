@@ -81,21 +81,30 @@
                         <p class="text-slate-500">Cara pembayaran</p>
                         <p class="mt-0.5 font-bold text-slate-900">{{ $transaction->payment_method ? str($transaction->payment_method)->title() : '-' }}</p>
                     </div>
-                    {{-- Menandai lunas tidak sama dengan uang sudah diterima.
-                         Baris ini memisahkan pengakuan karyawan dari pembenaran penyetor. --}}
                     <div>
-                        <p class="text-slate-500">Dikonfirmasi penyetor</p>
+                        <p class="text-slate-500">Dibayar</p>
                         <p class="mt-0.5 font-bold">
-                            @if($transaction->payment_confirmed_at)
-                                <span class="text-emerald-700">Ya, {{ $transaction->payment_confirmed_at->format('d M Y H:i') }}</span>
-                            @elseif($transaction->payment_status === 'paid')
-                                <span class="text-amber-700">Belum dikonfirmasi</span>
+                            @if($transaction->payment_status === 'paid')
+                                <span class="text-emerald-700">{{ $transaction->paid_at?->format('d M Y H:i') ?? 'Ya' }}</span>
+                            @elseif($transaction->payment_status === 'unpaid')
+                                <span class="text-amber-700">Belum dibayar</span>
                             @else
                                 <span class="text-slate-500">-</span>
                             @endif
                         </p>
                     </div>
                 </div>
+
+                {{-- Satu-satunya jalan keluar bagi transaksi selesai yang
+                     dibayar menyusul, karena statusnya sudah terkunci. --}}
+                @if($transaction->status === 'completed' && $transaction->payment_status === 'unpaid')
+                    <form method="post" action="{{ route('admin.transactions.mark-paid', $transaction) }}" class="mt-4 flex flex-col gap-3 rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-900/10 sm:flex-row sm:items-center sm:justify-between"
+                          onsubmit="return confirm('Tandai transaksi ini sudah dibayar ke penyetor?')">
+                        @csrf
+                        <p class="text-sm leading-6 text-amber-900">Penyetor belum menerima Rp{{ number_format($transaction->total_value, 0, ',', '.') }}.</p>
+                        <button class="shrink-0 rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-amber-800">Tandai Lunas</button>
+                    </form>
+                @endif
             </div>
 
             @if($transaction->status === 'rejected' && $transaction->rejection_reason)
@@ -143,14 +152,6 @@
                     <p class="mt-1.5 text-sm leading-6 text-slate-500">Statusnya tidak bisa diubah lagi. Bila ada kekeliruan, catat penyesuaiannya lewat penyaluran atau buat transaksi baru.</p>
                 </div>
             @else
-                <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
-                    <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Ubah status</h2>
-                    <div class="mt-3 grid grid-cols-2 gap-2">
-                        <form method="post" action="{{ route('admin.transactions.picked-up', $transaction) }}">@csrf<button class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-bold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-800">Dijemput</button></form>
-                        <form method="post" action="{{ route('admin.transactions.verification', $transaction) }}">@csrf<button class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-bold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-800">Verifikasi</button></form>
-                    </div>
-                </div>
-
                 <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
                     <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Selesaikan transaksi</h2>
                     <form method="post" action="{{ route('admin.transactions.verify', $transaction) }}" class="mt-4 space-y-4">
