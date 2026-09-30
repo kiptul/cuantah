@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Models\Notification;
 use App\Models\Partner;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -74,15 +75,57 @@ class UserController extends Controller
 
         // Password hanya ikut berubah bila benar-benar diisi, supaya menyunting
         // nama atau nomor telepon tidak diam-diam mengosongkan kata sandi.
-        if (filled($data['password'] ?? null)) {
+        $gantiPassword = filled($data['password'] ?? null);
+        $emailLama = $user->email;
+
+        if ($gantiPassword) {
             $attributes['password'] = Hash::make($data['password']);
         }
 
         $user->update($attributes);
+
+        $this->beritahuPerubahanKredensial($user, $gantiPassword, $emailLama);
         $user->partners()->sync($partnerIds);
         $user->forgetAccessiblePartnerIds();
 
         return back()->with('success', 'Data user berhasil diperbarui.');
+    }
+
+    /**
+     * Memberi tahu pemilik akun bahwa kredensialnya diubah orang lain.
+     *
+     * Admin boleh menyetel kata sandi dan mengganti email pengguna, dan
+     * keduanya cukup untuk mengambil alih akun. Tanpa pemberitahuan ini
+     * perubahan tersebut tidak meninggalkan jejak yang bisa dilihat
+     * pemiliknya sendiri.
+     */
+    private function beritahuPerubahanKredensial(User $user, bool $gantiPassword, string $emailLama): void
+    {
+        if (auth()->id() === $user->id) {
+            return;
+        }
+
+        $perubahan = [];
+
+        if ($gantiPassword) {
+            $perubahan[] = 'password';
+        }
+
+        if ($user->email !== $emailLama) {
+            $perubahan[] = 'alamat email';
+        }
+
+        if ($perubahan === []) {
+            return;
+        }
+
+        Notification::create([
+            'user_id' => $user->id,
+            'title' => 'Data masuk akunmu diubah admin',
+            'message' => 'Admin '.auth()->user()->name.' mengubah '.implode(' dan ', $perubahan)
+                .' akunmu. Bila kamu tidak meminta perubahan ini, segera hubungi mitramu.',
+            'type' => 'account',
+        ]);
     }
 
     /**

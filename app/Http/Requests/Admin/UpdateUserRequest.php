@@ -5,6 +5,7 @@ namespace App\Http\Requests\Admin;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Validator;
 
 class UpdateUserRequest extends FormRequest
@@ -21,7 +22,7 @@ class UpdateUserRequest extends FormRequest
             'email' => ['required', 'email', 'max:160', Rule::unique('users', 'email')->ignore($this->route('user'))],
             'phone' => ['nullable', 'string', 'max:24'],
             'role' => ['required', Rule::in(['user', 'employee', 'admin'])],
-            'password' => ['nullable', 'string', 'min:8'],
+            'password' => ['nullable', 'confirmed', Password::min(8)->letters()->numbers()],
             'partner_ids' => ['nullable', 'array'],
             'partner_ids.*' => ['integer', Rule::exists('partners', 'id')],
         ];

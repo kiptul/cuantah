@@ -78,6 +78,39 @@ class AuthSecurityTest extends TestCase
         );
     }
 
+    /**
+     * Middleware AuthenticateSession memeriksa juga sidik kata sandi di dalam
+     * cookie "ingat saya". Test ini menjaga agar pemeriksaan itu tidak diam-diam
+     * mematikan fitur ingat saya yang sah.
+     */
+    public function test_remember_me_still_signs_the_user_in_on_a_later_visit(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'ingat@cuantah.test',
+            'password' => Hash::make('password-kuat-1'),
+            'role' => 'user',
+        ]);
+
+        $login = $this->post('/login', [
+            'email' => 'ingat@cuantah.test',
+            'password' => 'password-kuat-1',
+            'remember' => 'on',
+        ])->assertRedirect(route('dashboard'));
+
+        $recaller = collect($login->headers->getCookies())
+            ->first(fn ($cookie) => str_starts_with($cookie->getName(), 'remember_web'));
+
+        $this->assertNotNull($recaller, 'Cookie ingat saya harus dikirim.');
+
+        // Sesi dibuang, hanya cookie yang tersisa — persis keadaan kunjungan berikutnya.
+        $this->flushSession();
+        $this->app['auth']->forgetGuards();
+
+        $this->withUnencryptedCookie($recaller->getName(), $recaller->getValue())
+            ->get(route('dashboard'))
+            ->assertOk();
+    }
+
     public function test_user_can_reset_password_through_emailed_link(): void
     {
         Notification::fake();

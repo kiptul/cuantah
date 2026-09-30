@@ -149,6 +149,49 @@ class AccessBoundaryTest extends TestCase
         $this->assertSame('korban@cuantah.test', $korban->fresh()->email);
     }
 
+    /**
+     * Admin boleh menyetel kata sandi dan mengganti email pengguna, dan
+     * keduanya cukup untuk mengambil alih akun. Pemiliknya harus bisa
+     * melihat bahwa itu terjadi.
+     */
+    public function test_owner_is_notified_when_an_admin_changes_their_credentials(): void
+    {
+        $admin = $this->adminMitraSendiri();
+        $penyetor = User::factory()->create(['role' => 'user', 'email' => 'lama@cuantah.test']);
+
+        $this->actingAs($admin)
+            ->put(route('admin.users.update', $penyetor), [
+                'name' => $penyetor->name,
+                'email' => 'baru@cuantah.test',
+                'role' => 'user',
+                'password' => 'password-baru-9',
+                'password_confirmation' => 'password-baru-9',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $penyetor->id,
+            'title' => 'Data masuk akunmu diubah admin',
+        ]);
+    }
+
+    public function test_editing_only_the_name_leaves_no_credential_notice(): void
+    {
+        $admin = $this->adminMitraSendiri();
+        $penyetor = User::factory()->create(['role' => 'user']);
+
+        $this->actingAs($admin)
+            ->put(route('admin.users.update', $penyetor), [
+                'name' => 'Nama Dikoreksi',
+                'email' => $penyetor->email,
+                'role' => 'user',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseMissing('notifications', ['user_id' => $penyetor->id]);
+        $this->assertSame('Nama Dikoreksi', $penyetor->fresh()->name);
+    }
+
     public function test_admin_cannot_demote_themselves(): void
     {
         $admin = $this->adminMitraSendiri();

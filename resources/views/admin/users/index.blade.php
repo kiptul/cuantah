@@ -14,7 +14,7 @@
                 <x-form-field label="Nama" name="name" :value="old('name')" required />
                 <x-form-field label="Email" name="email" type="email" :value="old('email')" required />
                 <x-form-field label="Telepon" name="phone" :value="old('phone')" />
-                <x-form-field label="Password" name="password" type="password" required hint="Minimal 8 karakter." />
+                <x-form-field label="Password" name="password" type="password" required hint="Minimal 8 karakter, memuat huruf dan angka." />
             </div>
 
             <div class="mt-4 grid gap-3 md:grid-cols-[200px_minmax(0,1fr)]">
@@ -84,6 +84,7 @@
                         <x-form-field label="Email" name="email" type="email" :value="$user->email" required />
                         <x-form-field label="Telepon" name="phone" :value="$user->phone" />
                         <x-form-field label="Password baru" name="password" type="password" hint="Kosongkan bila tidak diganti." />
+                        <x-form-field label="Ulangi password baru" name="password_confirmation" type="password" />
                     </div>
 
                     <div class="mt-4 grid gap-3 md:grid-cols-[200px_minmax(0,1fr)]">
