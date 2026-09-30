@@ -1,4 +1,7 @@
 <x-layouts.admin title="Admin Dashboard">
+    <x-slot:head>
+        @vite('resources/js/chart.js')
+    </x-slot:head>
     <div class="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
             <p class="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Ringkasan operasional</p>
@@ -56,33 +59,34 @@
             </div>
         </aside>
     </section>
-    {{-- Versi mayor dipatok. Tanpa patokan, CDN melayani rilis terbaru
-         sehingga breaking change pada Chart.js mematikan grafik ini
-         tanpa ada perubahan kode sama sekali. --}}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    {{-- Dibungkus DOMContentLoaded karena Chart.js kini ikut dibundel lewat
+         app.js. Berkas modul dieksekusi tertunda, jadi skrip sebaris seperti
+         ini berjalan lebih dulu dan belum melihat window.Chart. --}}
     <script>
-        const monthly = @json($monthly);
-        new Chart(document.getElementById('monthlyChart'), {
-            type: 'bar',
-            data: {
-                labels: monthly.map(item => item.month),
-                datasets: [
-                    { label: 'Volume (L)', data: monthly.map(item => item.volume), backgroundColor: '#047857' },
-                    { label: 'Jumlah Transaksi', data: monthly.map(item => item.count), backgroundColor: '#0f766e' },
-                    { label: 'Nilai / 1000', data: monthly.map(item => item.value / 1000), backgroundColor: '#334155' },
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, padding: 18 } },
+        document.addEventListener('DOMContentLoaded', () => {
+            const monthly = @json($monthly);
+            new Chart(document.getElementById('monthlyChart'), {
+                type: 'bar',
+                data: {
+                    labels: monthly.map(item => item.month),
+                    datasets: [
+                        { label: 'Volume (L)', data: monthly.map(item => item.volume), backgroundColor: '#047857' },
+                        { label: 'Jumlah Transaksi', data: monthly.map(item => item.count), backgroundColor: '#0f766e' },
+                        { label: 'Nilai / 1000', data: monthly.map(item => item.value / 1000), backgroundColor: '#334155' },
+                    ]
                 },
-                scales: {
-                    x: { grid: { display: false }, border: { display: false } },
-                    y: { beginAtZero: true, border: { display: false }, grid: { color: '#e2e8f0' } },
-                },
-            }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, padding: 18 } },
+                    },
+                    scales: {
+                        x: { grid: { display: false }, border: { display: false } },
+                        y: { beginAtZero: true, border: { display: false }, grid: { color: '#e2e8f0' } },
+                    },
+                }
+            });
         });
     </script>
 </x-layouts.admin>

@@ -1,7 +1,6 @@
 <x-layouts.app title="Detail Transaksi">
     <x-slot:head>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        @vite('resources/js/map.js')
     </x-slot:head>
     <div class="mb-5"><a href="{{ route('transactions.index') }}" class="text-sm font-bold text-emerald-700">Kembali</a><h1 class="mt-2 text-3xl font-black">{{ $transaction->code }}</h1></div>
     <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
@@ -103,12 +102,17 @@
         </aside>
     </div>
     @if($transaction->pickup)
+        {{-- Dibungkus DOMContentLoaded karena pustaka petanya kini ikut dibundel
+             lewat app.js. Berkas modul dieksekusi tertunda, jadi skrip sebaris
+             seperti ini berjalan lebih dulu dan belum melihat window.L. --}}
         <script>
-            const lat = {{ $transaction->pickup->latitude }};
-            const lng = {{ $transaction->pickup->longitude }};
-            const map = L.map('map').setView([lat, lng], 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
-            L.marker([lat, lng]).addTo(map);
+            document.addEventListener('DOMContentLoaded', () => {
+                const lat = {{ $transaction->pickup->latitude }};
+                const lng = {{ $transaction->pickup->longitude }};
+                const map = L.map('map').setView([lat, lng], 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+                L.marker([lat, lng]).addTo(map);
+            });
         </script>
     @endif
 </x-layouts.app>

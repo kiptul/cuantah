@@ -1,7 +1,6 @@
 <x-layouts.admin title="Mitra">
     <x-slot:head>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        @vite('resources/js/map.js')
     </x-slot:head>
 
     <div class="mb-6">

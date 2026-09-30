@@ -1,6 +1,26 @@
 {
+  "node_modules/leaflet/dist/images/layers-2x.png": {
+    "file": "assets/layers-2x-Bpkbi35X.png",
+    "src": "node_modules/leaflet/dist/images/layers-2x.png"
+  },
+  "node_modules/leaflet/dist/images/layers.png": {
+    "file": "assets/layers-BWBAp2CZ.png",
+    "src": "node_modules/leaflet/dist/images/layers.png"
+  },
+  "node_modules/leaflet/dist/images/marker-icon-2x.png": {
+    "file": "assets/marker-icon-2x-_ZA0WGCc.png",
+    "src": "node_modules/leaflet/dist/images/marker-icon-2x.png"
+  },
+  "node_modules/leaflet/dist/images/marker-icon.png": {
+    "file": "assets/marker-icon-hN30_KVU.png",
+    "src": "node_modules/leaflet/dist/images/marker-icon.png"
+  },
+  "node_modules/leaflet/dist/images/marker-shadow.png": {
+    "file": "assets/marker-shadow-f7SaPCxT.png",
+    "src": "node_modules/leaflet/dist/images/marker-shadow.png"
+  },
   "resources/css/app.css": {
-    "file": "assets/app-CjquD13j.css",
+    "file": "assets/app-B7tr-ylL.css",
     "name": "app",
     "names": [
       "app.css"
@@ -9,9 +29,37 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-DWdEIK5R.js",
+    "file": "assets/app-BvRk9kiK.js",
     "name": "app",
     "src": "resources/js/app.js",
+    "isEntry": true
+  },
+  "resources/js/chart.js": {
+    "file": "assets/chart-CtUx7YPw.js",
+    "name": "chart",
+    "src": "resources/js/chart.js",
+    "isEntry": true
+  },
+  "resources/js/map.js": {
+    "file": "assets/map-DX6bws85.js",
+    "name": "map",
+    "src": "resources/js/map.js",
+    "isEntry": true,
+    "css": [
+      "assets/map-1DTFk8zz.css"
+    ],
+    "assets": [
+      "assets/marker-icon-2x-_ZA0WGCc.png",
+      "assets/marker-icon-hN30_KVU.png",
+      "assets/marker-shadow-f7SaPCxT.png",
+      "assets/layers-BWBAp2CZ.png",
+      "assets/layers-2x-Bpkbi35X.png"
+    ]
+  },
+  "resources/js/scanner.js": {
+    "file": "assets/scanner-DWdEIK5R.js",
+    "name": "scanner",
+    "src": "resources/js/scanner.js",
     "isEntry": true
   }
 }

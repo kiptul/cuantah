@@ -1,4 +1,7 @@
 <x-layouts.app title="Scan Drop-off">
+    <x-slot:head>
+        @vite('resources/js/scanner.js')
+    </x-slot:head>
     <section class="mx-auto max-w-xl">
         <div class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div class="flex items-center justify-between gap-4">
@@ -40,7 +43,7 @@
         </div>
     </section>
 
-    {{-- Modul: dieksekusi setelah app.js (yang dimuat @vite sebagai type=module),
+    {{-- Modul: dieksekusi setelah scanner.js yang dimuat @vite di atas,
          sehingga window.CuantahScanner dijamin sudah tersedia saat auto-start. --}}
     <script type="module">
         const video = document.getElementById('scannerVideo');
