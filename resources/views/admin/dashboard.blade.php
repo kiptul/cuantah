@@ -15,7 +15,7 @@
 
     <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @foreach([
-            ['Pengguna aktif', $total_users, 'Terdaftar sebagai penyetor'],
+            ['Penyetor aktif', $total_users, 'Pernah menyetor ke mitramu'],
             ['Volume terkumpul', number_format($total_liter, 2, ',', '.').' L', 'Transaksi berstatus selesai'],
             ['Total transaksi', $total_transactions, 'Seluruh setoran yang tercatat'],
             ['Nilai terkumpul', 'Rp'.number_format($total_value, 0, ',', '.'), 'Dari transaksi selesai'],

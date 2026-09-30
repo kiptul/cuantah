@@ -27,7 +27,12 @@ class AdminDashboardService
             ->get();
 
         return [
-            'total_users' => User::where('role', 'user')->count(),
+            // Dibatasi pada penyetor yang pernah bertransaksi dengan mitra yang
+            // boleh diakses. Sebelumnya seluruh penyetor di sistem ikut dihitung,
+            // sehingga admin satu mitra melihat angka yang bukan miliknya.
+            'total_users' => User::where('role', 'user')
+                ->whereHas('transactions', fn ($transaction) => $transaction->visibleTo($user))
+                ->count(),
             'total_liter' => Transaction::visibleTo($user)->where('status', Transaction::STATUS_COMPLETED)->sum('actual_liter'),
             'total_transactions' => Transaction::visibleTo($user)->count(),
             'total_value' => Transaction::visibleTo($user)->where('status', Transaction::STATUS_COMPLETED)->sum('total_value'),

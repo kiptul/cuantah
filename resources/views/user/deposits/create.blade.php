@@ -21,7 +21,14 @@
                     <label class="text-sm font-bold">Mitra tujuan</label>
                     <select name="partner_id" id="partner_id" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2" required>
                         @foreach($partners as $partner)
-                            <option value="{{ $partner['id'] }}">{{ $partner['name'] }}</option>
+                            <option value="{{ $partner['id'] }}" @disabled($partner['penuh'])>
+                                {{ $partner['name'] }}
+                                @if($partner['penuh'])
+                                    — penuh, belum bisa menerima
+                                @else
+                                    — sisa {{ rtrim(rtrim(number_format($partner['sisa_liter'], 2, ',', '.'), '0'), ',') }} L
+                                @endif
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -33,7 +40,13 @@
                     </button>
                     <button type="button" data-method="pickup" class="method-btn rounded-lg border-2 border-slate-200 p-4 text-left">
                         <span class="block font-black">Jemput</span>
-                        <span class="text-sm text-slate-600">Tentukan lokasi rumah/UMKM.</span>
+                        <span class="text-sm text-slate-600">
+                            @if($alamatTerakhir)
+                                Memakai alamat penjemputan terakhirmu.
+                            @else
+                                Tentukan lokasi rumah/UMKM.
+                            @endif
+                        </span>
                     </button>
                 </div>
                 <input type="hidden" name="method" id="method" value="drop_off">
@@ -101,6 +114,8 @@
             document.addEventListener('DOMContentLoaded', () => {
                 const price = {{ (int) ($price?->price_per_liter ?? 0) }};
                 const partners = @json($partners->values());
+                // Alamat penjemputan terakhir milik penyetor ini, bila ada.
+                const alamatTerakhir = @json($alamatTerakhir);
                 const colors = ['#059669', '#2563eb', '#f59e0b', '#dc2626', '#7c3aed'];
                 const partnerInput = document.getElementById('partner_id');
                 const methodInput = document.getElementById('method');
@@ -253,8 +268,16 @@
                     renderCircles();
 
                     if (method === 'pickup') {
-                        addressInput.value = '';
-                        setPosition(partner.latitude, partner.longitude, '', false);
+                        // Diisikan dari penjemputan terakhir. Mengetik ulang alamat
+                        // rumah pada tiap setoran hanya mengundang salah ketik pada
+                        // satu-satunya keterangan yang dipakai karyawan mencarinya.
+                        if (alamatTerakhir) {
+                            setPosition(alamatTerakhir.latitude, alamatTerakhir.longitude, alamatTerakhir.address);
+                            map.setView([alamatTerakhir.latitude, alamatTerakhir.longitude], 15);
+                        } else {
+                            addressInput.value = '';
+                            setPosition(partner.latitude, partner.longitude, '', false);
+                        }
                     } else {
                         setPosition(partner.latitude, partner.longitude, partner.address);
                     }
