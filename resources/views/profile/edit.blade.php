@@ -22,7 +22,7 @@
         <section class="mt-5 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5 sm:p-6">
             <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Ganti password</h2>
             <p class="mt-2 text-sm leading-6 text-slate-600">
-                Setelah diganti, sesi di perangkat lain akan otomatis keluar.
+                Setelah diganti, sesi yang masih terbuka di perangkat lain akan keluar dengan sendirinya.
             </p>
             <form method="post" action="{{ route('profile.password') }}" class="mt-4 grid gap-4">
                 @csrf

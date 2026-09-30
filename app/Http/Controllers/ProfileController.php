@@ -29,17 +29,25 @@ class ProfileController extends Controller
         return back()->with('success', 'Data akun berhasil diperbarui.');
     }
 
+    /**
+     * Mengganti kata sandi sendiri.
+     *
+     * Sesi di perangkat lain ikut terputus dengan sendirinya: middleware
+     * AuthenticateSession menyimpan sidik kata sandi di dalam sesi dan
+     * membandingkannya pada tiap permintaan, lalu menyegarkan sidik untuk
+     * sesi yang sedang berjalan sesudah respons dikirim. Memanggil
+     * logoutOtherDevices() di sini justru keliru — pemeriksaannya
+     * membandingkan kata sandi lama dengan yang sudah berganti, sehingga
+     * selalu gagal.
+     */
     public function updatePassword(UpdatePasswordRequest $request): RedirectResponse
     {
         $request->user()->update([
             'password' => Hash::make($request->validated('password')),
         ]);
 
-        // Sesi lain yang memakai kata sandi lama ikut diputus, sebab justru
-        // sesi itulah yang biasanya menjadi alasan orang menggantinya.
-        auth()->logoutOtherDevices($request->validated('current_password'));
         $request->session()->regenerate();
 
-        return back()->with('success', 'Password berhasil diganti. Perangkat lain sudah dikeluarkan.');
+        return back()->with('success', 'Password berhasil diganti. Sesi di perangkat lain akan keluar dengan sendirinya.');
     }
 }

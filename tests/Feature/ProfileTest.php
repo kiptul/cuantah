@@ -89,7 +89,34 @@ class ProfileTest extends TestCase
             ->assertSessionHasErrors('password');
     }
 
+    /**
+     * Status respons ikut diperiksa. Tanpa itu sebuah galat 500 tetap lolos,
+     * sebab halaman galat tidak meninggalkan pesan kesalahan di sesi
+     * sementara kata sandinya sendiri sudah terlanjur berubah.
+     */
     public function test_depositor_can_change_their_password(): void
+    {
+        $user = User::factory()->create(['password' => Hash::make('password-lama-1')]);
+
+        $this->actingAs($user)
+            ->from(route('profile.edit'))
+            ->put(route('profile.password'), [
+                'current_password' => 'password-lama-1',
+                'password' => 'password-baru-2',
+                'password_confirmation' => 'password-baru-2',
+            ])
+            ->assertRedirect(route('profile.edit'))
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+
+        $this->assertTrue(Hash::check('password-baru-2', $user->fresh()->password));
+    }
+
+    /**
+     * Sesi yang masih memakai sidik kata sandi lama harus berhenti berlaku.
+     * Itulah alasan orang mengganti kata sandinya.
+     */
+    public function test_sessions_still_holding_the_old_password_stop_working(): void
     {
         $user = User::factory()->create(['password' => Hash::make('password-lama-1')]);
 
@@ -101,6 +128,27 @@ class ProfileTest extends TestCase
             ])
             ->assertSessionHasNoErrors();
 
-        $this->assertTrue(Hash::check('password-baru-2', $user->fresh()->password));
+        // Sesi lain menyimpan sidik kata sandi yang lama.
+        $this->flushSession();
+        $this->withSession(['password_hash_web' => Hash::make('password-lama-1')]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_the_session_that_changed_the_password_stays_signed_in(): void
+    {
+        $user = User::factory()->create(['password' => Hash::make('password-lama-1')]);
+
+        $this->actingAs($user)
+            ->put(route('profile.password'), [
+                'current_password' => 'password-lama-1',
+                'password' => 'password-baru-2',
+                'password_confirmation' => 'password-baru-2',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->get(route('dashboard'))->assertOk();
     }
 }
