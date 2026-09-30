@@ -85,7 +85,7 @@ class UserController extends Controller
         $user->update($attributes);
 
         $this->beritahuPerubahanKredensial($user, $gantiPassword, $emailLama);
-        $user->partners()->sync($partnerIds);
+        $user->partners()->sync($this->keepHiddenPartners($user, $partnerIds, $data['role']));
         $user->forgetAccessiblePartnerIds();
 
         return back()->with('success', 'Data user berhasil diperbarui.');
@@ -126,6 +126,39 @@ class UserController extends Controller
                 .' akunmu. Bila kamu tidak meminta perubahan ini, segera hubungi mitramu.',
             'type' => 'account',
         ]);
+    }
+
+    /**
+     * Menambahkan kembali mitra yang tidak terlihat oleh admin yang mengedit.
+     *
+     * Daftar centang hanya memuat mitra yang dapat diakses admin tersebut,
+     * sedangkan sync mencabut semua yang tidak ikut terkirim. Tanpa langkah
+     * ini, admin satu mitra yang menyunting nomor telepon karyawan ikut
+     * memutus akses karyawan itu ke mitra lain yang bahkan tidak ia lihat.
+     *
+     * @param  array<int>  $partnerIds
+     * @return array<int>
+     */
+    private function keepHiddenPartners(User $user, array $partnerIds, string $role): array
+    {
+        if (! in_array($role, ['admin', 'employee'], true)) {
+            return [];
+        }
+
+        $terlihat = Partner::query()
+            ->accessibleTo(auth()->user())
+            ->pluck('id')
+            ->all();
+
+        $tersembunyi = $user->partners()
+            ->pluck('partners.id')
+            ->diff($terlihat);
+
+        return collect($partnerIds)
+            ->merge($tersembunyi)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**
