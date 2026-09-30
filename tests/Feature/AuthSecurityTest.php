@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -87,7 +87,7 @@ class AuthSecurityTest extends TestCase
         $this->post('/lupa-password', ['email' => $user->email])
             ->assertSessionHas('success');
 
-        Notification::assertSentTo($user, ResetPassword::class, function (ResetPassword $notification) use ($user) {
+        Notification::assertSentTo($user, ResetPasswordNotification::class, function (ResetPasswordNotification $notification) use ($user) {
             $this->post('/reset-password', [
                 'token' => $notification->token,
                 'email' => $user->email,
@@ -116,7 +116,7 @@ class AuthSecurityTest extends TestCase
             'Pesan untuk email terdaftar dan tidak terdaftar harus identik.'
         );
 
-        Notification::assertSentTo($terdaftar, ResetPassword::class);
-        Notification::assertSentTimes(ResetPassword::class, 1);
+        Notification::assertSentTo($terdaftar, ResetPasswordNotification::class);
+        Notification::assertSentTimes(ResetPasswordNotification::class, 1);
     }
 }
