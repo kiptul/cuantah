@@ -58,22 +58,52 @@
                     </div>
                 </div>
 
-                <div class="join join-vertical w-full gap-3">
+                {{-- Memakai <details> bawaan browser, bukan komponen collapse
+                     DaisyUI. Versi sebelumnya bersandar pada input tersembunyi
+                     beserta transisi content-visibility: butir yang terbuka saat
+                     halaman dimuat memang tampil, tetapi butir lain tidak pernah
+                     bisa dibuka sama sekali, sehingga sebelas dari dua belas
+                     jawaban tidak terjangkau.
+
+                     Jawabannya sendiri disusun dari perilaku sistem yang
+                     sebenarnya, bukan janji umum. --}}
+                <div class="grid w-full gap-3">
                     @foreach([
-                        ['Apakah ada wallet CUAN?', 'Tidak untuk MVP. Pembayaran dilakukan langsung oleh mitra secara cash atau transfer.'],
-                        ['Kapan nilai akhir dihitung?', 'Setelah minyak ditimbang dan volume aktual diverifikasi oleh admin.'],
-                        ['Apakah harga lama berubah jika harga baru dibuat?', 'Tidak. Transaksi menyimpan snapshot harga per liter.'],
+                        ['Apa yang dimaksud jelantah, dan kenapa tidak boleh dibuang ke saluran air?',
+                         'Jelantah adalah minyak goreng bekas pakai. Dibuang ke saluran air, ia mengeras dan menyumbat; dibuang ke tanah, ia menutup pori tanah dan mencemari air tanah. Dikumpulkan, minyak yang sama bisa diolah menjadi bahan bakar nabati dan bernilai uang.'],
+                        ['Bagaimana cara menyetor?',
+                         'Buat akun, lalu pilih Setor Jelantah. Tentukan mitra tujuan, pilih dijemput atau diantar sendiri, isi perkiraan volume, dan kirim. Nilai perkiraan yang kamu terima sudah terlihat sebelum tombol kirim ditekan.'],
+                        ['Apa bedanya dijemput dan antar sendiri?',
+                         'Dijemput berarti karyawan datang ke alamatmu pada tanggal dan jam yang kamu pilih, dan ada potongan ongkir sesuai jarak ke mitra. Antar sendiri berarti kamu membawanya ke lokasi mitra, tanpa potongan ongkir sama sekali; kamu cukup menunjukkan barcode transaksi untuk dipindai petugas.'],
+                        ['Kenapa setoran jemput ada potongan ongkirnya?',
+                         'Karena ada orang dan kendaraan yang berangkat ke alamatmu. Besarnya mengikuti jarak, dan aturannya ditetapkan tiap mitra. Bila volume setoranmu terlalu kecil sehingga nilainya habis termakan ongkir, sistem menolak pengajuan itu dan menyarankan volume minimal atau opsi antar sendiri, supaya tidak ada yang berangkat untuk hasil nol.'],
+                        ['Harga per liternya berapa, dan apa bisa berubah setelah saya menyetor?',
+                         'Harga yang berlaku selalu tercantum di halaman Harga dan di formulir setoran. Setiap transaksi menyimpan harga saat pengajuan dibuat, jadi perubahan harga sesudahnya tidak mengubah transaksi yang sudah jalan.'],
+                        ['Kapan dan bagaimana saya dibayar?',
+                         'Pembayaran dilakukan langsung oleh mitra, tunai atau transfer, setelah jelantah ditimbang dan volumenya diverifikasi. Sesudah mitra menandainya terbayar, kamu akan diminta membenarkan bahwa uangnya memang sudah diterima — penandaan oleh mitra saja belum dianggap selesai.'],
+                        ['Bagaimana kalau hasil timbangannya tidak sesuai perkiraan saya?',
+                         'Kamu bisa mengajukan keberatan dari halaman transaksi dalam tiga hari setelah transaksi selesai. Keberatan itu masuk ke mitra terkait, dan tanggapannya tampil di halaman transaksi yang sama. Batas tiga hari dipakai supaya jelantahnya masih bisa ditelusuri.'],
+                        ['Jelantah seperti apa yang diterima?',
+                         'Minyak goreng bekas yang masih berupa minyak: disaring dari remah dan tidak tercampur air, deterjen, atau oli. Campuran air adalah alasan penolakan yang paling sering terjadi, dan alasannya selalu disampaikan supaya bisa diperbaiki pada setoran berikutnya.'],
+                        ['Bagaimana menyimpannya sebelum disetor?',
+                         'Tunggu dingin, saring, lalu simpan dalam wadah tertutup rapat yang tidak bocor — jeriken bekas air minum sudah cukup. Jauhkan dari panas dan sinar matahari langsung. Tidak ada batas waktu simpan selama wadahnya tertutup.'],
+                        ['Berapa jumlah paling sedikit yang bisa disetor?',
+                         'Setengah liter. Untuk setoran jemput, jumlahnya perlu cukup agar nilainya melebihi ongkir; formulirnya akan memberi tahu angka minimal bila belum mencukupi.'],
+                        ['Apakah saya bisa membatalkan pengajuan?',
+                         'Bisa, selama statusnya masih menunggu dan belum ada karyawan yang mengerjakannya. Sesudah ditugaskan, pembatalan sepihak merugikan pihak yang sudah berangkat, jadi hubungi mitranya langsung.'],
+                        ['Apa yang terjadi dengan data lokasi saya?',
+                         'Titik lokasi dipakai untuk menghitung ongkir dan menuntun karyawan ke alamatmu. Yang bisa melihatnya hanya kamu dan staf mitra yang menangani transaksi itu; mitra lain tidak.'],
                     ] as $index => [$q, $a])
-                        <div class="collapse join-item rounded-[1.5rem] border border-emerald-100 bg-white shadow-sm">
-                            <input type="radio" name="public-faq" @checked($index === 0) />
-                            <div class="collapse-title flex items-center gap-4 py-5 pr-12 text-lg font-black text-emerald-950">
+                        <details class="group rounded-[1.5rem] border border-emerald-100 bg-white shadow-sm" @if($index === 0) open @endif>
+                            <summary class="flex cursor-pointer list-none items-center gap-4 px-5 py-5 text-lg font-black text-emerald-950">
                                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-sm font-black text-white">{{ $index + 1 }}</span>
-                                <span>{{ $q }}</span>
-                            </div>
-                            <div class="collapse-content">
-                                <p class="pl-[3.25rem] leading-7 text-slate-600">{{ $a }}</p>
-                            </div>
-                        </div>
+                                <span class="min-w-0 flex-1">{{ $q }}</span>
+                                <svg class="h-5 w-5 shrink-0 text-emerald-700 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </summary>
+                            <p class="px-5 pb-5 leading-7 text-slate-600 sm:pl-[4.25rem]">{{ $a }}</p>
+                        </details>
                     @endforeach
                 </div>
             </div>
