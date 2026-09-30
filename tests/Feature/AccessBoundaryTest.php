@@ -164,6 +164,49 @@ class AccessBoundaryTest extends TestCase
         $this->assertTrue($admin->fresh()->isAdmin());
     }
 
+    /**
+     * Tombol yang tidak mungkin berhasil sebaiknya tidak ditawarkan.
+     */
+    public function test_admin_detail_page_hides_actions_on_a_finished_transaction(): void
+    {
+        $harga = OilPrice::factory()->create();
+        $mitra = Partner::factory()->create();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $admin->partners()->attach($mitra->id);
+
+        $selesai = Transaction::factory()->completed(4)->create([
+            'partner_id' => $mitra->id,
+            'oil_price_id' => $harga->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.transactions.show', $selesai))
+            ->assertOk()
+            ->assertSee('Transaksi sudah selesai')
+            ->assertDontSee('Tolak Transaksi')
+            ->assertDontSee('Selesaikan Transaksi');
+    }
+
+    public function test_admin_detail_page_offers_actions_while_the_transaction_runs(): void
+    {
+        $harga = OilPrice::factory()->create();
+        $mitra = Partner::factory()->create();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $admin->partners()->attach($mitra->id);
+
+        $berjalan = Transaction::factory()->create([
+            'partner_id' => $mitra->id,
+            'oil_price_id' => $harga->id,
+            'status' => Transaction::STATUS_VERIFICATION,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.transactions.show', $berjalan))
+            ->assertOk()
+            ->assertSee('Selesaikan Transaksi')
+            ->assertSee('Tolak Transaksi');
+    }
+
     public function test_staff_account_cannot_be_saved_without_a_partner(): void
     {
         $admin = $this->adminMitraSendiri();

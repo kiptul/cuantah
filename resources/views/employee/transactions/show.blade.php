@@ -9,7 +9,7 @@
     </div>
 
     <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
-        <section class="rounded-lg border border-slate-200 bg-white p-5">
+        <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
             <div id="employee-map" class="h-[360px] rounded-lg border border-slate-200"></div>
             <p class="mt-4 font-bold">Lokasi</p>
             <p class="mt-1 text-sm text-slate-600">{{ $transaction->pickup?->address }}</p>
@@ -18,7 +18,26 @@
             @endif
         </section>
 
-        <aside class="rounded-lg border border-slate-200 bg-white p-5">
+        <aside class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
+            {{-- Nama dan nomor penyetor. Karyawan yang tiba di lokasi dan tidak
+                 menemukan alamatnya sebelumnya tidak punya cara menghubungi
+                 siapa pun dari dalam aplikasi. --}}
+            <div class="mb-5 rounded-xl bg-slate-50 px-4 py-3">
+                <p class="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Penyetor</p>
+                <p class="mt-1 font-bold text-slate-900">{{ $transaction->user->name }}</p>
+                @if($transaction->user->phone)
+                    <a href="tel:{{ preg_replace('/[^0-9+]/', '', $transaction->user->phone) }}"
+                       class="mt-2 inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-bold text-emerald-800 shadow-sm ring-1 ring-slate-900/10 transition hover:ring-emerald-300">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M4 5a1 1 0 0 1 1-1h2.6a1 1 0 0 1 1 .76l.7 2.9a1 1 0 0 1-.3 1L7.6 10.1a12 12 0 0 0 5.4 5.4l1.4-1.4a1 1 0 0 1 1-.26l2.9.7a1 1 0 0 1 .76 1V19a1 1 0 0 1-1 1A15 15 0 0 1 4 5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                        </svg>
+                        {{ $transaction->user->phone }}
+                    </a>
+                @else
+                    <p class="mt-1 text-sm text-slate-500">Nomor telepon belum diisi.</p>
+                @endif
+            </div>
+
             <dl class="mb-5 space-y-3 text-sm">
                 <div class="flex justify-between gap-3"><dt>Mitra</dt><dd class="text-right font-bold">{{ $transaction->partner?->name ?? '-' }}</dd></div>
                 {{-- Jadwal yang dipilih penyetor. Sebelumnya hanya admin yang
@@ -50,25 +69,29 @@
             @if($canMarkPickedUp)
                 <form method="post" action="{{ route('employee.transactions.picked-up', $transaction) }}">
                     @csrf
-                    <button class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-bold hover:bg-slate-50">Dijemput</button>
+                    <button class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-bold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-800">Dijemput</button>
                 </form>
             @endif
 
             @if($canMarkVerification)
                 <form method="post" action="{{ route('employee.transactions.verification', $transaction) }}" class="{{ $canMarkPickedUp ? 'mt-2' : '' }}">
                     @csrf
-                    <button class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-bold hover:bg-slate-50">Verifikasi</button>
+                    <button class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-bold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-800">Verifikasi</button>
                 </form>
             @endif
 
             @if($canComplete)
                 <form method="post" action="{{ route('employee.transactions.verify', $transaction) }}" class="space-y-4">
                     @csrf
-                    <div><label class="text-sm font-bold">Actual liter</label><input name="actual_liter" type="number" step="0.01" value="{{ old('actual_liter', $transaction->actual_liter) }}" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2" required></div>
-                    <div><label class="text-sm font-bold">Metode pembayaran</label><select name="payment_method" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2"><option value="cash">Cash</option><option value="transfer">Transfer</option></select></div>
-                    <div><label class="text-sm font-bold">Status pembayaran</label><select name="payment_status" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2"><option value="paid">Dibayar</option><option value="unpaid">Belum dibayar</option></select></div>
-                    <textarea name="notes" rows="3" placeholder="Catatan" class="w-full rounded-md border border-slate-300 px-3 py-2">{{ old('notes', $transaction->notes) }}</textarea>
-                    <button class="w-full rounded-md bg-emerald-700 px-4 py-3 font-bold text-white">Selesaikan Transaksi</button>
+                    <div>
+                        <label class="text-sm font-bold">Volume aktual (L)</label>
+                        <input name="actual_liter" type="number" step="0.01" min="0.1" max="500" value="{{ old('actual_liter', $transaction->actual_liter) }}" class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                        <p class="mt-1.5 text-xs text-slate-500">Estimasi penyetor {{ number_format($transaction->estimated_liter, 2, ',', '.') }} L.</p>
+                    </div>
+                    <div><label class="text-sm font-bold">Metode pembayaran</label><select name="payment_method" class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"><option value="cash" @selected(old('payment_method', $transaction->payment_method) === 'cash')>Tunai</option><option value="transfer" @selected(old('payment_method', $transaction->payment_method) === 'transfer')>Transfer</option></select></div>
+                    <div><label class="text-sm font-bold">Status pembayaran</label><select name="payment_status" class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"><option value="paid" @selected(old('payment_status', $transaction->payment_status) === 'paid')>Sudah dibayar</option><option value="unpaid" @selected(old('payment_status', $transaction->payment_status) === 'unpaid')>Belum dibayar</option></select></div>
+                    <textarea name="notes" rows="3" maxlength="700" placeholder="Catatan" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">{{ old('notes', $transaction->notes) }}</textarea>
+                    <button class="w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-black text-white shadow-sm shadow-emerald-900/20 transition hover:bg-emerald-800">Selesaikan Transaksi</button>
                 </form>
             @endif
 
