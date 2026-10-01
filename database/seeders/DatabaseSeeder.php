@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'user@cuantah.test'],
             // ['name' => 'Rumah Tangga Demo', 'phone' => '081200000002', 'role' => 'user', 'password' => Hash::make($password)]
-            ['name' => 'Rumah Tangga Demo', 'phone' => '081200000002', 'role' => 'user', 'password' => Hash::make('user')]
+            ['name' => 'Rumah Tangga Demo', 'phone' => '081200000002', 'role' => 'user', 'password' => Hash::make('password')]
         );
 
         $employee = User::updateOrCreate(
