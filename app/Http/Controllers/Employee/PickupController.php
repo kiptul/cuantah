@@ -16,6 +16,14 @@ class PickupController extends Controller
             'pickups' => Pickup::with('transaction.user', 'partner')
                 ->visibleTo(auth()->user())
                 ->whereNull('assigned_user_id')
+                /**
+                 * Setoran yang sudah berakhir tidak ikut ditawarkan. Tanpa
+                 * saringan ini, setoran yang dibatalkan penyetor tetap muncul
+                 * di daftar meski angka di dasbor tidak menghitungnya, dan
+                 * karyawan yang mencoba mengambilnya ditolak dengan alasan
+                 * yang keliru.
+                 */
+                ->whereHas('transaction', fn ($transaction) => $transaction->whereNotIn('status', Transaction::FINAL_STATUSES))
                 ->where(function ($query) {
                     $query->whereHas('transaction', fn ($transaction) => $transaction->where('method', Transaction::METHOD_PICKUP))
                         ->orWhereNotNull('scanned_at');
@@ -38,9 +46,14 @@ class PickupController extends Controller
 
         $claimed = $service->claimPickup($pickup, auth()->user());
 
+        /**
+         * Kegagalan tidak selalu berarti didahului karyawan lain: setoran yang
+         * dibatalkan atau ditolak juga ditolak claimPickup. Menyebut satu
+         * sebab saja membuat karyawan mencari orang yang tidak pernah ada.
+         */
         return back()->with($claimed ? 'success' : 'error', $claimed
             ? 'Pickup berhasil kamu ambil.'
-            : 'Pickup sudah diambil karyawan lain.');
+            : 'Pickup itu sudah tidak bisa diambil. Mungkin karyawan lain lebih dulu mengambilnya, atau setorannya dibatalkan penyetor.');
     }
 
     public function scanForm()
