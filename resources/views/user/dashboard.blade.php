@@ -25,9 +25,9 @@
             <div class="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-emerald-950/30 blur-2xl" aria-hidden="true"></div>
             <div class="relative flex h-full flex-col">
                 <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-200">CUAN diterima</p>
-                <p class="mt-3 text-4xl font-black tracking-tight tabular-nums sm:text-5xl">Rp{{ number_format($total_value, 0, ',', '.') }}</p>
+                <p class="mt-3 text-4xl font-black tracking-tight tabular-nums sm:text-5xl">Rp{{ number_format($paid_value, 0, ',', '.') }}</p>
                 <p class="mt-3 max-w-sm text-sm leading-6 text-emerald-100/90">
-                    Dari {{ number_format($total_liter, 2, ',', '.') }} liter jelantah yang sudah ditimbang mitra.
+                    Dari {{ number_format($paid_liter, 2, ',', '.') }} liter jelantah yang sudah dibayar mitra.
                 </p>
                 @if($unpaid_value > 0)
                     <p class="mt-4 w-fit rounded-lg bg-amber-400/20 px-3 py-1.5 text-xs font-bold text-amber-100 ring-1 ring-amber-300/30">

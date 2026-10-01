@@ -18,11 +18,30 @@ class DashboardService
     {
         $completed = fn () => $user->transactions()->where('status', Transaction::STATUS_COMPLETED);
 
+        /**
+         * Hanya yang uangnya benar-benar sudah diserahkan mitra.
+         *
+         * Angka utama dasbor berlabel "CUAN diterima", sedangkan sebelumnya ia
+         * menjumlah seluruh transaksi selesai termasuk yang belum dibayar.
+         * Akibatnya kartu yang sama menyebut sejumlah uang sebagai diterima
+         * dan, beberapa baris di bawahnya, menyebut sebagian darinya masih
+         * akan dibayarkan.
+         */
+        $dibayar = fn () => $completed()->where('payment_status', 'paid');
+
         return [
             'total_liter' => (float) $completed()->sum('actual_liter'),
-            'total_value' => (int) $completed()->sum('total_value'),
+            'paid_value' => (int) $dibayar()->sum('total_value'),
+            'paid_liter' => (float) $dibayar()->sum('actual_liter'),
             'month_liter' => (float) $completed()->where('created_at', '>=', now()->startOfMonth())->sum('actual_liter'),
-            'unpaid_value' => (int) $completed()->where('payment_status', 'unpaid')->sum('total_value'),
+            /**
+             * Yang belum dibayar mencakup payment_status kosong, bukan hanya
+             * yang bertanda "unpaid". Tanpa itu, transaksi selesai yang
+             * statusnya belum terisi hilang dari kedua angka sekaligus.
+             */
+            'unpaid_value' => (int) $completed()
+                ->where(fn ($query) => $query->where('payment_status', '!=', 'paid')->orWhereNull('payment_status'))
+                ->sum('total_value'),
             'total_transactions' => $user->transactions()->count(),
             'current_price' => OilPrice::current(),
             'active_transactions' => $user->transactions()
