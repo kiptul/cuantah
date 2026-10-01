@@ -97,6 +97,22 @@ class TransactionService
                 'type' => 'transaction',
             ]);
 
+            /**
+             * Mitra ikut diberi tahu. Sebelumnya hanya penyetor yang menerima
+             * kabar, sehingga pihak yang justru harus menindaklanjuti tidak
+             * pernah tahu ada setoran masuk. Drop-off bahkan tidak muncul di
+             * daftar pickup sampai barcode-nya discan, jadi tanpa pesan ini
+             * mitra tidak punya satu pun jalan untuk mengetahuinya.
+             */
+            $this->notifyPartnerAdmins(
+                $transaction,
+                'Setoran baru masuk',
+                $isPickup
+                    ? $user->name.' meminta penjemputan '.$transaction->code.' pada '
+                        .$transaction->pickup->pickup_date->translatedFormat('d M').'. Tugaskan karyawan untuk menjemputnya.'
+                    : $user->name.' akan mengantar sendiri setoran '.$transaction->code.' ke mitra.',
+            );
+
             return $transaction->load('pickup.partner', 'partner');
         });
     }
@@ -118,6 +134,24 @@ class TransactionService
                 'user_id' => $pickup->transaction->user_id,
                 'title' => 'Pickup dijadwalkan',
                 'message' => 'Pickup '.$pickup->transaction->code.' sudah di-assign ke karyawan CUANTAH.',
+                'type' => 'pickup',
+            ]);
+
+            /**
+             * Karyawannya sendiri ikut diberi tahu. Sebelumnya tugas muncul di
+             * dasbornya tanpa pemberitahuan apa pun, sehingga ia hanya tahu
+             * bila kebetulan membuka halaman itu.
+             *
+             * Tidak dikirim pada claimPickup: di sana karyawan yang mengambil
+             * sendiri, dan mengabari seseorang tentang tindakannya sendiri
+             * hanya menambah kebisingan.
+             */
+            Notification::create([
+                'user_id' => $employeeId,
+                'title' => 'Pickup ditugaskan kepadamu',
+                'message' => 'Jemput '.$pickup->transaction->code.' di '.$pickup->address
+                    .($pickup->pickup_date ? ' pada '.$pickup->pickup_date->translatedFormat('d M') : '')
+                    .($pickup->pickup_time ? ', '.substr((string) $pickup->pickup_time, 0, 5) : '').'.',
                 'type' => 'pickup',
             ]);
 
@@ -318,6 +352,20 @@ class TransactionService
                 'message' => 'Kamu membatalkan transaksi '.$transaction->code.'.',
                 'type' => 'transaction',
             ]);
+
+            /**
+             * Karyawan yang sudah ditugaskan ikut diberi tahu. Tanpa pesan ini
+             * ia dapat berkendara ke alamat yang setorannya sudah dibatalkan,
+             * sebab tugasnya hilang dari dasbor tanpa meninggalkan jejak.
+             */
+            if ($transaction->pickup?->assigned_user_id) {
+                Notification::create([
+                    'user_id' => $transaction->pickup->assigned_user_id,
+                    'title' => 'Penjemputan dibatalkan',
+                    'message' => 'Penyetor membatalkan '.$transaction->code.'. Tidak perlu berangkat ke '.$transaction->pickup->address.'.',
+                    'type' => 'pickup',
+                ]);
+            }
 
             return $transaction->refresh();
         });
