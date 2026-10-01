@@ -155,9 +155,16 @@
     </section>
 
     <section class="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-900/5">
-        <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-3.5">
+        <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-slate-100 px-5 py-3.5">
             <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Baru saya selesaikan</h2>
-            <span class="text-xs font-bold text-slate-400">{{ $total_count }} total</span>
+            {{-- Angkanya menyebut satuan dan rentangnya. "1 total" tidak
+                 mengatakan total apa, dan daftar di bawahnya hanya memuat lima
+                 terbaru sehingga rentangnya pun tidak terbaca dari isinya.
+                 Disembunyikan saat nol, sebab keadaan kosong di bawah sudah
+                 mengatakan hal yang sama. --}}
+            @if($total_count > 0)
+                <span class="text-xs font-bold text-slate-500">{{ $total_count }} setoran sepanjang waktu</span>
+            @endif
         </div>
         <div class="divide-y divide-slate-100">
             @forelse($recent_completions as $transaction)
