@@ -78,7 +78,7 @@
                 </div>
             @else
                 <form method="post" action="{{ route('employee.transactions.verify', $transaction) }}" class="space-y-4 border-t border-slate-100 pt-5"
-                      data-complete-form data-price="{{ $transaction->price_per_liter }}" data-fee="{{ $transaction->pickup_fee }}">
+                      data-complete-form data-price="{{ $transaction->price_per_liter }}" data-fee="{{ $transaction->pickup_fee }}" data-code="{{ $transaction->code }}">
                     @csrf
                     <div>
                         <p class="text-xs font-black uppercase tracking-[0.12em] text-emerald-700">Form penjemputan</p>
@@ -140,6 +140,37 @@
                         };
                         liter.addEventListener('input', render);
                         render();
+
+                        /**
+                         * Konfirmasi sebelum transaksi ditutup. Aksi ini tidak
+                         * bisa dibatalkan, dan satu-satunya jalan keluar bagi
+                         * penyetor adalah menyanggah dalam tiga hari.
+                         *
+                         * Pesannya menyebutkan angka yang akan tercatat, bukan
+                         * sekadar bertanya yakin atau tidak. Bahaya yang nyata
+                         * di sini adalah salah ketik volume, dan pertanyaan
+                         * umum tidak akan menangkapnya.
+                         */
+                        form.addEventListener('submit', (event) => {
+                            const value = parseFloat(liter.value);
+
+                            // Isian tidak sah dibiarkan ditangani validasi bawaan.
+                            if (! Number.isFinite(value) || value <= 0) {
+                                return;
+                            }
+
+                            const volume = value.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            // Satu baris, tanpa escape baris baru: lapisan
+                            // kutip Blade dan JS mudah membuatnya tertulis
+                            // sebagai baris baru sungguhan dan merusak skripnya.
+                            const pesan = 'Selesaikan ' + form.dataset.code + '? '
+                                + 'Volume ' + volume + ' L, penyetor menerima ' + total.textContent + '. '
+                                + 'Transaksi tidak bisa diubah setelah ini.';
+
+                            if (! window.confirm(pesan)) {
+                                event.preventDefault();
+                            }
+                        });
                     });
                 </script>
             @endif

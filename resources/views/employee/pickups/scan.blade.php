@@ -51,6 +51,7 @@
         const startButton = document.getElementById('startScanner');
         const codeInput = document.getElementById('codeInput');
         const form = document.getElementById('scanForm');
+        const submitButton = form.querySelector('button[type=submit], button:not([type])');
         let controls = null;
         let scanning = false;
 
@@ -83,9 +84,17 @@
                     scanning = false;
                     const code = result.getText();
                     codeInput.value = code;
-                    statusText.textContent = `Barcode terbaca: ${code}`;
                     controls?.stop();
-                    form.submit();
+
+                    /**
+                     * Tidak langsung dikirim. Pemindaian menugaskan transaksi
+                     * itu kepada karyawan yang memindainya, dan barcode yang
+                     * salah terbaca akan menugaskan transaksi orang lain tanpa
+                     * sempat dilihat. Kodenya ditampilkan lebih dulu agar bisa
+                     * dicocokkan dengan yang tertera di layar penyetor.
+                     */
+                    statusText.textContent = `Barcode terbaca: ${code}. Cocokkan dengan kode di layar penyetor, lalu tekan tombol di bawah.`;
+                    submitButton?.focus();
                 }
             });
         }
