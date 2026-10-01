@@ -124,6 +124,28 @@ class Transaction extends Model
     }
 
     /**
+     * Tahapan yang sedang dijalani transaksi, bernilai 0 sampai 2.
+     *
+     * Penanda kemajuan di dasbor penyetor sebelumnya menyimpulkan tahapan dari
+     * ada-tidaknya karyawan yang ditugaskan, bukan dari status transaksinya.
+     * Penugasan bukan kemajuan: begitu seorang karyawan mengambil jadwal,
+     * penanda melompat ke tahap terakhir, sehingga setoran yang penjemputannya
+     * masih dua hari lagi tampak hampir selesai.
+     *
+     * picked_up dan verification ikut dipetakan meski alur sekarang tidak
+     * pernah menuliskannya, supaya penanda tidak diam-diam mundur ke tahap
+     * awal bila keduanya dipakai kembali.
+     */
+    public function progressStep(): int
+    {
+        return match ($this->status) {
+            self::STATUS_SCHEDULED, self::STATUS_PICKED_UP => 1,
+            self::STATUS_VERIFICATION, self::STATUS_COMPLETED => 2,
+            default => 0,
+        };
+    }
+
+    /**
      * Nilai yang benar-benar menjadi hak penyetor, atau null bila tidak ada.
      *
      * Transaksi yang ditolak maupun dibatalkan tidak pernah berujung

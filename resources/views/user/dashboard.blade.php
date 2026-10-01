@@ -78,7 +78,7 @@
                     @php
                         $isPickup = $transaction->method === \App\Models\Transaction::METHOD_PICKUP;
                         $employee = $transaction->pickup?->assignedUser;
-                        $step = $employee ? 2 : 1;
+                        $step = $transaction->progressStep();
                         $steps = ['Diajukan', $isPickup ? 'Dijemput karyawan' : 'Dipindai di mitra', 'Selesai'];
                     @endphp
                     <a href="{{ route('transactions.show', $transaction) }}" class="group rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5 transition hover:ring-emerald-300">
@@ -97,7 +97,7 @@
 
                         <ol class="mt-5 grid grid-cols-3 gap-2" aria-label="Kemajuan setoran">
                             @foreach($steps as $index => $label)
-                                <li>
+                                <li @if($index === $step) aria-current="step" @endif>
                                     <span @class([
                                         'block h-1.5 rounded-full',
                                         'bg-emerald-600' => $index < $step,
