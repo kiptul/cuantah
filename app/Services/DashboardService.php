@@ -30,6 +30,14 @@ class DashboardService
     private const ACTIVE_SHOWN = 4;
 
     /**
+     * Banyaknya tugas karyawan yang ditampilkan di dasbor.
+     *
+     * Lebih longgar daripada milik penyetor sebab karyawan memang wajar
+     * memegang beberapa penjemputan sekaligus dalam satu hari.
+     */
+    private const TASKS_SHOWN = 6;
+
+    /**
      * @return array<string, mixed>
      */
     public function userSummary(User $user): array
@@ -102,6 +110,22 @@ class DashboardService
     }
 
     /**
+     * Tugas karyawan yang belum berakhir, dipakai daftar sekaligus
+     * perhitungannya.
+     *
+     * Jumlah dan daftarnya wajib berasal dari kueri yang sama. Angka besar
+     * "Tugas terbuka" di dasbor sebelumnya menghitung koleksi yang
+     * ditampilkan, sehingga begitu daftarnya dibatasi ia ikut berbohong.
+     */
+    private function taskQuery(User $employee): Builder
+    {
+        return Transaction::query()
+            ->join('pickups', 'pickups.transaction_id', '=', 'transactions.id')
+            ->where('pickups.assigned_user_id', $employee->id)
+            ->whereNotIn('transactions.status', Transaction::FINAL_STATUSES);
+    }
+
+    /**
      * Setoran yang belum berakhir, dipakai daftar sekaligus perhitungannya.
      *
      * @return HasMany<Transaction, User>
@@ -139,17 +163,16 @@ class DashboardService
              * Tugas terbuka diurutkan menurut jadwal penyetor. Drop-off tidak
              * berjadwal sehingga diletakkan sesudahnya.
              */
-            'tasks' => Transaction::query()
+            'tasks' => $this->taskQuery($employee)
                 ->with('user', 'pickup')
-                ->join('pickups', 'pickups.transaction_id', '=', 'transactions.id')
-                ->where('pickups.assigned_user_id', $employee->id)
-                ->whereNotIn('transactions.status', Transaction::FINAL_STATUSES)
                 ->select('transactions.*')
                 ->orderByRaw('pickups.pickup_date is null')
                 ->orderBy('pickups.pickup_date')
                 ->orderBy('pickups.pickup_time')
                 ->oldest('transactions.created_at')
+                ->limit(self::TASKS_SHOWN)
                 ->get(),
+            'tasks_count' => $this->taskQuery($employee)->count(),
             'available_count' => Pickup::query()
                 ->visibleTo($employee)
                 ->whereNull('assigned_user_id')

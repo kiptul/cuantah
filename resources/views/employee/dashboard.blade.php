@@ -26,7 +26,7 @@
         <div class="relative overflow-hidden rounded-2xl bg-emerald-800 p-5 text-white shadow-lg shadow-emerald-900/20">
             <div class="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-emerald-600/40 blur-2xl" aria-hidden="true"></div>
             <p class="relative text-xs font-bold uppercase tracking-[0.16em] text-emerald-200">Tugas terbuka</p>
-            <p class="relative mt-3 text-4xl font-black tabular-nums">{{ $tasks->count() }}</p>
+            <p class="relative mt-3 text-4xl font-black tabular-nums">{{ $tasks_count }}</p>
             <p class="relative mt-1 text-xs text-emerald-100/90">{{ $available_count }} pickup lain menunggu diambil.</p>
         </div>
         <x-stat-card label="Selesai hari ini" :value="$today_count"
@@ -43,7 +43,7 @@
             <a href="{{ route('employee.transactions.index') }}" class="text-sm font-bold text-emerald-700 transition hover:text-emerald-900">Semua transaksi</a>
         </div>
 
-        @if($tasks->isEmpty())
+        @if($tasks_count === 0)
             <div class="mt-3 rounded-2xl bg-white px-5 py-12 text-center shadow-sm ring-1 ring-slate-900/5">
                 <p class="font-bold text-slate-900">Tidak ada tugas terbuka</p>
                 <p class="mx-auto mt-1.5 max-w-xs text-sm leading-6 text-slate-500">Ambil pickup dari daftar yang tersedia, atau scan barcode penyetor yang datang ke mitra.</p>
@@ -109,6 +109,16 @@
                     </div>
                 @endforeach
             </div>
+            @if($tasks_count > $tasks->count())
+                {{-- Sisanya disebut jumlahnya. Tugas yang tidak tertampil tetap
+                     menjadi tanggung jawab karyawan, jadi memotongnya tanpa
+                     keterangan menyembunyikan pekerjaan yang harus dikerjakan. --}}
+                <a href="{{ route('employee.transactions.index') }}"
+                   class="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-slate-900/5 transition hover:text-slate-900 hover:ring-slate-900/15">
+                    {{ $tasks_count - $tasks->count() }} tugas lain belum tertampil
+                    <span aria-hidden="true">&rarr;</span>
+                </a>
+            @endif
         @endif
     </section>
 
