@@ -163,9 +163,15 @@ class DashboardService
             'month_liter' => (float) $completed()->where('completed_at', '>=', now()->startOfMonth())->sum('actual_liter'),
             'total_count' => $completed()->count(),
             'total_liter' => (float) $completed()->sum('actual_liter'),
+            /**
+             * Diurutkan menurut waktu selesai, bukan waktu sentuh terakhir.
+             * Dengan updated_at, transaksi lama yang disunting admin melompat
+             * ke puncak daftar "Baru saya selesaikan" meski tidak ada yang
+             * baru diselesaikan.
+             */
             'recent_completions' => $completed()
                 ->with('user')
-                ->latest('updated_at')
+                ->latest('completed_at')
                 ->limit(5)
                 ->get(),
         ];

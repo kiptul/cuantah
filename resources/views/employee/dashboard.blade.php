@@ -122,7 +122,13 @@
                 <a href="{{ route('employee.transactions.show', $transaction) }}" class="flex items-center gap-4 px-5 py-3.5 transition hover:bg-slate-50">
                     <div class="min-w-0 flex-1">
                         <p class="truncate text-sm font-bold text-slate-900">{{ $transaction->user->name }}</p>
-                        <p class="mt-0.5 text-xs text-slate-500">{{ $transaction->updated_at->diffForHumans() }} &middot; {{ $transaction->method === 'pickup' ? 'Jemput' : 'Antar' }}</p>
+                        {{-- Waktu selesai, bukan waktu sentuh terakhir. Kartu
+                             statistik di atas sudah memakai completed_at, jadi
+                             updated_at di sini membuat dua angka pada satu
+                             layar saling membantah. --}}
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            @if($transaction->completed_at){{ $transaction->completed_at->diffForHumans() }} &middot; @endif{{ $transaction->method === 'pickup' ? 'Jemput' : 'Antar' }}
+                        </p>
                     </div>
                     <div class="shrink-0 text-right">
                         <p class="text-sm font-black tabular-nums text-slate-900">{{ number_format($transaction->actual_liter, 2, ',', '.') }} L</p>
