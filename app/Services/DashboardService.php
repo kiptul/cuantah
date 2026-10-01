@@ -22,6 +22,14 @@ class DashboardService
     private const DISPUTABLE_SHOWN = 3;
 
     /**
+     * Banyaknya setoran berjalan yang ditampilkan di dasbor.
+     *
+     * Daftarnya sebelumnya tanpa batas, sehingga penyetor dengan tiga puluh
+     * setoran berjalan mendapat tiga puluh kartu sebelum sampai ke riwayat.
+     */
+    private const ACTIVE_SHOWN = 4;
+
+    /**
      * @return array<string, mixed>
      */
     public function userSummary(User $user): array
@@ -60,11 +68,12 @@ class DashboardService
              */
             'completed_transactions' => $completed()->count(),
             'current_price' => OilPrice::current(),
-            'active_transactions' => $user->transactions()
-                ->whereNotIn('status', Transaction::FINAL_STATUSES)
+            'active_transactions' => $this->activeQuery($user)
                 ->with('partner', 'pickup.assignedUser')
                 ->latest()
+                ->limit(self::ACTIVE_SHOWN)
                 ->get(),
+            'active_count' => $this->activeQuery($user)->count(),
             'latest_transactions' => $user->transactions()
                 ->whereIn('status', Transaction::FINAL_STATUSES)
                 ->latest()
@@ -90,6 +99,16 @@ class DashboardService
             ->latest('completed_at')
             ->limit(self::DISPUTABLE_SHOWN)
             ->get();
+    }
+
+    /**
+     * Setoran yang belum berakhir, dipakai daftar sekaligus perhitungannya.
+     *
+     * @return HasMany<Transaction, User>
+     */
+    private function activeQuery(User $user): HasMany
+    {
+        return $user->transactions()->whereNotIn('status', Transaction::FINAL_STATUSES);
     }
 
     /**

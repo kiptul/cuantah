@@ -56,7 +56,7 @@
             </x-stat-card>
 
             <x-stat-card label="Setoran selesai" :value="$completed_transactions"
-                         :hint="$active_transactions->isNotEmpty() ? $active_transactions->count().' sedang berjalan.' : 'Tidak ada yang sedang berjalan.'">
+                         :hint="$active_count > 0 ? $active_count.' sedang berjalan.' : 'Tidak ada yang sedang berjalan.'">
                 <x-slot:icon>
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M5 4h14v16l-3.5-2-3.5 2-3.5-2L5 20V4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
@@ -70,9 +70,12 @@
     {{-- Setoran yang masih berjalan dengan tiga langkah saja: diajukan,
          ditangani karyawan, selesai. Begitu karyawan mengirim form
          penjemputan, transaksi langsung selesai tanpa konfirmasi ulang. --}}
-    @if($active_transactions->isNotEmpty())
+    @if($active_count > 0)
         <section class="mt-6">
-            <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Setoran berjalan</h2>
+            <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Setoran berjalan</h2>
+                <p class="text-sm font-bold text-slate-500">{{ $active_count }} setoran</p>
+            </div>
             <div class="mt-3 grid gap-4 md:grid-cols-2">
                 @foreach($active_transactions as $transaction)
                     @php
@@ -128,6 +131,15 @@
                     </a>
                 @endforeach
             </div>
+            @if($active_count > $active_transactions->count())
+                {{-- Sisanya disebut jumlahnya, bukan dibiarkan memanjangkan
+                     halaman sampai riwayat terdorong jauh ke bawah. --}}
+                <a href="{{ route('transactions.index') }}"
+                   class="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-slate-900/5 transition hover:text-slate-900 hover:ring-slate-900/15">
+                    {{ $active_count - $active_transactions->count() }} setoran lain juga sedang berjalan
+                    <span aria-hidden="true">&rarr;</span>
+                </a>
+            @endif
         </section>
     @endif
 
@@ -203,7 +215,7 @@
                 </a>
             @empty
                 <div class="px-5 py-12 text-center">
-                    @if($active_transactions->isEmpty())
+                    @if($active_count === 0)
                         <p class="font-bold text-slate-900">Belum ada transaksi</p>
                         <p class="mx-auto mt-1.5 max-w-xs text-sm leading-6 text-slate-500">Setoran pertamamu akan muncul di sini beserta nilai CUAN yang kamu terima.</p>
                         <a href="{{ route('deposits.create') }}" class="mt-5 inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-emerald-900/20 transition hover:bg-emerald-800">
