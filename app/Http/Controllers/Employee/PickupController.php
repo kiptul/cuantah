@@ -119,6 +119,38 @@ class PickupController extends Controller
     }
 
     /**
+     * Menolak setoran yang tidak memenuhi kriteria, langsung dari lokasi.
+     *
+     * Sebelumnya karyawan yang tiba di tempat dan menemukan jelantah
+     * bercampur air tidak punya jalan keluar: menyelesaikan transaksi berarti
+     * membayar barang yang ditolak, membiarkannya berarti tugas menggantung,
+     * dan penyetor pun sudah tidak bisa membatalkan sebab statusnya bukan
+     * lagi menunggu.
+     */
+    public function reject(Request $request, Transaction $transaction, TransactionService $service)
+    {
+        $this->ensureAssigned($transaction);
+
+        /**
+         * Alasan diwajibkan, sama seperti penolakan oleh admin. Tanpa itu
+         * penyetor hanya tahu setorannya gagal dan tidak tahu apa yang perlu
+         * diperbaiki pada setoran berikutnya.
+         */
+        $data = $request->validate([
+            'rejection_reason' => ['required', 'string', 'min:5', 'max:500'],
+        ], [
+            'rejection_reason.required' => 'Sebutkan alasan penolakan agar penyetor tahu apa yang perlu diperbaiki.',
+            'rejection_reason.min' => 'Alasan terlalu singkat untuk bisa dipahami penyetor.',
+        ]);
+
+        $service->reject($transaction, $data['rejection_reason'], $request->user());
+
+        return redirect()
+            ->route('employee.dashboard')
+            ->with('success', 'Setoran '.$transaction->code.' ditolak. Penyetor sudah diberi tahu alasannya.');
+    }
+
+    /**
      * Rute karyawan juga terbuka bagi admin, tetapi admin tetap terikat pada
      * mitranya sendiri. Tanpa pengikatan itu, admin mitra A bisa membuka dan
      * memverifikasi transaksi mitra B lewat jalur ini, padahal rute admin

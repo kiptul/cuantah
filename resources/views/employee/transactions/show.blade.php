@@ -120,6 +120,30 @@
 
                     <button class="w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-black text-white shadow-sm shadow-emerald-900/20 transition hover:bg-emerald-800">Kirim &amp; Selesaikan</button>
                 </form>
+
+                {{-- Penolakan diletakkan terpisah di balik rincian yang harus
+                     dibuka sendiri. Dua tombol yang sama-sama menutup transaksi
+                     tetapi dengan akibat berlawanan tidak boleh bersebelahan
+                     dan serupa; yang satu membayar penyetor, yang satu lagi
+                     memulangkan jelantahnya. --}}
+                <details class="mt-5 border-t border-slate-100 pt-5">
+                    <summary class="cursor-pointer list-none text-sm font-bold text-rose-700 hover:text-rose-900">
+                        Jelantahnya tidak memenuhi kriteria?
+                    </summary>
+                    <form method="post" action="{{ route('employee.transactions.reject', $transaction) }}" class="mt-3 space-y-3" data-reject-form data-code="{{ $transaction->code }}">
+                        @csrf
+                        <label for="rejection_reason" class="block text-sm font-bold text-slate-700">Alasan penolakan</label>
+                        <textarea id="rejection_reason" name="rejection_reason" rows="2" minlength="5" maxlength="500" required
+                                  placeholder="Contoh: jelantah bercampur air dan sisa makanan."
+                                  class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-rose-400 focus:ring-4 focus:ring-rose-100" data-reason>{{ old('rejection_reason') }}</textarea>
+                        @error('rejection_reason')
+                            <p class="text-xs font-semibold text-rose-700">{{ $message }}</p>
+                        @enderror
+                        <p class="text-xs leading-5 text-slate-500">Penyetor akan menerima alasan ini, dan transaksinya tidak bisa dilanjutkan lagi.</p>
+                        <button class="w-full rounded-xl border border-rose-300 px-4 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50">Tolak Setoran</button>
+                    </form>
+                </details>
+
                 <script>
                     document.addEventListener('DOMContentLoaded', () => {
                         const form = document.querySelector('[data-complete-form]');
@@ -166,6 +190,31 @@
                             const pesan = 'Selesaikan ' + form.dataset.code + '? '
                                 + 'Volume ' + volume + ' L, penyetor menerima ' + total.textContent + '. '
                                 + 'Transaksi tidak bisa diubah setelah ini.';
+
+                            if (! window.confirm(pesan)) {
+                                event.preventDefault();
+                            }
+                        });
+
+                        // Penolakan juga tidak bisa dibatalkan, jadi diberi jeda
+                        // yang sama dan pesannya membacakan alasan yang diketik.
+                        const rejectForm = document.querySelector('[data-reject-form]');
+                        const reason = rejectForm?.querySelector('[data-reason]');
+
+                        rejectForm?.addEventListener('submit', (event) => {
+                            const alasan = (reason.value || '').trim();
+
+                            if (alasan.length < 5) {
+                                return;
+                            }
+
+                            // Titik di ujung alasan dibuang lebih dulu, supaya
+                            // kalimatnya tidak berakhir dengan titik ganda.
+                            const alasanRapi = alasan.replace(/[.\s]+$/, '');
+
+                            const pesan = 'Tolak ' + rejectForm.dataset.code + '? '
+                                + 'Alasan: ' + alasanRapi + '. '
+                                + 'Penyetor akan diberi tahu dan transaksi tidak bisa dilanjutkan.';
 
                             if (! window.confirm(pesan)) {
                                 event.preventDefault();

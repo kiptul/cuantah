@@ -65,6 +65,7 @@ Route::middleware(['auth', 'employee'])->prefix('employee')->name('employee.')->
     Route::get('/transactions', [EmployeePickupController::class, 'transactions'])->name('transactions.index');
     Route::get('/transactions/{transaction}', [EmployeePickupController::class, 'show'])->name('transactions.show');
     Route::post('/transactions/{transaction}/verify', [EmployeePickupController::class, 'verify'])->name('transactions.verify');
+    Route::post('/transactions/{transaction}/reject', [EmployeePickupController::class, 'reject'])->name('transactions.reject');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {

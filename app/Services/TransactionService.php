@@ -377,11 +377,11 @@ class TransactionService
      * Sebelumnya penyetor hanya menerima pesan generik, sehingga ia tidak
      * pernah tahu apa yang perlu diperbaiki pada setoran berikutnya.
      */
-    public function reject(Transaction $transaction, ?string $reason = null): Transaction
+    public function reject(Transaction $transaction, ?string $reason = null, ?User $penolak = null): Transaction
     {
         $this->pastikanBelumFinal($transaction, 'ditolak');
 
-        return DB::transaction(function () use ($transaction, $reason) {
+        return DB::transaction(function () use ($transaction, $reason, $penolak) {
             $transaction->update([
                 'status' => Transaction::STATUS_REJECTED,
                 'rejection_reason' => $reason,
@@ -396,6 +396,21 @@ class TransactionService
                     : 'Transaksi '.$transaction->code.' tidak dapat diproses.',
                 'type' => 'transaction',
             ]);
+
+            /**
+             * Penolakan di lapangan ikut dikabarkan ke admin mitra. Merekalah
+             * yang perlu tahu ada penjemputan yang gagal tanpa harus memeriksa
+             * daftar sendiri. Penolakan oleh admin tidak mengirim kabar ini,
+             * sebab mengabari seseorang tentang tindakannya sendiri hanya
+             * menambah kebisingan.
+             */
+            if ($penolak !== null) {
+                $this->notifyPartnerAdmins(
+                    $transaction,
+                    'Setoran ditolak di lapangan',
+                    $penolak->name.' menolak '.$transaction->code.'.'.($reason ? ' Alasan: '.$reason : ''),
+                );
+            }
 
             return $transaction->refresh();
         });
