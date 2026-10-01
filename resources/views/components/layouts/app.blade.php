@@ -18,16 +18,23 @@
                     default => route('dashboard'),
                 };
             @endphp
+            @php
+                $adalahPenyetor = ! auth()->user()?->isAdmin() && ! auth()->user()?->isEmployee();
+            @endphp
             <a href="{{ $homeRoute }}" class="flex items-center gap-2.5 font-black text-emerald-800">
-                @if(auth()->user()?->isAdmin())
-                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-700 text-white shadow-sm shadow-emerald-900/20">C</span>
-                @endif
-                <span>
-                    <span class="block leading-none">CUANTAH</span>
+                @if($adalahPenyetor)
+                    <x-brand-lockup />
+                @else
                     @if(auth()->user()?->isAdmin())
-                        <span class="mt-1 block text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700/70">Admin panel</span>
+                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-700 text-white shadow-sm shadow-emerald-900/20">C</span>
                     @endif
-                </span>
+                    <span>
+                        <span class="block leading-none">CUANTAH</span>
+                        @if(auth()->user()?->isAdmin())
+                            <span class="mt-1 block text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700/70">Admin panel</span>
+                        @endif
+                    </span>
+                @endif
             </a>
             <div class="flex max-w-full items-center gap-2 overflow-x-auto text-sm">
                 @if(auth()->user()?->isAdmin())
