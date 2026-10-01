@@ -99,6 +99,11 @@
                         </div>
                         <p class="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">{{ $task->pickup?->address }}</p>
                         <p class="mt-1 text-sm font-bold tabular-nums text-slate-900">± {{ number_format($task->estimated_liter, 2, ',', '.') }} L</p>
+                        {{-- Mitra tujuan. Seorang karyawan dapat terhubung ke
+                             lebih dari satu mitra, dan tanpa baris ini kartunya
+                             menyebut dari mana jelantah diambil tetapi tidak ke
+                             mana ia harus disetorkan. --}}
+                        <p class="mt-0.5 text-xs text-slate-500">Setor ke {{ $task->partner?->name ?? 'mitra belum ditentukan' }}</p>
                         <div class="mt-4 flex gap-2">
                             <a href="{{ route('employee.transactions.show', $task) }}"
                                class="inline-flex flex-1 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800">

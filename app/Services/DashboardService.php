@@ -164,7 +164,7 @@ class DashboardService
              * berjadwal sehingga diletakkan sesudahnya.
              */
             'tasks' => $this->taskQuery($employee)
-                ->with('user', 'pickup')
+                ->with('user', 'pickup', 'partner')
                 ->select('transactions.*')
                 ->orderByRaw('pickups.pickup_date is null')
                 ->orderBy('pickups.pickup_date')
