@@ -10,9 +10,11 @@
 
     <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
         <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
-            <div id="employee-map" class="h-[360px] rounded-lg border border-slate-200"></div>
+            @if($transaction->pickup)
+                <div id="employee-map" class="h-[360px] rounded-lg border border-slate-200"></div>
+            @endif
             <p class="mt-4 font-bold">Lokasi</p>
-            <p class="mt-1 text-sm text-slate-600">{{ $transaction->pickup?->address }}</p>
+            <p class="mt-1 text-sm text-slate-600">{{ $transaction->pickup?->address ?? 'Lokasi belum tercatat.' }}</p>
             @if($transaction->pickup)
                 <a target="_blank" class="mt-3 inline-flex rounded-md border border-slate-300 px-3 py-2 text-sm font-bold" href="https://www.google.com/maps?q={{ $transaction->pickup->latitude }},{{ $transaction->pickup->longitude }}">Buka Navigasi</a>
             @endif
@@ -109,7 +111,11 @@
 
                     <div class="flex items-baseline justify-between rounded-xl bg-emerald-50 px-4 py-3">
                         <span class="text-sm font-bold text-emerald-900">Diterima penyetor</span>
-                        <span class="text-lg font-black tabular-nums text-emerald-800" data-total>Rp{{ number_format($transaction->estimated_total, 0, ',', '.') }}</span>
+                        {{-- Dibiarkan kosong sampai volume diisi. Memulai dengan
+                             estimasi membuat angka perkiraan berdiri di bawah
+                             label "Diterima penyetor", dan karyawan dapat
+                             menyebutkannya sebelum apa pun ditimbang. --}}
+                        <span class="text-lg font-black tabular-nums text-emerald-800" data-total>&mdash;</span>
                     </div>
 
                     <button class="w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-black text-white shadow-sm shadow-emerald-900/20 transition hover:bg-emerald-800">Kirim &amp; Selesaikan</button>
@@ -123,7 +129,13 @@
                         const fee = Number(form.dataset.fee);
                         const render = () => {
                             const value = parseFloat(liter.value);
-                            if (Number.isNaN(value)) return;
+                            // Isian kosong atau tidak sah mengosongkan angkanya.
+                            // Sebelumnya nilai lama dibiarkan bertahan, sehingga
+                            // angka yang tampil tidak lagi berasal dari isi kolom.
+                            if (! Number.isFinite(value) || value <= 0) {
+                                total.textContent = '—';
+                                return;
+                            }
                             total.textContent = 'Rp' + Math.max(Math.round(value * price) - fee, 0).toLocaleString('id-ID');
                         };
                         liter.addEventListener('input', render);
