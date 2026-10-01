@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-@plugin 'daisyui';
 
 /* DaisyUI dipasang sebagai plugin, bukan ditarik dari CDN. Sebelumnya
    halaman publik bergantung pada jsdelivr: bila layanannya lambat atau
