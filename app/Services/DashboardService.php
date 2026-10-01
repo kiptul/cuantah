@@ -7,10 +7,20 @@ use App\Models\Pickup;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 
 class DashboardService
 {
+    /**
+     * Banyaknya setoran yang bisa disanggah yang ditampilkan di dasbor.
+     *
+     * Sisanya tidak disembunyikan diam-diam melainkan disebut jumlahnya,
+     * sebab hak menyanggah hangus dalam tiga hari dan penyetor tidak punya
+     * cara lain mengetahui bahwa masih ada yang menunggu.
+     */
+    private const DISPUTABLE_SHOWN = 3;
+
     /**
      * @return array<string, mixed>
      */
@@ -55,6 +65,7 @@ class DashboardService
                 ->limit(5)
                 ->get(),
             'disputable' => $this->disputable($user),
+            'disputable_count' => $this->disputableQuery($user)->count(),
         ];
     }
 
@@ -69,13 +80,24 @@ class DashboardService
      */
     private function disputable(User $user): Collection
     {
+        return $this->disputableQuery($user)
+            ->latest('updated_at')
+            ->limit(self::DISPUTABLE_SHOWN)
+            ->get();
+    }
+
+    /**
+     * Dasar perhitungan sekaligus daftar, supaya jumlah yang disebut di layar
+     * tidak pernah berasal dari syarat yang berbeda dengan isinya.
+     *
+     * @return HasMany<Transaction, User>
+     */
+    private function disputableQuery(User $user): HasMany
+    {
         return $user->transactions()
             ->where('status', Transaction::STATUS_COMPLETED)
             ->whereNull('disputed_at')
-            ->where('updated_at', '>', now()->subDays(3))
-            ->latest('updated_at')
-            ->limit(3)
-            ->get();
+            ->where('updated_at', '>', now()->subDays(3));
     }
 
     /**

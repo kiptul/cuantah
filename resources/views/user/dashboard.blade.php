@@ -133,9 +133,12 @@
 
     @if($disputable->isNotEmpty())
         <section class="mt-6 overflow-hidden rounded-2xl bg-amber-50 shadow-sm ring-1 ring-amber-900/10">
-            <div class="border-b border-amber-900/10 px-5 py-3.5">
-                <h2 class="text-sm font-black uppercase tracking-[0.12em] text-amber-900">Baru selesai</h2>
-                <p class="mt-0.5 text-xs text-amber-800">Takaran tidak sesuai? Keberatan bisa diajukan dalam 3 hari.</p>
+            <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-amber-900/10 px-5 py-3.5">
+                <div>
+                    <h2 class="text-sm font-black uppercase tracking-[0.12em] text-amber-900">Baru selesai</h2>
+                    <p class="mt-0.5 text-xs text-amber-800">Takaran tidak sesuai? Keberatan bisa diajukan dalam 3 hari.</p>
+                </div>
+                <p class="text-xs font-bold text-amber-900">{{ $disputable_count }} setoran</p>
             </div>
             <div class="divide-y divide-amber-900/10">
                 @foreach($disputable as $transaction)
@@ -148,6 +151,16 @@
                     </a>
                 @endforeach
             </div>
+            @if($disputable_count > $disputable->count())
+                {{-- Sisanya disebut jumlahnya, tidak dipotong diam-diam. Hak
+                     menyanggah hangus dalam tiga hari, dan tanpa baris ini
+                     penyetor tidak punya cara tahu masih ada yang menunggu. --}}
+                <a href="{{ route('transactions.index') }}"
+                   class="flex items-center justify-between gap-3 border-t border-amber-900/10 px-5 py-3 text-sm font-bold text-amber-900 transition hover:bg-amber-100/60">
+                    {{ $disputable_count - $disputable->count() }} setoran lain juga masih bisa disanggah
+                    <span aria-hidden="true">&rarr;</span>
+                </a>
+            @endif
         </section>
     @endif
 
