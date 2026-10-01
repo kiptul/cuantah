@@ -55,7 +55,7 @@
                 </x-slot:icon>
             </x-stat-card>
 
-            <x-stat-card label="Transaksi" :value="$total_transactions"
+            <x-stat-card label="Setoran selesai" :value="$completed_transactions"
                          :hint="$active_transactions->isNotEmpty() ? $active_transactions->count().' sedang berjalan.' : 'Tidak ada yang sedang berjalan.'">
                 <x-slot:icon>
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">

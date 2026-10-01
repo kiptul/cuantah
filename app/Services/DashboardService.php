@@ -52,7 +52,13 @@ class DashboardService
             'unpaid_value' => (int) $completed()
                 ->where(fn ($query) => $query->where('payment_status', '!=', 'paid')->orWhereNull('payment_status'))
                 ->sum('total_value'),
-            'total_transactions' => $user->transactions()->count(),
+            /**
+             * Hanya yang selesai. Kartu ini berdiri bersebelahan dengan CUAN
+             * diterima dan liter terkumpul, sehingga angkanya terbaca sebagai
+             * pencapaian. Menghitung setoran yang ditolak dan dibatalkan di
+             * dalamnya membuat penolakan tampak seperti keberhasilan.
+             */
+            'completed_transactions' => $completed()->count(),
             'current_price' => OilPrice::current(),
             'active_transactions' => $user->transactions()
                 ->whereNotIn('status', Transaction::FINAL_STATUSES)
