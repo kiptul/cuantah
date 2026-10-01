@@ -44,10 +44,26 @@
         </div>
 
         @if($tasks_count === 0)
+            @php
+                $adaPickup = $available_count > 0;
+            @endphp
+            {{-- Keadaan kosong membaca jumlah pickup yang tersedia. Sebelumnya
+                 ia selalu menyuruh mengambil pickup, bahkan ketika hero tepat
+                 di atasnya sudah menyatakan tidak ada satu pun, dan tombolnya
+                 mengantar ke halaman yang mengulangi hal yang sama. --}}
             <div class="mt-3 rounded-2xl bg-white px-5 py-12 text-center shadow-sm ring-1 ring-slate-900/5">
                 <p class="font-bold text-slate-900">Tidak ada tugas terbuka</p>
-                <p class="mx-auto mt-1.5 max-w-xs text-sm leading-6 text-slate-500">Ambil pickup dari daftar yang tersedia, atau scan barcode penyetor yang datang ke mitra.</p>
-                <a href="{{ route('employee.pickups.available') }}" class="mt-5 inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800">Cari Pickup</a>
+                <p class="mx-auto mt-1.5 max-w-xs text-sm leading-6 text-slate-500">
+                    @if($adaPickup)
+                        {{ $available_count }} pickup menunggu diambil, atau scan barcode penyetor yang datang ke mitra.
+                    @else
+                        Belum ada pickup yang bisa diambil. Penyetor masih bisa datang sendiri ke mitra, scan barcode-nya saat itu terjadi.
+                    @endif
+                </p>
+                <a href="{{ $adaPickup ? route('employee.pickups.available') : route('employee.scan') }}"
+                   class="mt-5 inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800">
+                    {{ $adaPickup ? 'Cari Pickup' : 'Scan Barcode' }}
+                </a>
             </div>
         @else
             <div class="mt-3 grid gap-3 md:grid-cols-2">
