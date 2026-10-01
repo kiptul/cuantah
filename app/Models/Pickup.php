@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class Pickup extends Model
 {
@@ -32,6 +33,42 @@ class Pickup extends Model
             'scanned_at' => 'datetime',
             'assigned_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Apakah tugas ini sudah lewat dari waktunya.
+     *
+     * Penjemputan dinilai dari tanggal yang dijanjikan kepada penyetor.
+     * Drop-off tidak punya tanggal sama sekali, sehingga sebelumnya ia tidak
+     * pernah menua: kartunya tetap berlencana abu-abu berhari-hari meski
+     * jelantahnya sudah ada di mitra dan belum ditimbang.
+     *
+     * Drop-off dinilai dari sejak kapan ia menjadi tanggungan karyawan, yaitu
+     * waktu barcode-nya discan, atau waktu penugasan bila admin menugaskannya
+     * tanpa pemindaian.
+     */
+    public function isOverdue(): bool
+    {
+        if ($this->pickup_date !== null) {
+            return $this->pickup_date->lt(today());
+        }
+
+        return $this->menungguSejak()?->lt(today()) ?? false;
+    }
+
+    /**
+     * Lamanya tugas tanpa tanggal menunggu, dalam hari penuh.
+     */
+    public function daysWaiting(): ?int
+    {
+        $sejak = $this->menungguSejak();
+
+        return $sejak === null ? null : (int) $sejak->diffInDays(today());
+    }
+
+    private function menungguSejak(): ?Carbon
+    {
+        return ($this->scanned_at ?? $this->assigned_at)?->copy()->startOfDay();
     }
 
     public function transaction(): BelongsTo

@@ -69,9 +69,13 @@
             <div class="mt-3 grid gap-3 md:grid-cols-2">
                 @foreach($tasks as $task)
                     @php
-                        $date = $task->pickup?->pickup_date;
-                        $isOverdue = $date && $date->lt(today());
+                        $pickup = $task->pickup;
+                        $date = $pickup?->pickup_date;
+                        $isOverdue = $pickup?->isOverdue() ?? false;
                         $isToday = $date && $date->isToday();
+                        // Hanya untuk tugas tanpa tanggal: drop-off dinilai dari
+                        // berapa lama ia menunggu, bukan dari janji tanggal.
+                        $hariMenunggu = $date ? null : $pickup?->daysWaiting();
                     @endphp
                     <div @class([
                         'flex flex-col rounded-2xl bg-white p-5 shadow-sm ring-1',
@@ -91,7 +95,14 @@
                                 'bg-slate-100 text-slate-700' => ! $isOverdue && ! $isToday,
                             ])>
                                 @if(! $date)
+                                    {{-- Direktif ditulis di baris sendiri. Blade hanya
+                                         mengenali @ bila didahului karakter non-huruf,
+                                         sehingga menempelkannya di belakang kata akan
+                                         tercetak apa adanya sebagai teks. --}}
                                     Antar sendiri
+                                    @if($isOverdue && $hariMenunggu)
+                                        &middot; menunggu {{ $hariMenunggu }} hari
+                                    @endif
                                 @else
                                     {{ $isToday ? 'Hari ini' : ($isOverdue ? 'Terlewat · ' : '').$date->translatedFormat('d M') }}@if($task->pickup->pickup_time), {{ \Illuminate\Support\Str::of($task->pickup->pickup_time)->substr(0, 5) }}@endif
                                 @endif
