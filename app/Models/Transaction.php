@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 
 class Transaction extends Model
 {
@@ -29,6 +30,16 @@ class Transaction extends Model
     public const STATUS_REJECTED = 'rejected';
 
     public const STATUS_CANCELLED = 'cancelled';
+
+    /**
+     * Lamanya penyetor boleh menyanggah takaran, dihitung sejak transaksi
+     * dinyatakan selesai.
+     *
+     * Ditulis sekali di sini karena angkanya dipakai tiga pihak sekaligus:
+     * policy yang mengizinkan, dasbor yang mendaftar, dan teks yang
+     * menjanjikannya kepada penyetor. Ketiganya tidak boleh berbeda.
+     */
+    public const DISPUTE_WINDOW_DAYS = 3;
 
     /**
      * Status akhir: transaksi tidak boleh berpindah lagi dari sini.
@@ -123,6 +134,31 @@ class Transaction extends Model
     public function isFinal(): bool
     {
         return in_array($this->status, self::FINAL_STATUSES, true);
+    }
+
+    /**
+     * Batas akhir penyetor boleh menyanggah takaran.
+     *
+     * Dihitung dari completed_at, bukan updated_at. Dengan updated_at, satu
+     * kali admin menyunting catatan atau menutup sanggahan lain, hitungan
+     * tiga hari dimulai lagi dari nol untuk transaksi yang sudah lama
+     * selesai.
+     */
+    public function disputeDeadline(): ?Carbon
+    {
+        return $this->completed_at?->copy()->addDays(self::DISPUTE_WINDOW_DAYS);
+    }
+
+    /**
+     * Apakah jendela sanggahan masih terbuka.
+     *
+     * Transaksi selesai tanpa completed_at tidak pernah terjadi lewat alur
+     * verifikasi, dan bila toh muncul, lebih aman ditolak daripada dibuka
+     * selamanya.
+     */
+    public function withinDisputeWindow(): bool
+    {
+        return $this->disputeDeadline()?->isFuture() ?? false;
     }
 
     /**

@@ -136,15 +136,22 @@
             <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-amber-900/10 px-5 py-3.5">
                 <div>
                     <h2 class="text-sm font-black uppercase tracking-[0.12em] text-amber-900">Baru selesai</h2>
-                    <p class="mt-0.5 text-xs text-amber-800">Takaran tidak sesuai? Keberatan bisa diajukan dalam 3 hari.</p>
+                    <p class="mt-0.5 text-xs text-amber-800">Takaran tidak sesuai? Keberatan bisa diajukan dalam {{ \App\Models\Transaction::DISPUTE_WINDOW_DAYS }} hari.</p>
                 </div>
                 <p class="text-xs font-bold text-amber-900">{{ $disputable_count }} setoran</p>
             </div>
             <div class="divide-y divide-amber-900/10">
                 @foreach($disputable as $transaction)
                     <a href="{{ route('transactions.show', $transaction) }}" class="flex items-center gap-4 px-5 py-3.5 transition hover:bg-amber-100/60">
-                        <span class="font-mono text-sm font-bold text-amber-950">{{ $transaction->code }}</span>
-                        <span class="ml-auto text-sm font-bold tabular-nums text-amber-900">{{ number_format($transaction->actual_liter, 2, ',', '.') }} L &middot; Rp{{ number_format($transaction->total_value, 0, ',', '.') }}</span>
+                        <span class="min-w-0">
+                            <span class="block font-mono text-sm font-bold text-amber-950">{{ $transaction->code }}</span>
+                            {{-- Tanpa sisa waktu, panel menjanjikan tenggat tetapi
+                                 menyembunyikan posisi tiap setoran di dalamnya. --}}
+                            <span class="mt-0.5 block text-xs text-amber-800">
+                                Sisa {{ $transaction->disputeDeadline()->diffForHumans(['syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE, 'parts' => 1]) }}
+                            </span>
+                        </span>
+                        <span class="ml-auto shrink-0 text-sm font-bold tabular-nums text-amber-900">{{ number_format($transaction->actual_liter, 2, ',', '.') }} L &middot; Rp{{ number_format($transaction->total_value, 0, ',', '.') }}</span>
                         <svg class="h-4 w-4 shrink-0 text-amber-700" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                             <path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>

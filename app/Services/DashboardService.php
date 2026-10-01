@@ -81,7 +81,7 @@ class DashboardService
     private function disputable(User $user): Collection
     {
         return $this->disputableQuery($user)
-            ->latest('updated_at')
+            ->latest('completed_at')
             ->limit(self::DISPUTABLE_SHOWN)
             ->get();
     }
@@ -97,7 +97,7 @@ class DashboardService
         return $user->transactions()
             ->where('status', Transaction::STATUS_COMPLETED)
             ->whereNull('disputed_at')
-            ->where('updated_at', '>', now()->subDays(3));
+            ->where('completed_at', '>', now()->subDays(Transaction::DISPUTE_WINDOW_DAYS));
     }
 
     /**
