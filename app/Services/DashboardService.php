@@ -33,7 +33,7 @@ class DashboardService
             'total_liter' => (float) $completed()->sum('actual_liter'),
             'paid_value' => (int) $dibayar()->sum('total_value'),
             'paid_liter' => (float) $dibayar()->sum('actual_liter'),
-            'month_liter' => (float) $completed()->where('created_at', '>=', now()->startOfMonth())->sum('actual_liter'),
+            'month_liter' => (float) $completed()->where('completed_at', '>=', now()->startOfMonth())->sum('actual_liter'),
             /**
              * Yang belum dibayar mencakup payment_status kosong, bukan hanya
              * yang bertanda "unpaid". Tanpa itu, transaksi selesai yang
@@ -110,10 +110,10 @@ class DashboardService
                     ->where('method', Transaction::METHOD_PICKUP)
                     ->whereNotIn('status', Transaction::FINAL_STATUSES))
                 ->count(),
-            'today_count' => $completed()->whereDate('updated_at', today())->count(),
-            'today_liter' => (float) $completed()->whereDate('updated_at', today())->sum('actual_liter'),
-            'month_count' => $completed()->where('updated_at', '>=', now()->startOfMonth())->count(),
-            'month_liter' => (float) $completed()->where('updated_at', '>=', now()->startOfMonth())->sum('actual_liter'),
+            'today_count' => $completed()->whereDate('completed_at', today())->count(),
+            'today_liter' => (float) $completed()->whereDate('completed_at', today())->sum('actual_liter'),
+            'month_count' => $completed()->where('completed_at', '>=', now()->startOfMonth())->count(),
+            'month_liter' => (float) $completed()->where('completed_at', '>=', now()->startOfMonth())->sum('actual_liter'),
             'total_count' => $completed()->count(),
             'total_liter' => (float) $completed()->sum('actual_liter'),
             'recent_completions' => $completed()

@@ -227,6 +227,7 @@ class TransactionService
                 'payment_status' => $data['payment_status'],
                 'paid_at' => $data['payment_status'] === 'paid' ? now() : null,
                 'status' => Transaction::STATUS_COMPLETED,
+                'completed_at' => now(),
                 'notes' => $data['notes'] ?? $transaction->notes,
             ]);
 
