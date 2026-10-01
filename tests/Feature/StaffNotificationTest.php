@@ -141,20 +141,6 @@ class StaffNotificationTest extends TestCase
         $this->assertContains('Pickup ditugaskan kepadamu', $this->judulUntuk($this->karyawan));
     }
 
-    public function test_karyawan_tidak_dikabari_saat_mengambil_pickup_sendiri(): void
-    {
-        $this->siapkan();
-        $transaksi = $this->setoranJemput();
-
-        app(TransactionService::class)->claimPickup($transaksi->pickup, $this->karyawan);
-
-        $this->assertNotContains(
-            'Pickup ditugaskan kepadamu',
-            $this->judulUntuk($this->karyawan),
-            'Mengabari seseorang tentang tindakannya sendiri hanya menambah kebisingan.'
-        );
-    }
-
     public function test_karyawan_dikabari_saat_setoran_yang_ditugaskan_dibatalkan(): void
     {
         $this->siapkan();

@@ -1,25 +1,11 @@
 <x-layouts.app title="Dashboard Karyawan">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div class="min-w-0">
-            <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Karyawan CUANTAH &middot; {{ now()->translatedFormat('l, d F') }}</p>
-            <h1 class="mt-1 truncate text-2xl font-black tracking-tight text-emerald-950 sm:text-3xl">Halo, {{ auth()->user()->name }}</h1>
-        </div>
-        <div class="flex shrink-0 gap-2">
-            <a href="{{ route('employee.scan') }}"
-               class="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-emerald-900/20 transition hover:bg-emerald-800 sm:flex-none">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                </svg>
-                Scan Barcode
-            </a>
-            <a href="{{ route('employee.pickups.available') }}"
-               class="relative inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-slate-900/10 transition hover:text-slate-950 hover:ring-slate-900/20 sm:flex-none">
-                Cari Pickup
-                @if($available_count > 0)
-                    <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-black text-amber-800">{{ $available_count }}</span>
-                @endif
-            </a>
-        </div>
+    {{-- Sapaan saja. Tombol Scan dan Cari Pickup dibuang dari sini: navbar
+         sudah memuat keduanya di setiap halaman, dan jumlah pickup yang
+         menunggu sudah disebut kartu "Tugas terbuka" di bawah. --}}
+    <div class="min-w-0">
+        <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Karyawan CUANTAH &middot; {{ now()->translatedFormat('l, d F') }}</p>
+        <h1 class="mt-1 truncate text-2xl font-black tracking-tight text-emerald-950 sm:text-3xl">Halo, {{ auth()->user()->name }}</h1>
+    </div>
     </div>
 
     <section class="mt-6 grid gap-4 sm:grid-cols-3">
@@ -27,7 +13,6 @@
             <div class="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-emerald-600/40 blur-2xl" aria-hidden="true"></div>
             <p class="relative text-xs font-bold uppercase tracking-[0.16em] text-emerald-200">Tugas terbuka</p>
             <p class="relative mt-3 text-4xl font-black tabular-nums">{{ $tasks_count }}</p>
-            <p class="relative mt-1 text-xs text-emerald-100/90">{{ $available_count }} pickup lain menunggu diambil.</p>
         </div>
         <x-stat-card label="Selesai hari ini" :value="$today_count"
                      :hint="number_format($today_liter, 2, ',', '.').' L terkumpul.'" />
@@ -44,25 +29,18 @@
         </div>
 
         @if($tasks_count === 0)
-            @php
-                $adaPickup = $available_count > 0;
-            @endphp
-            {{-- Keadaan kosong membaca jumlah pickup yang tersedia. Sebelumnya
-                 ia selalu menyuruh mengambil pickup, bahkan ketika hero tepat
-                 di atasnya sudah menyatakan tidak ada satu pun, dan tombolnya
-                 mengantar ke halaman yang mengulangi hal yang sama. --}}
+            {{-- Tidak ada lagi daftar pekerjaan terbuka untuk diambil sendiri:
+                 penjemputan hanya sampai ke karyawan lewat penugasan admin.
+                 Yang tersisa sebagai tindakan mandiri hanyalah memindai
+                 barcode penyetor yang datang ke mitra. --}}
             <div class="mt-3 rounded-2xl bg-white px-5 py-12 text-center shadow-sm ring-1 ring-slate-900/5">
                 <p class="font-bold text-slate-900">Tidak ada tugas terbuka</p>
                 <p class="mx-auto mt-1.5 max-w-xs text-sm leading-6 text-slate-500">
-                    @if($adaPickup)
-                        {{ $available_count }} pickup menunggu diambil, atau scan barcode penyetor yang datang ke mitra.
-                    @else
-                        Belum ada pickup yang bisa diambil. Penyetor masih bisa datang sendiri ke mitra, scan barcode-nya saat itu terjadi.
-                    @endif
+                    Penjemputan akan muncul di sini setelah admin menugaskannya kepadamu. Penyetor juga masih bisa datang sendiri ke mitra, scan barcode-nya saat itu terjadi.
                 </p>
-                <a href="{{ $adaPickup ? route('employee.pickups.available') : route('employee.scan') }}"
+                <a href="{{ route('employee.scan') }}"
                    class="mt-5 inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800">
-                    {{ $adaPickup ? 'Cari Pickup' : 'Scan Barcode' }}
+                    Scan Barcode
                 </a>
             </div>
         @else

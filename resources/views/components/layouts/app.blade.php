@@ -44,7 +44,6 @@
                         $menuKaryawan = [
                             ['label' => 'Beranda', 'url' => route('employee.dashboard'), 'route' => 'employee.dashboard', 'icon' => 'grid'],
                             ['label' => 'Scan', 'url' => route('employee.scan'), 'route' => 'employee.scan', 'icon' => 'scan'],
-                            ['label' => 'Pickup', 'url' => route('employee.pickups.available'), 'route' => 'employee.pickups.*', 'icon' => 'truck'],
                             ['label' => 'Transaksi', 'url' => route('employee.transactions.index'), 'route' => 'employee.transactions.*', 'icon' => 'receipt'],
                         ];
                     @endphp

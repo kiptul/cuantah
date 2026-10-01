@@ -133,7 +133,6 @@ class SmokeTest extends TestCase
 
         $this->get(route('employee.dashboard'))->assertOk();
         $this->get(route('employee.scan'))->assertOk();
-        $this->get(route('employee.pickups.available'))->assertOk();
         $this->get(route('employee.transactions.index'))->assertOk();
         $this->get(route('employee.transactions.show', $dunia['transaction']))->assertOk();
     }

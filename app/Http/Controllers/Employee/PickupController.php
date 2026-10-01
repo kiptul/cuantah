@@ -3,59 +3,12 @@
 namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
-use App\Models\Pickup;
 use App\Models\Transaction;
 use App\Services\TransactionService;
 use Illuminate\Http\Request;
 
 class PickupController extends Controller
 {
-    public function available()
-    {
-        return view('employee.pickups.available', [
-            'pickups' => Pickup::with('transaction.user', 'partner')
-                ->visibleTo(auth()->user())
-                ->whereNull('assigned_user_id')
-                /**
-                 * Setoran yang sudah berakhir tidak ikut ditawarkan. Tanpa
-                 * saringan ini, setoran yang dibatalkan penyetor tetap muncul
-                 * di daftar meski angka di dasbor tidak menghitungnya, dan
-                 * karyawan yang mencoba mengambilnya ditolak dengan alasan
-                 * yang keliru.
-                 */
-                ->whereHas('transaction', fn ($transaction) => $transaction->whereNotIn('status', Transaction::FINAL_STATUSES))
-                ->where(function ($query) {
-                    $query->whereHas('transaction', fn ($transaction) => $transaction->where('method', Transaction::METHOD_PICKUP))
-                        ->orWhereNotNull('scanned_at');
-                })
-                // Diurutkan menurut jadwal yang dipilih penyetor, bukan waktu
-                // pendaftaran. Dengan urutan terbaru lebih dulu, permintaan yang
-                // dijadwalkan besok pagi bisa kalah oleh yang baru masuk sore ini.
-                // Drop-off tidak berjadwal, jadi ditempatkan setelah yang berjadwal.
-                ->orderByRaw('pickup_date is null')
-                ->orderBy('pickup_date')
-                ->orderBy('pickup_time')
-                ->oldest()
-                ->paginate(10),
-        ]);
-    }
-
-    public function claim(Pickup $pickup, TransactionService $service)
-    {
-        abort_unless(auth()->user()->canAccessPartnerId($pickup->transaction->partner_id), 403);
-
-        $claimed = $service->claimPickup($pickup, auth()->user());
-
-        /**
-         * Kegagalan tidak selalu berarti didahului karyawan lain: setoran yang
-         * dibatalkan atau ditolak juga ditolak claimPickup. Menyebut satu
-         * sebab saja membuat karyawan mencari orang yang tidak pernah ada.
-         */
-        return back()->with($claimed ? 'success' : 'error', $claimed
-            ? 'Pickup berhasil kamu ambil.'
-            : 'Pickup itu sudah tidak bisa diambil. Mungkin karyawan lain lebih dulu mengambilnya, atau setorannya dibatalkan penyetor.');
-    }
-
     public function scanForm()
     {
         return view('employee.pickups.scan');

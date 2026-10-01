@@ -60,8 +60,6 @@ Route::middleware(['auth', 'employee'])->prefix('employee')->name('employee.')->
     Route::get('/dashboard', EmployeeDashboardController::class)->name('dashboard');
     Route::get('/scan-dropoff', [EmployeePickupController::class, 'scanForm'])->name('scan');
     Route::post('/scan-dropoff', [EmployeePickupController::class, 'scan'])->name('scan.store');
-    Route::get('/pickups/available', [EmployeePickupController::class, 'available'])->name('pickups.available');
-    Route::post('/pickups/{pickup}/claim', [EmployeePickupController::class, 'claim'])->name('pickups.claim');
     Route::get('/transactions', [EmployeePickupController::class, 'transactions'])->name('transactions.index');
     Route::get('/transactions/{transaction}', [EmployeePickupController::class, 'show'])->name('transactions.show');
     Route::post('/transactions/{transaction}/verify', [EmployeePickupController::class, 'verify'])->name('transactions.verify');

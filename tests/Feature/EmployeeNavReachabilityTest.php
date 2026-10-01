@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\OilPrice;
 use App\Models\Partner;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -65,7 +67,6 @@ class EmployeeNavReachabilityTest extends TestCase
         foreach ([
             route('employee.dashboard'),
             route('employee.scan'),
-            route('employee.pickups.available'),
             route('employee.transactions.index'),
         ] as $tujuan) {
             $this->assertStringContainsString($tujuan, $header);
@@ -77,9 +78,9 @@ class EmployeeNavReachabilityTest extends TestCase
         $karyawan = $this->karyawan();
         $header = $this->blokHeader($karyawan, route('employee.dashboard'));
 
-        preg_match_all('/<a[^>]*employee\/(pickups|transactions)[^>]*>/', $header, $cocok);
+        preg_match_all('/<a[^>]*employee\/(scan-dropoff|transactions)[^>]*>/', $header, $cocok);
 
-        $this->assertNotEmpty($cocok[0], 'Tautan Pickup dan Transaksi harus ada untuk diperiksa.');
+        $this->assertNotEmpty($cocok[0], 'Tautan Scan dan Transaksi harus ada untuk diperiksa.');
 
         foreach ($cocok[0] as $tautan) {
             $this->assertStringNotContainsString(
@@ -96,7 +97,7 @@ class EmployeeNavReachabilityTest extends TestCase
         $header = $this->blokHeader($karyawan, route('employee.transactions.index'));
 
         $this->assertStringContainsString(
-            route('employee.pickups.available'),
+            route('employee.scan'),
             $header,
             'Begitu karyawan berpindah halaman, header adalah satu-satunya jalan yang tersisa.'
         );
@@ -108,7 +109,7 @@ class EmployeeNavReachabilityTest extends TestCase
 
         $this->assertStringContainsString(
             'aria-current="page"',
-            $this->blokHeader($karyawan, route('employee.pickups.available')),
+            $this->blokHeader($karyawan, route('employee.scan')),
             'Dengan empat menu, penanda posisi berhenti menjadi hiasan.'
         );
     }
@@ -126,6 +127,46 @@ class EmployeeNavReachabilityTest extends TestCase
             $cocok[0],
             'Penanda harus menunjuk halaman yang sedang dibuka, bukan selalu dasbor.'
         );
+    }
+
+    /**
+     * Badan dasbor di luar header, yaitu bagian yang bukan navigasi.
+     */
+    private function badanDasbor(User $karyawan): string
+    {
+        $isi = $this->actingAs($karyawan)->get(route('employee.dashboard'))->assertOk()->getContent();
+
+        return preg_replace('/<header.*?<\/header>/s', '', $isi);
+    }
+
+    public function test_dasbor_tidak_mengulang_menu_yang_sudah_ada_di_header(): void
+    {
+        $karyawan = $this->karyawan();
+
+        $mitra = $karyawan->partners()->first();
+        $transaksi = Transaction::factory()->pickup()->create([
+            'user_id' => User::factory()->create(['role' => 'user'])->id,
+            'partner_id' => $mitra->id,
+            'oil_price_id' => OilPrice::factory(),
+            'status' => Transaction::STATUS_SCHEDULED,
+        ]);
+        $transaksi->pickup()->create([
+            'partner_id' => $mitra->id,
+            'address' => 'Jl. Uji',
+            'latitude' => -6.3,
+            'longitude' => 107.3,
+            'status' => 'assigned',
+            'assigned_user_id' => $karyawan->id,
+        ]);
+
+        $badan = $this->badanDasbor($karyawan);
+
+        /**
+         * Ada tugas terbuka, jadi keadaan kosong tidak muncul dan tidak ada
+         * alasan lain bagi dasbor memuat tautan ini. Keduanya sudah tersedia
+         * di header pada setiap halaman.
+         */
+        $this->assertStringNotContainsString(route('employee.scan'), $badan);
     }
 
     public function test_menu_karyawan_tidak_muncul_untuk_penyetor(): void

@@ -128,26 +128,6 @@ class PartnerScopingTest extends TestCase
         $this->assertNull($pickup->fresh()->assigned_user_id);
     }
 
-    public function test_employee_available_queue_excludes_other_partners(): void
-    {
-        [$mitraA, $mitraB] = $this->duaMitraBerisi();
-        $karyawan = User::factory()->create(['role' => 'employee']);
-        $karyawan->partners()->attach($mitraA->id);
-
-        foreach ([$mitraA, $mitraB] as $mitra) {
-            $trx = Transaction::factory()->pickup()->create(['partner_id' => $mitra->id]);
-            Pickup::factory()->scheduledInDays(1)->create(['transaction_id' => $trx->id, 'partner_id' => $mitra->id]);
-        }
-
-        $antrian = $this->actingAs($karyawan)
-            ->get(route('employee.pickups.available'))
-            ->assertOk()
-            ->viewData('pickups');
-
-        $this->assertCount(1, $antrian);
-        $this->assertSame($mitraA->id, $antrian->first()->partner_id);
-    }
-
     public function test_depositor_only_sees_their_own_transactions(): void
     {
         $mitra = Partner::factory()->create();

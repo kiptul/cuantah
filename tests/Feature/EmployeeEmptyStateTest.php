@@ -6,18 +6,17 @@ use App\Models\OilPrice;
 use App\Models\Partner;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
  * Keadaan kosong pada bagian "Tugas saya" di dasbor karyawan.
  *
- * Keadaan itu hanya memeriksa jumlah tugas dan tidak pernah melihat berapa
- * pickup yang tersedia, padahal angka tersebut sudah dipakai hero tepat di
- * atasnya. Akibatnya satu layar memuat tiga pernyataan yang bertabrakan: hero
- * menyatakan nol pickup menunggu, paragraf di bawahnya menyuruh mengambil
- * pickup dari daftar, dan tombolnya mengantar ke halaman yang mengulangi
- * bahwa tidak ada apa-apa.
+ * Penjemputan hanya sampai ke karyawan lewat penugasan admin. Keadaan kosong
+ * karenanya tidak boleh menjanjikan pekerjaan yang bisa diambil sendiri, dan
+ * satu-satunya tindakan mandiri yang tersisa adalah memindai barcode penyetor
+ * yang datang ke mitra.
  */
 class EmployeeEmptyStateTest extends TestCase
 {
@@ -52,36 +51,31 @@ class EmployeeEmptyStateTest extends TestCase
     }
 
     /**
-     * Pickup jemput yang belum diambil siapa pun di mitra karyawan tersebut.
+     * Setoran jemput yang sudah diajukan penyetor tetapi belum ditugaskan
+     * admin kepada siapa pun.
      */
-    private function pickupTersedia(int $jumlah): void
+    private function setoranBelumDitugaskan(): Transaction
     {
-        $harga = OilPrice::factory()->create();
+        $transaksi = Transaction::factory()->pickup()->create([
+            'user_id' => User::factory()->create(['role' => 'user'])->id,
+            'partner_id' => $this->mitra->id,
+            'oil_price_id' => OilPrice::factory(),
+            'status' => Transaction::STATUS_PENDING,
+        ]);
 
-        for ($i = 0; $i < $jumlah; $i++) {
-            $transaksi = Transaction::factory()->pickup()->create([
-                'user_id' => User::factory()->create(['role' => 'user'])->id,
-                'partner_id' => $this->mitra->id,
-                'oil_price_id' => $harga->id,
-                'status' => Transaction::STATUS_PENDING,
-            ]);
+        $transaksi->pickup()->create([
+            'partner_id' => $this->mitra->id,
+            'address' => 'Jl. Belum Ditugaskan',
+            'latitude' => -6.3,
+            'longitude' => 107.3,
+            'pickup_date' => now()->addDay()->toDateString(),
+            'status' => 'pending',
+            'assigned_user_id' => null,
+        ]);
 
-            $transaksi->pickup()->create([
-                'partner_id' => $this->mitra->id,
-                'address' => 'Jl. Tersedia '.$i,
-                'latitude' => -6.3,
-                'longitude' => 107.3,
-                'pickup_date' => now()->addDay()->toDateString(),
-                'status' => 'pending',
-                'assigned_user_id' => null,
-            ]);
-        }
+        return $transaksi;
     }
 
-    /**
-     * Mengambil blok keadaan kosong saja, supaya tombol "Cari Pickup" dan
-     * "Scan Barcode" yang selalu ada di header tidak ikut terbaca.
-     */
     private function blokKeadaanKosong(): string
     {
         $isi = $this->actingAs($this->karyawan)->get(route('employee.dashboard'))->assertOk()->getContent();
@@ -91,73 +85,54 @@ class EmployeeEmptyStateTest extends TestCase
         return $cocok[0] ?? '';
     }
 
-    public function test_tanpa_pickup_tersedia_mengarahkan_ke_scan(): void
+    public function test_mengarahkan_ke_scan_sebagai_satu_satunya_tindakan_mandiri(): void
     {
         $this->siapkanKaryawan();
 
         $blok = $this->blokKeadaanKosong();
 
-        $this->assertStringContainsString('Belum ada pickup yang bisa diambil', $blok);
-        $this->assertStringContainsString(route('employee.scan'), $blok, 'Scan adalah satu-satunya tindakan yang benar-benar bisa dilakukan.');
-        $this->assertStringNotContainsString(
-            route('employee.pickups.available'),
-            $blok,
-            'Tombolnya tidak boleh mengantar ke daftar pickup yang sudah pasti kosong.'
-        );
+        $this->assertStringContainsString('setelah admin menugaskannya kepadamu', $blok);
+        $this->assertStringContainsString(route('employee.scan'), $blok);
     }
 
-    public function test_dengan_pickup_tersedia_mengarahkan_ke_daftar_pickup(): void
+    public function test_tidak_menjanjikan_pekerjaan_yang_bisa_diambil_sendiri(): void
     {
         $this->siapkanKaryawan();
-        $this->pickupTersedia(2);
+        $this->setoranBelumDitugaskan();
 
         $blok = $this->blokKeadaanKosong();
 
-        $this->assertStringContainsString('2 pickup menunggu diambil', $blok);
-        $this->assertStringContainsString(route('employee.pickups.available'), $blok);
+        /**
+         * Ada setoran menunggu di mitra ini, tetapi belum ditugaskan. Karyawan
+         * tidak punya cara mengambilnya, jadi menyebutnya hanya menimbulkan
+         * harapan yang tidak bisa ditindaklanjuti.
+         */
+        $this->assertStringNotContainsString('pickup menunggu diambil', $blok);
+        $this->assertStringNotContainsString('Cari Pickup', $blok);
     }
 
-    public function test_keadaan_kosong_tidak_membantah_angka_di_hero(): void
+    public function test_setoran_yang_belum_ditugaskan_tidak_masuk_daftar_tugas(): void
     {
         $this->siapkanKaryawan();
+        $this->setoranBelumDitugaskan();
 
         $halaman = $this->actingAs($this->karyawan)->get(route('employee.dashboard'))->assertOk();
 
-        $this->assertSame(0, $halaman->viewData('available_count'));
-
-        /**
-         * Menjaga sifatnya, bukan kalimat lamanya. Memeriksa ketiadaan teks
-         * yang memang sudah dihapus akan selalu lolos tanpa menguji apa pun.
-         */
-        $this->assertStringNotContainsString(
-            'pickup menunggu diambil',
-            $this->blokKeadaanKosong(),
-            'Hero menyatakan nol pickup menunggu, jadi keadaan kosong tidak boleh menjanjikan ada yang bisa diambil.'
-        );
+        $this->assertSame(0, $halaman->viewData('tasks_count'));
+        $halaman->assertSee('Tidak ada tugas terbuka');
     }
 
-    public function test_keadaan_kosong_tidak_muncul_ketika_ada_tugas(): void
+    public function test_keadaan_kosong_hilang_setelah_admin_menugaskan(): void
     {
         $this->siapkanKaryawan();
+        $transaksi = $this->setoranBelumDitugaskan();
 
-        $transaksi = Transaction::factory()->pickup()->create([
-            'user_id' => User::factory()->create(['role' => 'user'])->id,
-            'partner_id' => $this->mitra->id,
-            'oil_price_id' => OilPrice::factory(),
-            'status' => Transaction::STATUS_SCHEDULED,
-        ]);
+        app(TransactionService::class)
+            ->assignPickupToEmployee($transaksi->pickup, $this->karyawan->id);
 
-        $transaksi->pickup()->create([
-            'partner_id' => $this->mitra->id,
-            'address' => 'Jl. Tugas',
-            'latitude' => -6.3,
-            'longitude' => 107.3,
-            'pickup_date' => now()->toDateString(),
-            'status' => 'assigned',
-            'assigned_user_id' => $this->karyawan->id,
-        ]);
+        $halaman = $this->actingAs($this->karyawan)->get(route('employee.dashboard'))->assertOk();
 
-        $this->actingAs($this->karyawan)->get(route('employee.dashboard'))->assertOk()
-            ->assertDontSee('Tidak ada tugas terbuka');
+        $this->assertSame(1, $halaman->viewData('tasks_count'));
+        $halaman->assertDontSee('Tidak ada tugas terbuka');
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\OilPrice;
-use App\Models\Pickup;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -173,13 +172,6 @@ class DashboardService
                 ->limit(self::TASKS_SHOWN)
                 ->get(),
             'tasks_count' => $this->taskQuery($employee)->count(),
-            'available_count' => Pickup::query()
-                ->visibleTo($employee)
-                ->whereNull('assigned_user_id')
-                ->whereHas('transaction', fn (Builder $transaction) => $transaction
-                    ->where('method', Transaction::METHOD_PICKUP)
-                    ->whereNotIn('status', Transaction::FINAL_STATUSES))
-                ->count(),
             'today_count' => $completed()->whereDate('completed_at', today())->count(),
             'today_liter' => (float) $completed()->whereDate('completed_at', today())->sum('actual_liter'),
             'month_count' => $completed()->where('completed_at', '>=', now()->startOfMonth())->count(),

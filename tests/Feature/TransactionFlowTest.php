@@ -462,41 +462,6 @@ class TransactionFlowTest extends TestCase
         ]);
     }
 
-    public function test_available_pickups_are_ordered_by_schedule_not_by_newest(): void
-    {
-        $employee = User::factory()->create(['role' => 'employee']);
-        $partner = $this->partnerWithPickupFee();
-        $employee->partners()->attach($partner->id);
-        $price = OilPrice::create(['price_per_liter' => 4000, 'effective_date' => now()->toDateString(), 'is_active' => true]);
-        $user = User::factory()->create(['role' => 'user']);
-
-        // Dibuat terbalik: yang didaftarkan belakangan justru berjadwal lebih awal.
-        foreach ([['LAMBAT', 5], ['CEPAT', 1]] as [$kode, $hari]) {
-            $transaction = Transaction::create([
-                'code' => 'CNT-'.$kode, 'user_id' => $user->id, 'partner_id' => $partner->id,
-                'oil_price_id' => $price->id, 'estimated_liter' => 8, 'price_per_liter' => 4000,
-                'estimated_total' => 32000, 'method' => Transaction::METHOD_PICKUP,
-                'status' => Transaction::STATUS_PENDING,
-            ]);
-            Pickup::create([
-                'transaction_id' => $transaction->id, 'partner_id' => $partner->id,
-                'address' => 'Jl. Uji', 'latitude' => -6.3, 'longitude' => 107.3,
-                'pickup_date' => now()->addDays($hari)->toDateString(),
-                'pickup_time' => '08:00', 'status' => 'pending',
-            ]);
-        }
-
-        $urutan = $this->actingAs($employee)
-            ->get(route('employee.pickups.available'))
-            ->assertOk()
-            ->viewData('pickups')
-            ->pluck('transaction.code')
-            ->all();
-
-        $this->assertSame(['CNT-CEPAT', 'CNT-LAMBAT'], $urutan,
-            'Jadwal terdekat harus di atas, bukan pendaftaran terbaru.');
-    }
-
     public function test_deposit_is_blocked_when_partner_is_already_full(): void
     {
         $user = User::factory()->create(['role' => 'user']);

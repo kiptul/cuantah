@@ -141,10 +141,6 @@ class TransactionService
              * Karyawannya sendiri ikut diberi tahu. Sebelumnya tugas muncul di
              * dasbornya tanpa pemberitahuan apa pun, sehingga ia hanya tahu
              * bila kebetulan membuka halaman itu.
-             *
-             * Tidak dikirim pada claimPickup: di sana karyawan yang mengambil
-             * sendiri, dan mengabari seseorang tentang tindakannya sendiri
-             * hanya menambah kebisingan.
              */
             Notification::create([
                 'user_id' => $employeeId,
@@ -173,33 +169,6 @@ class TransactionService
             $pickup->transaction()->update(['status' => Transaction::STATUS_PENDING]);
 
             return $pickup->refresh()->load('transaction.user');
-        });
-    }
-
-    public function claimPickup(Pickup $pickup, User $employee): bool
-    {
-        return DB::transaction(function () use ($pickup, $employee) {
-            $updated = Pickup::query()
-                ->whereKey($pickup->id)
-                ->whereNull('assigned_user_id')
-                ->whereHas('transaction', fn ($transaction) => $transaction->visibleTo($employee)
-                    ->whereNotIn('status', Transaction::FINAL_STATUSES))
-                ->where(function ($query) {
-                    $query->whereNotNull('scanned_at')
-                        ->orWhereHas('transaction', fn ($transaction) => $transaction->where('method', Transaction::METHOD_PICKUP));
-                })
-                ->update([
-                    'assigned_user_id' => $employee->id,
-                    'status' => 'assigned',
-                    'assigned_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-            if ($updated === 1) {
-                $pickup->transaction()->update(['status' => Transaction::STATUS_SCHEDULED]);
-            }
-
-            return $updated === 1;
         });
     }
 
