@@ -173,8 +173,12 @@
                         </p>
                     </div>
                     <div class="shrink-0 text-right">
-                        <p class="font-black tabular-nums text-slate-900">Rp{{ number_format($transaction->total_value ?? $transaction->estimated_total, 0, ',', '.') }}</p>
-                        <p class="mt-1.5 text-sm tabular-nums text-slate-500">{{ number_format($transaction->actual_liter ?? $transaction->estimated_liter, 2, ',', '.') }} L</p>
+                        <p class="font-black tabular-nums text-slate-900"><x-transaction-amount :transaction="$transaction" /></p>
+                        @if($transaction->settledLiter() !== null)
+                            <p class="mt-1.5 text-sm tabular-nums text-slate-500">{{ number_format($transaction->settledLiter(), 2, ',', '.') }} L</p>
+                        @else
+                            <p class="mt-1.5 text-sm font-semibold text-slate-500">Tidak dibayar</p>
+                        @endif
                     </div>
                 </a>
             @empty

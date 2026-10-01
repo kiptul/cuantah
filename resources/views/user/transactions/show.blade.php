@@ -22,7 +22,7 @@
                 <div class="flex justify-between"><dt>Actual liter</dt><dd class="font-bold">{{ $transaction->actual_liter ? number_format($transaction->actual_liter, 2, ',', '.').' L' : '-' }}</dd></div>
                 <div class="flex justify-between"><dt>Harga/L</dt><dd class="font-bold">Rp{{ number_format($transaction->price_per_liter, 0, ',', '.') }}</dd></div>
                 <div class="flex justify-between"><dt>Ongkir jemput</dt><dd class="font-bold">Rp{{ number_format($transaction->pickup_fee, 0, ',', '.') }}</dd></div>
-                <div class="flex justify-between"><dt>Total</dt><dd class="font-black">Rp{{ number_format($transaction->total_value ?? $transaction->estimated_total, 0, ',', '.') }}</dd></div>
+                <div class="flex justify-between"><dt>Total</dt><dd class="font-black"><x-transaction-amount :transaction="$transaction" /></dd></div>
                 <div class="flex justify-between"><dt>Pembayaran</dt><dd class="font-bold">{{ $transaction->payment_method ? str($transaction->payment_method)->title() : '-' }}</dd></div>
                 <div class="flex justify-between"><dt>Status bayar</dt><dd>{{ $transaction->payment_status ? '' : '-' }}@if($transaction->payment_status)<x-status-badge :status="$transaction->payment_status" />@endif</dd></div>
                 <div class="flex justify-between"><dt>Karyawan</dt><dd class="font-bold">{{ $transaction->pickup?->assignedUser?->name ?? '-' }}</dd></div>

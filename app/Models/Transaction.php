@@ -123,6 +123,35 @@ class Transaction extends Model
         return in_array($this->status, self::FINAL_STATUSES, true);
     }
 
+    /**
+     * Nilai yang benar-benar menjadi hak penyetor, atau null bila tidak ada.
+     *
+     * Transaksi yang ditolak maupun dibatalkan tidak pernah berujung
+     * pembayaran, dan keduanya meninggalkan total_value kosong. Membaca
+     * estimasi sebagai gantinya membuat angka perkiraan tampil sebagai uang
+     * yang sudah diterima, lengkap dengan lencana "Ditolak" di sebelahnya.
+     */
+    public function settledValue(): ?int
+    {
+        if ($this->status !== self::STATUS_COMPLETED) {
+            return null;
+        }
+
+        return $this->total_value === null ? null : (int) $this->total_value;
+    }
+
+    /**
+     * Liter hasil timbangan mitra, atau null bila tidak pernah ditimbang.
+     */
+    public function settledLiter(): ?float
+    {
+        if ($this->status !== self::STATUS_COMPLETED) {
+            return null;
+        }
+
+        return $this->actual_liter === null ? null : (float) $this->actual_liter;
+    }
+
     public function statusLabel(): string
     {
         return self::STATUS_LABELS[$this->status] ?? $this->status;
