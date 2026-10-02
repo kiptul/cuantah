@@ -23,20 +23,17 @@ class DatabaseSeeder extends Seeder
 
         $admin = User::updateOrCreate(
             ['email' => 'admin@cuantah.test'],
-            // ['name' => 'Admin CUANTAH', 'phone' => '081200000001', 'role' => 'admin', 'password' => Hash::make($password)]
-            ['name' => 'Admin CUANTAH', 'phone' => '081200000001', 'role' => 'admin', 'password' => Hash::make('admin')]
+            ['name' => 'Admin CUANTAH', 'phone' => '081200000001', 'role' => 'admin', 'password' => Hash::make($password)]
         );
 
         User::updateOrCreate(
             ['email' => 'user@cuantah.test'],
-            // ['name' => 'Rumah Tangga Demo', 'phone' => '081200000002', 'role' => 'user', 'password' => Hash::make($password)]
-            ['name' => 'Rumah Tangga Demo', 'phone' => '081200000002', 'role' => 'user', 'password' => Hash::make('password')]
+            ['name' => 'Rumah Tangga Demo', 'phone' => '081200000002', 'role' => 'user', 'password' => Hash::make($password)]
         );
 
         $employee = User::updateOrCreate(
             ['email' => 'karyawan@cuantah.test'],
-            // ['name' => 'Karyawan Pickup Demo', 'phone' => '081200000004', 'role' => 'employee', 'password' => Hash::make($password)]
-            ['name' => 'Karyawan Pickup Demo', 'phone' => '081200000004', 'role' => 'employee', 'password' => Hash::make('karyawan')]
+            ['name' => 'Karyawan Pickup Demo', 'phone' => '081200000004', 'role' => 'employee', 'password' => Hash::make($password)]
         );
 
         OilPrice::updateOrCreate(
