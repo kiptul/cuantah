@@ -34,6 +34,38 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Nomor WhatsApp dalam format internasional, tanpa tanda dan tanpa nol depan.
+     *
+     * wa.me menolak nomor yang masih berawalan nol: "081200000001" tidak pernah
+     * menemukan siapa pun, dan tautannya membuka WhatsApp pada percakapan kosong
+     * tanpa memberi tahu bahwa nomornya tidak terpakai. Nomor di basis data
+     * disimpan apa adanya seperti yang diketik orang, jadi penerjemahannya
+     * dilakukan di sini, satu kali, bukan diulang di setiap tampilan.
+     *
+     * Nomor yang sudah berawalan kode negara dibiarkan, sehingga nomor luar
+     * Indonesia tidak ikut dipaksa menjadi 62.
+     */
+    public function whatsappNumber(): ?string
+    {
+        $angka = preg_replace('/\D/', '', (string) $this->phone);
+
+        if ($angka === '' || strlen($angka) < 8) {
+            return null;
+        }
+
+        if (str_starts_with($angka, '0')) {
+            return '62'.ltrim($angka, '0');
+        }
+
+        // Nomor seluler Indonesia yang ditulis tanpa nol maupun kode negara.
+        if (str_starts_with($angka, '8')) {
+            return '62'.$angka;
+        }
+
+        return $angka;
+    }
+
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);

@@ -98,11 +98,13 @@
                                class="inline-flex flex-1 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800">
                                 Proses
                             </a>
-                            @if($task->user->phone)
-                                <a href="https://wa.me/{{ preg_replace('/[^0-9+]/', '', $task->user->phone) }}" aria-label="Telepon {{ $task->user->name }}"
+                            @if($task->user->whatsappNumber())
+                                <a href="https://wa.me/{{ $task->user->whatsappNumber() }}"
+                                   target="_blank" rel="noopener"
+                                   aria-label="Hubungi {{ $task->user->name }} lewat WhatsApp"
                                    class="inline-flex items-center justify-center rounded-xl px-3 py-2.5 text-emerald-800 ring-1 ring-slate-900/10 transition hover:ring-emerald-300">
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                        <path d="M4 5a1 1 0 0 1 1-1h2.6a1 1 0 0 1 1 .76l.7 2.9a1 1 0 0 1-.3 1L7.6 10.1a12 12 0 0 0 5.4 5.4l1.4-1.4a1 1 0 0 1 1-.26l2.9.7a1 1 0 0 1 .76 1V19a1 1 0 0 1-1 1A15 15 0 0 1 4 5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                                        <path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3.5 20.5l1.7-5A8.4 8.4 0 1 1 21 11.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
                                     </svg>
                                 </a>
                             @endif
