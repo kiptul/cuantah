@@ -574,8 +574,13 @@ class TransactionFlowTest extends TestCase
     public function test_dispute_closes_after_three_days(): void
     {
         $user = User::factory()->create(['role' => 'user']);
-        $transaction = Transaction::factory()->completed(6)->create(['user_id' => $user->id]);
-        $transaction->forceFill(['updated_at' => now()->subDays(4)])->saveQuietly();
+
+        // Yang dituakan completed_at, bukan updated_at. Tenggatnya dihitung dari
+        // waktu selesai, dan menuakan updated_at tidak menggeser apa pun.
+        $transaction = Transaction::factory()->completed(6)->create([
+            'user_id' => $user->id,
+            'completed_at' => now()->subDays(4),
+        ]);
 
         $this->actingAs($user)->post(route('transactions.dispute', $transaction), [
             'dispute_reason' => 'Keberatan yang diajukan terlambat sesudah batas waktu.',
@@ -584,13 +589,35 @@ class TransactionFlowTest extends TestCase
         $this->assertNull($transaction->fresh()->disputed_at);
     }
 
+    public function test_dispute_is_still_open_on_the_last_day(): void
+    {
+        // Pasangan dari test di atas. Tanpa ini, penolakan yang terlalu rajin
+        // ikut lolos: menolak semua sanggahan juga memenuhi test tenggat.
+        $user = User::factory()->create(['role' => 'user']);
+        $transaction = Transaction::factory()->completed(6)->create([
+            'user_id' => $user->id,
+            'completed_at' => now()->subDays(3)->addMinutes(5),
+        ]);
+
+        $this->actingAs($user)->post(route('transactions.dispute', $transaction), [
+            'dispute_reason' => 'Keberatan yang diajukan tepat sebelum batas waktu.',
+        ])->assertSessionHas('success');
+
+        $this->assertNotNull($transaction->fresh()->disputed_at);
+    }
+
     public function test_dispute_cannot_be_filed_twice(): void
     {
         $user = User::factory()->create(['role' => 'user']);
         $transaction = Transaction::factory()->completed(6)->create(['user_id' => $user->id]);
         $alasan = ['dispute_reason' => 'Takaran tidak sesuai dengan yang saya serahkan.'];
 
-        $this->actingAs($user)->post(route('transactions.dispute', $transaction), $alasan);
+        // Yang pertama harus benar-benar berhasil. Tanpa memeriksanya, dua kali
+        // penolakan juga memenuhi test ini, dan itu sempat terjadi.
+        $this->actingAs($user)->post(route('transactions.dispute', $transaction), $alasan)
+            ->assertSessionHas('success');
+        $this->assertNotNull($transaction->fresh()->disputed_at);
+
         $this->actingAs($user)->post(route('transactions.dispute', $transaction), $alasan)->assertForbidden();
     }
 
