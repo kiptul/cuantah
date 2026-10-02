@@ -27,15 +27,34 @@ class TransactionService
                 ->firstOrFail();
             abort_if($partner->latitude === null || $partner->longitude === null, 422, 'Lokasi mitra belum tersedia.');
 
-            // Kapasitas mitra sebelumnya hanya disimpan dan ditampilkan tanpa
-            // pernah dipakai, sehingga mitra yang sudah penuh tetap menerima
-            // setoran dan penyetor menunggu untuk sesuatu yang tidak muat.
-            if ($partner->availableLiter() >= $partner->capacity_liter) {
+            // Yang diperiksa adalah sisa daya tampung, bukan sekadar apakah
+            // mitranya sudah penuh. Pemeriksaan sebelumnya hanya menolak setoran
+            // yang datang ketika mitra sudah terisi penuh, sehingga mitra yang
+            // masih bersisa satu liter tetap menerima setoran empat ratus liter
+            // dan penyetor menunggu untuk sesuatu yang tidak muat.
+            $sisaLiter = round((float) $partner->capacity_liter - $partner->availableLiter(), 2);
+
+            if ($sisaLiter <= 0) {
+                // Mitra penuh bukan soal besarnya setoran, jadi galatnya menempel
+                // pada pilihan mitra: yang perlu diganti mitranya, bukan angkanya.
                 throw ValidationException::withMessages([
                     'partner_id' => sprintf(
                         'Mitra %s sedang penuh, kapasitasnya %s L dan belum ada penyaluran keluar. Pilih mitra lain dulu.',
                         $partner->name,
-                        number_format($partner->capacity_liter, 0, ',', '.'),
+                        number_format((float) $partner->capacity_liter, 0, ',', '.'),
+                    ),
+                ]);
+            }
+
+            if ($estimatedLiter > $sisaLiter) {
+                // Angkanya disebutkan supaya penyetor tahu harus turun ke berapa,
+                // bukan menebak-nebak sampai setorannya diterima.
+                throw ValidationException::withMessages([
+                    'estimated_liter' => sprintf(
+                        'Mitra %s hanya sanggup menerima %s L lagi, sedangkan kamu mengajukan %s L. Turunkan volumenya atau pilih mitra lain.',
+                        $partner->name,
+                        $this->angkaRapi($sisaLiter),
+                        $this->angkaRapi($estimatedLiter),
                     ),
                 ]);
             }
@@ -459,6 +478,17 @@ class TransactionService
                 $tindakan,
             ),
         ]);
+    }
+
+    /**
+     * Angka liter tanpa nol di belakang yang tidak berarti.
+     *
+     * "100 L" lebih mudah dibaca daripada "100,00 L", tetapi "1,5 L" tetap
+     * perlu desimalnya.
+     */
+    private function angkaRapi(float $nilai): string
+    {
+        return rtrim(rtrim(number_format($nilai, 2, ',', '.'), '0'), ',');
     }
 
     private function distanceKm(float $originLatitude, float $originLongitude, float $destinationLatitude, float $destinationLongitude): float
