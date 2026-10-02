@@ -34,11 +34,6 @@ class User extends Authenticatable
         ];
     }
 
-    public function addresses(): HasMany
-    {
-        return $this->hasMany(UserAddress::class);
-    }
-
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
@@ -47,11 +42,6 @@ class User extends Authenticatable
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class);
-    }
-
-    public function assignedPickups(): HasMany
-    {
-        return $this->hasMany(Pickup::class, 'assigned_user_id');
     }
 
     public function partners(): BelongsToMany

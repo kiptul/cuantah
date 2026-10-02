@@ -109,11 +109,6 @@ class Transaction extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function oilPrice(): BelongsTo
-    {
-        return $this->belongsTo(OilPrice::class);
-    }
-
     public function partner(): BelongsTo
     {
         return $this->belongsTo(Partner::class);
