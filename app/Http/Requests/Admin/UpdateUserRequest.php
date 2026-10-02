@@ -22,7 +22,7 @@ class UpdateUserRequest extends FormRequest
             'email' => ['required', 'email', 'max:160', Rule::unique('users', 'email')->ignore($this->route('user'))],
             'phone' => ['nullable', 'string', 'max:24'],
             'role' => ['required', Rule::in(['user', 'employee', 'admin'])],
-            'password' => ['nullable', 'confirmed', Password::min(8)->letters()->numbers()],
+            'password' => ['nullable', 'confirmed', Password::defaults()],
             'partner_ids' => ['nullable', 'array'],
             'partner_ids.*' => ['integer', Rule::exists('partners', 'id')],
         ];
