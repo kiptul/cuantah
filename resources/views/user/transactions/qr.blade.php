@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Barcode {{ $transaction->code }}</title>
+    <title>QR {{ $transaction->code }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         @media print {
@@ -17,13 +17,20 @@
         <section class="w-full rounded-lg border border-slate-200 bg-white p-8 text-center shadow-sm">
             <p class="text-sm font-bold uppercase text-emerald-700">CUANTAH Drop-off</p>
             <h1 class="mt-2 text-3xl font-black">{{ $transaction->code }}</h1>
-            <p class="mt-2 text-sm text-slate-600">Tunjukkan barcode ini ke karyawan di drop-off point.</p>
+            <p class="mt-2 text-sm text-slate-600">Tunjukkan QR ini ke karyawan di drop-off point.</p>
 
-            <div class="mx-auto mt-8 max-w-md rounded-md bg-white p-4">
-                <svg viewBox="0 0 {{ $barcode['width'] }} {{ $barcode['height'] }}" class="h-28 w-full" role="img" aria-label="Barcode {{ $transaction->code }}">
-                    <rect width="{{ $barcode['width'] }}" height="{{ $barcode['height'] }}" fill="#fff"></rect>
-                    @foreach($barcode['rects'] as $rect)
-                        <rect x="{{ $rect['x'] }}" y="0" width="{{ $rect['width'] }}" height="{{ $barcode['height'] }}" fill="#020617"></rect>
+            {{-- shape-rendering crispEdges mematikan antialias: modul QR harus
+                 bertepi tegas, sebab tepi yang dilembutkan membuat pemindai
+                 ragu menentukan batas modul pada ukuran cetak kecil. --}}
+            <div class="mx-auto mt-8 max-w-xs">
+                <svg viewBox="0 0 {{ $qr['viewBox'] }} {{ $qr['viewBox'] }}"
+                     class="w-full"
+                     shape-rendering="crispEdges"
+                     role="img"
+                     aria-label="Kode QR {{ $transaction->code }}">
+                    <rect width="{{ $qr['viewBox'] }}" height="{{ $qr['viewBox'] }}" fill="#fff"></rect>
+                    @foreach($qr['runs'] as $run)
+                        <rect x="{{ $run['x'] }}" y="{{ $run['y'] }}" width="{{ $run['w'] }}" height="1" fill="#020617"></rect>
                     @endforeach
                 </svg>
             </div>

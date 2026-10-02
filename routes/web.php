@@ -9,7 +9,6 @@ use App\Http\Controllers\Admin\TransactionController as AdminTransactionControll
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\PasswordResetController;
-use App\Http\Controllers\BarcodeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepositController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
@@ -17,6 +16,7 @@ use App\Http\Controllers\Employee\PickupController as EmployeePickupController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicController;
+use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,7 +51,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/setor', [DepositController::class, 'store'])->name('deposits.store');
     Route::get('/transaksi', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transaksi/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
-    Route::get('/transaksi/{transaction}/barcode', [BarcodeController::class, 'show'])->name('transactions.barcode');
+    Route::get('/transaksi/{transaction}/qr', [QrCodeController::class, 'show'])->name('transactions.qr');
     Route::post('/transaksi/{transaction}/batal', [TransactionController::class, 'cancel'])->name('transactions.cancel');
     Route::post('/transaksi/{transaction}/sanggah', [TransactionController::class, 'dispute'])->name('transactions.dispute');
 });

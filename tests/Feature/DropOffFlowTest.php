@@ -10,7 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Alur antar sendiri: penyetor menampilkan barcode, karyawan memindainya,
+ * Alur antar sendiri: penyetor menampilkan QR, karyawan memindainya,
  * lalu transaksinya masuk ke daftar karyawan itu. Ini satu-satunya jalur
  * yang tidak melewati penugasan admin, dan sebelumnya tidak diuji ujung
  * ke ujung.
@@ -39,18 +39,18 @@ class DropOffFlowTest extends TestCase
         ]);
     }
 
-    public function test_depositor_can_open_the_barcode_of_their_own_drop_off(): void
+    public function test_depositor_can_open_the_qr_of_their_own_drop_off(): void
     {
         $penyetor = User::factory()->create(['role' => 'user']);
         $transaksi = $this->setoranAntarSendiri($penyetor, Partner::factory()->create());
 
         $this->actingAs($penyetor)
-            ->get(route('transactions.barcode', $transaksi))
+            ->get(route('transactions.qr', $transaksi))
             ->assertOk()
             ->assertSee($transaksi->code);
     }
 
-    public function test_a_pickup_transaction_has_no_barcode_page(): void
+    public function test_a_pickup_transaction_has_no_qr_page(): void
     {
         $penyetor = User::factory()->create(['role' => 'user']);
         $transaksi = Transaction::factory()->pickup()->create([
@@ -59,18 +59,18 @@ class DropOffFlowTest extends TestCase
         ]);
 
         $this->actingAs($penyetor)
-            ->get(route('transactions.barcode', $transaksi))
+            ->get(route('transactions.qr', $transaksi))
             ->assertNotFound();
     }
 
-    public function test_someone_else_cannot_open_the_barcode(): void
+    public function test_someone_else_cannot_open_the_qr(): void
     {
         $penyetor = User::factory()->create(['role' => 'user']);
         $orangLain = User::factory()->create(['role' => 'user']);
         $transaksi = $this->setoranAntarSendiri($penyetor, Partner::factory()->create());
 
         $this->actingAs($orangLain)
-            ->get(route('transactions.barcode', $transaksi))
+            ->get(route('transactions.qr', $transaksi))
             ->assertForbidden();
     }
 

@@ -125,7 +125,7 @@
                                     {{ $transaction->pickup->pickup_date->translatedFormat('d M') }}@if($transaction->pickup->pickup_time), {{ \Illuminate\Support\Str::of($transaction->pickup->pickup_time)->substr(0, 5) }}@endif.
                                 @endif
                             @else
-                                Bawa jelantah ke mitra dan tunjukkan barcode-nya.
+                                Bawa jelantah ke mitra dan tunjukkan QR-nya.
                             @endif
                         </p>
                     </a>

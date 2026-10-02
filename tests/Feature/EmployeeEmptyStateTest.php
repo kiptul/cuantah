@@ -15,7 +15,7 @@ use Tests\TestCase;
  *
  * Penjemputan hanya sampai ke karyawan lewat penugasan admin. Keadaan kosong
  * karenanya tidak boleh menjanjikan pekerjaan yang bisa diambil sendiri, dan
- * satu-satunya tindakan mandiri yang tersisa adalah memindai barcode penyetor
+ * satu-satunya tindakan mandiri yang tersisa adalah memindai QR penyetor
  * yang datang ke mitra.
  */
 class EmployeeEmptyStateTest extends TestCase

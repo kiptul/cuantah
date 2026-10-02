@@ -101,7 +101,7 @@ class TransactionService
              * Mitra ikut diberi tahu. Sebelumnya hanya penyetor yang menerima
              * kabar, sehingga pihak yang justru harus menindaklanjuti tidak
              * pernah tahu ada setoran masuk. Drop-off bahkan tidak muncul di
-             * daftar pickup sampai barcode-nya discan, jadi tanpa pesan ini
+             * daftar pickup sampai QR-nya dipindai, jadi tanpa pesan ini
              * mitra tidak punya satu pun jalan untuk mengetahuinya.
              */
             $this->notifyPartnerAdmins(

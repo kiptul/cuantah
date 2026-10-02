@@ -25,7 +25,7 @@ class PickupController extends Controller
 
         return redirect()
             ->route('employee.transactions.show', $pickup->transaction)
-            ->with('success', 'Barcode berhasil discan dan transaksi masuk ke daftar kamu.');
+            ->with('success', 'QR berhasil dipindai dan transaksi masuk ke daftar kamu.');
     }
 
     public function transactions()

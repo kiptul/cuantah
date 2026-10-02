@@ -44,7 +44,7 @@ class Pickup extends Model
      * jelantahnya sudah ada di mitra dan belum ditimbang.
      *
      * Drop-off dinilai dari sejak kapan ia menjadi tanggungan karyawan, yaitu
-     * waktu barcode-nya discan, atau waktu penugasan bila admin menugaskannya
+     * waktu QR-nya dipindai, atau waktu penugasan bila admin menugaskannya
      * tanpa pemindaian.
      */
     public function isOverdue(): bool

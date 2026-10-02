@@ -4,7 +4,7 @@
     </x-slot:head>
 
     <x-page-header eyebrow="Operasional" title="Pickup & Assignment Karyawan">
-        Pickup jemput muncul otomatis. Drop-off baru muncul setelah barcode discan karyawan.
+        Pickup jemput muncul otomatis. Drop-off baru muncul setelah QR dipindai karyawan.
     </x-page-header>
 
     @if($pickupPoints !== [])

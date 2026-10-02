@@ -1,4 +1,4 @@
-<x-layouts.app title="Scan Drop-off">
+<x-layouts.app title="Pindai QR Drop-off">
     <x-slot:head>
         @vite('resources/js/scanner.js')
     </x-slot:head>
@@ -12,11 +12,11 @@
                         </svg>
                     </div>
                     <div>
-                        <h1 class="text-3xl font-black tracking-tight">Pindai Barcode</h1>
-                        <p class="text-sm font-semibold text-slate-500 sm:text-base">Posisikan barcode di dalam bingkai</p>
+                        <h1 class="text-3xl font-black tracking-tight">Pindai QR</h1>
+                        <p class="text-sm font-semibold text-slate-500 sm:text-base">Posisikan QR di dalam bingkai</p>
                     </div>
                 </div>
-                <a href="{{ route('employee.dashboard') }}" class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 hover:bg-slate-200" aria-label="Tutup scanner">
+                <a href="{{ route('employee.dashboard') }}" class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 hover:bg-slate-200" aria-label="Tutup pemindai">
                     <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
@@ -26,9 +26,7 @@
             <div class="relative mt-6 overflow-hidden rounded-[1.5rem] bg-slate-900">
                 <video id="scannerVideo" class="aspect-[4/5] w-full object-cover sm:aspect-[4/3]" playsinline muted></video>
                 <div class="pointer-events-none absolute inset-0 bg-slate-950/20"></div>
-                <div class="pointer-events-none absolute left-1/2 top-1/2 h-32 w-[82%] -translate-x-1/2 -translate-y-1/2 rounded-2xl border-4 border-emerald-400/90 shadow-[0_0_0_999px_rgba(15,23,42,.28)]">
-                    <div class="absolute left-8 right-8 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-white/90"></div>
-                </div>
+                <div class="pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[72%] -translate-x-1/2 -translate-y-1/2 rounded-2xl border-4 border-emerald-400/90 shadow-[0_0_0_999px_rgba(15,23,42,.28)]"></div>
             </div>
 
             <p id="scannerStatus" class="mt-5 text-center text-sm font-semibold text-slate-500">Memulai kamera...</p>
@@ -62,15 +60,15 @@
                 return;
             }
 
-            if (!window.CuantahScanner?.BrowserMultiFormatReader) {
-                statusText.textContent = 'Scanner belum selesai dimuat. Coba muat ulang halaman.';
+            if (!window.CuantahScanner?.BrowserQRCodeReader) {
+                statusText.textContent = 'Pemindai belum selesai dimuat. Coba muat ulang halaman.';
                 return;
             }
 
             controls?.stop();
-            const reader = new window.CuantahScanner.BrowserMultiFormatReader();
+            const reader = new window.CuantahScanner.BrowserQRCodeReader();
             scanning = true;
-            statusText.textContent = 'Dekatkan barcode ke bingkai sampai garisnya terlihat tajam.';
+            statusText.textContent = 'Dekatkan QR ke bingkai sampai seluruh kotaknya masuk.';
 
             controls = await reader.decodeFromConstraints({
                 video: {
@@ -88,12 +86,12 @@
 
                     /**
                      * Tidak langsung dikirim. Pemindaian menugaskan transaksi
-                     * itu kepada karyawan yang memindainya, dan barcode yang
+                     * itu kepada karyawan yang memindainya, dan QR yang
                      * salah terbaca akan menugaskan transaksi orang lain tanpa
                      * sempat dilihat. Kodenya ditampilkan lebih dulu agar bisa
                      * dicocokkan dengan yang tertera di layar penyetor.
                      */
-                    statusText.textContent = `Barcode terbaca: ${code}. Cocokkan dengan kode di layar penyetor, lalu tekan tombol di bawah.`;
+                    statusText.textContent = `QR terbaca: ${code}. Cocokkan dengan kode di layar penyetor, lalu tekan tombol di bawah.`;
                     submitButton?.focus();
                 }
             });

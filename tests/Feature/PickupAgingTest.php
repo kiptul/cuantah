@@ -95,7 +95,7 @@ class PickupAgingTest extends TestCase
     {
         $this->siapkan();
 
-        // Admin dapat menugaskan drop-off tanpa barcode pernah discan, sehingga
+        // Admin dapat menugaskan drop-off tanpa QR pernah dipindai, sehingga
         // scanned_at kosong dan satu-satunya patokan adalah waktu penugasan.
         $pickup = $this->tugas(Transaction::METHOD_DROP_OFF, [
             'scanned_at' => null,

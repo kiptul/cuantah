@@ -17,7 +17,7 @@ use Tests\TestCase;
  * berkonsekuensi: nilainya langsung menjadi final dan satu-satunya jalan
  * keluar bagi penyetor adalah menyanggah dalam tiga hari.
  *
- * Pemindaian barcode juga langsung mengirim formnya, sehingga barcode yang
+ * Pemindaian QR juga langsung mengirim formnya, sehingga QR yang
  * salah terbaca menugaskan transaksi orang lain tanpa sempat dilihat.
  */
 class IrreversibleActionGuardTest extends TestCase
@@ -128,7 +128,7 @@ class IrreversibleActionGuardTest extends TestCase
         $this->assertStringNotContainsString(
             'form.submit()',
             $isi,
-            'Barcode yang salah terbaca tidak boleh menugaskan transaksi orang lain tanpa sempat dilihat.'
+            'QR yang salah terbaca tidak boleh menugaskan transaksi orang lain tanpa sempat dilihat.'
         );
     }
 

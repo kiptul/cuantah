@@ -81,7 +81,7 @@
             @endif
 
             @if($transaction->method === 'drop_off')
-                <a href="{{ route('transactions.barcode', $transaction) }}" class="mt-5 block rounded-md bg-emerald-700 px-4 py-3 text-center font-bold text-white">Lihat Barcode</a>
+                <a href="{{ route('transactions.qr', $transaction) }}" class="mt-5 block rounded-md bg-emerald-700 px-4 py-3 text-center font-bold text-white">Lihat QR</a>
             @endif
         </aside>
     </div>

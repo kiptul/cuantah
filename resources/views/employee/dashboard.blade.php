@@ -32,15 +32,15 @@
             {{-- Tidak ada lagi daftar pekerjaan terbuka untuk diambil sendiri:
                  penjemputan hanya sampai ke karyawan lewat penugasan admin.
                  Yang tersisa sebagai tindakan mandiri hanyalah memindai
-                 barcode penyetor yang datang ke mitra. --}}
+                 QR penyetor yang datang ke mitra. --}}
             <div class="mt-3 rounded-2xl bg-white px-5 py-12 text-center shadow-sm ring-1 ring-slate-900/5">
                 <p class="font-bold text-slate-900">Tidak ada tugas terbuka</p>
                 <p class="mx-auto mt-1.5 max-w-xs text-sm leading-6 text-slate-500">
-                    Penjemputan akan muncul di sini setelah admin menugaskannya kepadamu. Penyetor juga masih bisa datang sendiri ke mitra, scan barcode-nya saat itu terjadi.
+                    Penjemputan akan muncul di sini setelah admin menugaskannya kepadamu. Penyetor juga masih bisa datang sendiri ke mitra, pindai QR-nya saat itu terjadi.
                 </p>
                 <a href="{{ route('employee.scan') }}"
                    class="mt-5 inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800">
-                    Scan Barcode
+                    Pindai QR
                 </a>
             </div>
         @else
@@ -99,7 +99,7 @@
                                 Proses
                             </a>
                             @if($task->user->phone)
-                                <a href="tel:{{ preg_replace('/[^0-9+]/', '', $task->user->phone) }}" aria-label="Telepon {{ $task->user->name }}"
+                                <a href="https://wa.me/{{ preg_replace('/[^0-9+]/', '', $task->user->phone) }}" aria-label="Telepon {{ $task->user->name }}"
                                    class="inline-flex items-center justify-center rounded-xl px-3 py-2.5 text-emerald-800 ring-1 ring-slate-900/10 transition hover:ring-emerald-300">
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                         <path d="M4 5a1 1 0 0 1 1-1h2.6a1 1 0 0 1 1 .76l.7 2.9a1 1 0 0 1-.3 1L7.6 10.1a12 12 0 0 0 5.4 5.4l1.4-1.4a1 1 0 0 1 1-.26l2.9.7a1 1 0 0 1 .76 1V19a1 1 0 0 1-1 1A15 15 0 0 1 4 5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
