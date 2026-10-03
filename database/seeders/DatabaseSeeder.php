@@ -44,7 +44,7 @@ class DatabaseSeeder extends Seeder
         $partner = Partner::updateOrCreate(
             ['name' => 'Mitra Angkut Karawang'],
             [
-                'type' => 'Collector',
+                'type' => 'Pengepul',
                 'phone' => '081200000003',
                 'address' => 'Jl. Tuparev, Karawang',
                 'latitude' => -6.3055,

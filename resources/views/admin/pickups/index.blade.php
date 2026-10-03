@@ -1,9 +1,9 @@
-<x-layouts.admin title="Pickup & Assignment">
+<x-layouts.admin title="Pickup & Penugasan">
     <x-slot:head>
         @vite('resources/js/map.js')
     </x-slot:head>
 
-    <x-page-header eyebrow="Operasional" title="Pickup & Assignment Karyawan">
+    <x-page-header eyebrow="Operasional" title="Pickup & Penugasan Karyawan">
         Pickup jemput muncul otomatis. Drop-off baru muncul setelah QR dipindai karyawan.
     </x-page-header>
 
@@ -108,7 +108,7 @@
                     </div>
 
                     <aside class="border-t border-emerald-100 pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-                        <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Assignment</p>
+                        <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Penugasan</p>
                         <p class="mt-2 text-sm text-slate-500">Karyawan saat ini</p>
                         <p class="font-black text-emerald-950">{{ $pickup->assignedUser?->name ?? 'Belum di-assign' }}</p>
 

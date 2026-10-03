@@ -13,13 +13,36 @@
         @csrf
         <p class="font-black">Tambah Mitra</p>
         <div class="mt-4 grid gap-4 md:grid-cols-3">
-            <input name="name" placeholder="Nama mitra" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-            <input name="type" placeholder="Tipe" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-            <input name="phone" placeholder="Telepon" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-            <input name="capacity_liter" type="number" min="1" placeholder="Kapasitas liter" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-            <select name="status" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"><option value="active">Aktif</option><option value="inactive">Nonaktif</option></select>
-            <button type="button" data-target="new" class="gps-btn rounded-md border border-slate-300 px-4 py-2 font-bold text-slate-700">Gunakan GPS</button>
-            <textarea name="address" placeholder="Alamat" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 md:col-span-3" required></textarea>
+            {{-- Label, bukan placeholder. Placeholder lenyap begitu kotaknya
+                 diisi, dan formulir ini dibaca ulang setiap kali ada kesalahan
+                 validasi, ketika seluruh kotak sudah terisi. --}}
+            <label class="block">
+                <span class="text-sm font-bold text-slate-700">Nama mitra</span>
+                <input name="name" value="{{ old('name') }}" placeholder="Mitra Angkut Karawang" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            </label>
+            <label class="block">
+                <span class="text-sm font-bold text-slate-700">Tipe mitra</span>
+                <input name="type" value="{{ old('type') }}" placeholder="Pengepul" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            </label>
+            <label class="block">
+                <span class="text-sm font-bold text-slate-700">Telepon</span>
+                <input name="phone" value="{{ old('phone') }}" placeholder="08xxxxxxxxxx" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            </label>
+            <label class="block">
+                <span class="text-sm font-bold text-slate-700">Kapasitas (liter)</span>
+                <input name="capacity_liter" type="number" min="1" value="{{ old('capacity_liter') }}" placeholder="500" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            </label>
+            <label class="block">
+                <span class="text-sm font-bold text-slate-700">Status</span>
+                <select name="status" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"><option value="active">Aktif</option><option value="inactive">Nonaktif</option></select>
+            </label>
+            <div class="flex items-end">
+                <button type="button" data-target="new" class="gps-btn w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50">Gunakan GPS</button>
+            </div>
+            <label class="block md:col-span-3">
+                <span class="text-sm font-bold text-slate-700">Alamat</span>
+                <textarea name="address" placeholder="Jl. Tuparev, Karawang" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>{{ old('address') }}</textarea>
+            </label>
             <input name="latitude" id="lat-new" type="hidden" value="-6.3055">
             <input name="longitude" id="lng-new" type="hidden" value="107.3053">
         </div>
@@ -51,13 +74,38 @@
                 </div>
 
                 <div class="mt-4 grid gap-4 md:grid-cols-3">
-                    <input name="name" value="{{ $partner->name }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                    <input name="type" value="{{ $partner->type }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                    <input name="phone" value="{{ $partner->phone }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                    <input name="capacity_liter" type="number" value="{{ $partner->capacity_liter }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                    <select name="status" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"><option value="active" @selected($partner->status === 'active')>Aktif</option><option value="inactive" @selected($partner->status === 'inactive')>Nonaktif</option></select>
-                    <button type="button" data-target="{{ $partner->id }}" class="gps-btn rounded-md border border-slate-300 px-4 py-2 font-bold text-slate-700">Gunakan GPS</button>
-                    <textarea name="address" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 md:col-span-3" required>{{ $partner->address }}</textarea>
+                    {{-- Formulir ini bahkan tidak punya placeholder, sebab
+                         kotaknya selalu terisi. Enam kotak berjajar berisi
+                         "Mitra Angkut Karawang", "Collector", "081200000003",
+                         "500" tanpa satu pun keterangan: angka 500 itu bisa
+                         apa saja. --}}
+                    <label class="block">
+                        <span class="text-sm font-bold text-slate-700">Nama mitra</span>
+                        <input name="name" value="{{ $partner->name }}" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-bold text-slate-700">Tipe mitra</span>
+                        <input name="type" value="{{ $partner->type }}" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-bold text-slate-700">Telepon</span>
+                        <input name="phone" value="{{ $partner->phone }}" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-bold text-slate-700">Kapasitas (liter)</span>
+                        <input name="capacity_liter" type="number" value="{{ $partner->capacity_liter }}" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-bold text-slate-700">Status</span>
+                        <select name="status" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"><option value="active" @selected($partner->status === 'active')>Aktif</option><option value="inactive" @selected($partner->status === 'inactive')>Nonaktif</option></select>
+                    </label>
+                    <div class="flex items-end">
+                        <button type="button" data-target="{{ $partner->id }}" class="gps-btn w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50">Gunakan GPS</button>
+                    </div>
+                    <label class="block md:col-span-3">
+                        <span class="text-sm font-bold text-slate-700">Alamat</span>
+                        <textarea name="address" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>{{ $partner->address }}</textarea>
+                    </label>
                     <input name="latitude" id="lat-{{ $partner->id }}" type="hidden" value="{{ $partner->latitude }}">
                     <input name="longitude" id="lng-{{ $partner->id }}" type="hidden" value="{{ $partner->longitude }}">
                 </div>

@@ -10,10 +10,22 @@
              catatan, urutan baca di layar kecil menjadi janggal karena aksi
              muncul sebelum isian terakhir. --}}
         <div class="mt-4 grid gap-3 md:grid-cols-3">
-            <input name="price_per_liter" type="number" placeholder="Harga per liter" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-            <input name="effective_date" type="date" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            {{-- Tanggal berlaku sebelumnya tidak punya keterangan sama sekali,
+                 sehingga kotaknya hanya berbunyi dd/mm/yyyy tanpa memberi tahu
+                 tanggal apa yang diminta. --}}
+            <label class="block">
+                <span class="text-sm font-bold text-slate-700">Harga per liter (Rp)</span>
+                <input name="price_per_liter" type="number" min="0" value="{{ old('price_per_liter') }}" placeholder="4000" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            </label>
+            <label class="block">
+                <span class="text-sm font-bold text-slate-700">Berlaku mulai</span>
+                <input name="effective_date" type="date" value="{{ old('effective_date') }}" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            </label>
             <label class="flex items-center gap-2 text-sm font-bold text-slate-700"><input name="is_active" value="1" type="checkbox" class="checkbox checkbox-sm border-emerald-200 [--chkbg:#047857] [--chkfg:white]" checked> Jadikan harga aktif</label>
-            <textarea name="notes" rows="2" placeholder="Catatan (opsional)" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 md:col-span-3"></textarea>
+            <label class="block md:col-span-3">
+                <span class="text-sm font-bold text-slate-700">Catatan <span class="font-medium text-slate-400">(opsional)</span></span>
+                <textarea name="notes" rows="2" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">{{ old('notes') }}</textarea>
+            </label>
             <button class="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-emerald-800 md:col-span-3">Simpan</button>
         </div>
         <p class="mt-3 text-xs leading-5 text-slate-500">Menyimpan harga aktif akan menonaktifkan harga aktif sebelumnya, sehingga hanya ada satu harga yang berlaku.</p>
