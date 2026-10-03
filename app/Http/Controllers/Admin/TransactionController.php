@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CorrectTransactionRequest;
 use App\Http\Requests\Admin\VerifyTransactionRequest;
 use App\Models\Transaction;
 use App\Services\TransactionService;
@@ -63,7 +64,7 @@ class TransactionController extends Controller
         $this->ensureVisible($transaction);
 
         return view('admin.transactions.show', [
-            'transaction' => $transaction->load('user', 'partner', 'pickup.assignedUser'),
+            'transaction' => $transaction->load('user', 'partner', 'pickup.assignedUser', 'corrections.correctedBy'),
         ]);
     }
 
@@ -76,6 +77,31 @@ class TransactionController extends Controller
         ]);
 
         return back()->with('success', 'Transaksi selesai diverifikasi.');
+    }
+
+    /**
+     * Mengoreksi volume yang salah diketik karyawan.
+     *
+     * Transaksi selesai terkunci oleh pastikanBelumFinal, dan penyelesaian
+     * sanggahan hanya menulis tanggapan tanpa menyentuh angkanya. Tanpa
+     * pintu ini, satu-satunya "perbaikan" yang tersedia adalah permintaan
+     * maaf tertulis.
+     */
+    public function correct(CorrectTransactionRequest $request, Transaction $transaction, TransactionService $service)
+    {
+        $transaction = $service->correctVolume(
+            $transaction,
+            (float) $request->validated('actual_liter'),
+            $request->validated('reason'),
+            $request->user(),
+        );
+
+        return back()->with('success', sprintf(
+            'Volume %s dikoreksi menjadi %s L, nilainya Rp%s.',
+            $transaction->code,
+            number_format((float) $transaction->actual_liter, 2, ',', '.'),
+            number_format((int) $transaction->total_value, 0, ',', '.'),
+        ));
     }
 
     /**

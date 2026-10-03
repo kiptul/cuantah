@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
@@ -103,6 +104,16 @@ class Transaction extends Model
             'disputed_at' => 'datetime',
             'dispute_resolved_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Riwayat koreksi volume, terbaru lebih dulu.
+     *
+     * @return HasMany<TransactionCorrection, $this>
+     */
+    public function corrections(): HasMany
+    {
+        return $this->hasMany(TransactionCorrection::class)->latest('id');
     }
 
     public function user(): BelongsTo

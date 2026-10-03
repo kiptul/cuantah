@@ -467,6 +467,105 @@ class TransactionService
      * siapa pun; sebaliknya, menulis berkas di dalam transaksi tidak membuat
      * penulisannya ikut dibatalkan, sebab disk tidak mengenal rollback.
      */
+    /**
+     * Mengoreksi volume transaksi yang sudah selesai.
+     *
+     * Karyawan menakar di lapangan dan mengetik angkanya di ponsel, jadi
+     * salah ketik tidak terhindarkan. Sampai sekarang tidak ada jalan
+     * membetulkannya: transaksi selesai terkunci, dan penyelesaian sanggahan
+     * hanya menulis tanggapan tanpa menyentuh angkanya.
+     *
+     * Harga diambil dari price_per_liter yang tersimpan di transaksi, bukan
+     * harga hari ini. Mengoreksi salah ketik bulan lalu dengan harga bulan
+     * ini akan mengubah dua hal sekaligus, dan yang kedua tidak diminta
+     * siapa pun.
+     */
+    public function correctVolume(Transaction $transaction, float $liter, string $reason, ?User $admin = null): Transaction
+    {
+        if ($transaction->status !== Transaction::STATUS_COMPLETED) {
+            throw ValidationException::withMessages([
+                'actual_liter' => 'Hanya transaksi selesai yang bisa dikoreksi.',
+            ]);
+        }
+
+        $literSebelum = (float) $transaction->actual_liter;
+        $nilaiSebelum = (int) $transaction->total_value;
+        $nilaiSesudah = max((int) round($liter * $transaction->price_per_liter) - (int) $transaction->pickup_fee, 0);
+
+        $this->pastikanStokMitraTidakMinus($transaction, $literSebelum, $liter);
+
+        /**
+         * Status bayar hanya dikembalikan bila nilainya naik. Pada koreksi
+         * turun, uangnya sudah terlanjur keluar dan malah kelebihan;
+         * menandainya belum dibayar berarti mencatat sesuatu yang tidak
+         * terjadi, sedangkan aplikasi ini tidak punya alur pengembalian dana.
+         */
+        $kurangBayar = $transaction->payment_status === 'paid' && $nilaiSesudah > $nilaiSebelum;
+
+        return DB::transaction(function () use ($transaction, $liter, $reason, $admin, $literSebelum, $nilaiSebelum, $nilaiSesudah, $kurangBayar) {
+            $transaction->corrections()->create([
+                'corrected_by' => $admin?->id,
+                'liter_before' => $literSebelum,
+                'liter_after' => $liter,
+                'value_before' => $nilaiSebelum,
+                'value_after' => $nilaiSesudah,
+                'payment_status_before' => $transaction->payment_status,
+                'payment_proof_path_before' => $transaction->payment_proof_path,
+                'reason' => $reason,
+            ]);
+
+            $transaction->update([
+                'actual_liter' => $liter,
+                'total_value' => $nilaiSesudah,
+                'payment_status' => $kurangBayar ? 'unpaid' : $transaction->payment_status,
+                'paid_at' => $kurangBayar ? null : $transaction->paid_at,
+            ]);
+
+            Notification::create([
+                'user_id' => $transaction->user_id,
+                'title' => 'Volume transaksi dikoreksi',
+                'message' => sprintf(
+                    'Volume %s diperbaiki dari %s L menjadi %s L, sehingga nilainya menjadi Rp%s. Alasan: %s',
+                    $transaction->code,
+                    $this->angkaRapi($literSebelum),
+                    $this->angkaRapi($liter),
+                    number_format($nilaiSesudah, 0, ',', '.'),
+                    $reason,
+                ),
+                'type' => 'transaction',
+            ]);
+
+            return $transaction->refresh();
+        });
+    }
+
+    /**
+     * Menahan koreksi yang membuat jelantah tersalur melebihi yang terkumpul.
+     *
+     * Stok mitra adalah selisih terkumpul dan tersalur. Koreksi turun pada
+     * setoran yang jelantahnya sudah terlanjur disalurkan akan membuat
+     * selisih itu minus, dan laporan rantai pasoknya berhenti berarti.
+     */
+    private function pastikanStokMitraTidakMinus(Transaction $transaction, float $literSebelum, float $literSesudah): void
+    {
+        if ($literSesudah >= $literSebelum || $transaction->partner === null) {
+            return;
+        }
+
+        $sisa = $transaction->partner->availableLiter();
+        $pengurangan = $literSebelum - $literSesudah;
+
+        if ($pengurangan > $sisa + 0.001) {
+            throw ValidationException::withMessages([
+                'actual_liter' => sprintf(
+                    'Koreksi ini mengurangi %s L sedangkan sisa jelantah mitra tinggal %s L, jadi yang sudah disalurkan akan melebihi yang pernah masuk.',
+                    $this->angkaRapi($pengurangan),
+                    $this->angkaRapi($sisa),
+                ),
+            ]);
+        }
+    }
+
     private function simpanBuktiBayar(UploadedFile $bukti, Transaction $transaction): string
     {
         return $bukti->store('bukti-bayar/'.$transaction->getKey(), 'local');

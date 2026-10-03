@@ -80,6 +80,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/transactions/{transaction}/verify', [AdminTransactionController::class, 'verify'])->name('transactions.verify');
     Route::post('/transactions/{transaction}/reject', [AdminTransactionController::class, 'reject'])->name('transactions.reject');
     Route::post('/transactions/{transaction}/mark-paid', [AdminTransactionController::class, 'markPaid'])->name('transactions.mark-paid');
+    Route::post('/transactions/{transaction}/correct', [AdminTransactionController::class, 'correct'])->name('transactions.correct');
     Route::post('/transactions/{transaction}/resolve-dispute', [AdminTransactionController::class, 'resolveDispute'])->name('transactions.resolve-dispute');
 
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
