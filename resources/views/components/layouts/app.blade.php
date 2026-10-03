@@ -157,7 +157,7 @@
             <aside class="fixed inset-y-0 left-0 z-[1100] w-72 max-w-[85vw] -translate-x-full overflow-y-auto border-r border-slate-200 bg-white p-3 shadow-xl shadow-slate-950/10 transition-transform duration-200 ease-out peer-checked:translate-x-0 sm:hidden">
                 <label
                     for="appDrawer"
-                    class="mb-2 flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+                    class="mb-2 flex min-h-11 cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
                 >
                     Tutup menu
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">

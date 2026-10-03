@@ -45,7 +45,7 @@
             {{-- Tombol tutup hanya ada selama laci berwujud laci. --}}
             <label
                 for="adminDrawer"
-                class="mb-2 flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50 lg:hidden"
+                class="mb-2 flex min-h-11 cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50 lg:hidden"
             >
                 Tutup menu
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">

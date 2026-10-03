@@ -114,7 +114,7 @@
         <aside class="fixed inset-y-0 left-0 z-[1100] w-72 max-w-[85vw] -translate-x-full overflow-y-auto border-r border-emerald-100 bg-white p-3 shadow-xl shadow-emerald-950/10 transition-transform duration-200 ease-out peer-checked:translate-x-0 xl:hidden">
             <label
                 for="publicDrawer"
-                class="mb-2 flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-emerald-50"
+                class="mb-2 flex min-h-11 cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-emerald-50"
             >
                 Tutup menu
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -173,7 +173,7 @@
                         <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-200">Jelajahi CUANTAH</p>
                         <nav class="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3 lg:grid-cols-4" aria-label="Navigasi footer">
                             @foreach ($publicNavItems as $item)
-                                <a href="{{ $item['url'] }}" class="rounded-lg py-2 text-sm font-semibold text-emerald-100/75 transition hover:bg-white/10 hover:px-2 hover:text-white">
+                                <a href="{{ $item['url'] }}" class="flex min-h-11 items-center rounded-lg text-sm font-semibold text-emerald-100/75 transition hover:bg-white/10 hover:px-2 hover:text-white">
                                     {{ $item['label'] }}
                                 </a>
                             @endforeach

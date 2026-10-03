@@ -25,9 +25,12 @@
                      hasil takaran menentukan bayaran, dan kualitas menentukan volume. --}}
                 <div class="mt-8 flex max-w-xl items-start gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5">
                     <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white">
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M12 3v18M8 7h6a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
+                        {{-- "Rp", bukan lambang dolar. Seluruh nilai di aplikasi ini
+                             dalam rupiah, dan ikon mata uang asing di sebelah kalimat
+                             tentang bayaran membuat pembaca ragu pada mata uang yang
+                             dimaksud. Ditulis sebagai teks, bukan jalur SVG, supaya
+                             ikut berubah bila ukuran atau warnanya disetel. --}}
+                        <span class="text-sm font-black leading-none tracking-tight">Rp</span>
                     </span>
                     <p class="text-[15px] leading-7 text-emerald-950">
                         <strong class="font-black">Ini berpengaruh ke bayaranmu.</strong>
