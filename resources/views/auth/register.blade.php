@@ -7,23 +7,7 @@
             class="relative mx-auto grid min-h-[calc(100vh-88px)] max-w-6xl items-center gap-10 px-4 py-14 lg:grid-cols-[.9fr_1.1fr] lg:px-8 lg:py-16">
             <div class="mx-auto max-w-xl text-center lg:mx-0 lg:text-left">
                 <div class="inline-flex items-center gap-4">
-                    <span
-                        class="flex h-[72px] w-[72px] items-center justify-center rounded-3xl bg-emerald-700 text-white shadow-lg shadow-emerald-900/20">
-                        <svg class="h-11 w-11" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-                            <path
-                                d="M20 4C13.5 10.8 8 17.6 8 25.2C8 32.1 13.4 36 20 36C26.6 36 32 32.1 32 25.2C32 17.6 26.5 10.8 20 4Z"
-                                stroke="currentColor" stroke-width="4" stroke-linejoin="round" />
-                            <path d="M20 13V31" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
-                            <path d="M20 24C16.6 23.6 14.3 21.8 13 18.5" stroke="currentColor" stroke-width="4"
-                                stroke-linecap="round" />
-                        </svg>
-                    </span>
-                    <span class="text-left">
-                        <span
-                            class="block text-4xl font-black leading-none tracking-tight text-emerald-800">CUANTAH</span>
-                        <span class="mt-2 block text-sm font-black uppercase tracking-[0.28em] text-emerald-700/70">Cuan
-                            dari minyak jelantah</span>
-                    </span>
+                    <x-brand-lockup variant="auth" />
                 </div>
 
                 <h1 class="mt-3 text-4xl font-black tracking-tight text-emerald-950 sm:text-5xl">

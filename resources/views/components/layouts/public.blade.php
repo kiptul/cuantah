@@ -22,17 +22,7 @@
     <header class="sticky top-0 z-40 border-b border-emerald-950/10 bg-white/95 shadow-sm shadow-emerald-950/5 backdrop-blur">
         <nav class="mx-auto flex max-w-[1500px] items-center justify-between gap-3 px-4 py-3 sm:gap-6 sm:py-4 lg:px-8">
             <a href="{{ route('home') }}" class="flex min-w-0 items-center gap-3">
-                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-700 text-white shadow-lg shadow-emerald-900/20 sm:h-12 sm:w-12">
-                    <svg class="h-7 w-7 sm:h-8 sm:w-8" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-                        <path d="M20 4C13.5 10.8 8 17.6 8 25.2C8 32.1 13.4 36 20 36C26.6 36 32 32.1 32 25.2C32 17.6 26.5 10.8 20 4Z" stroke="currentColor" stroke-width="4" stroke-linejoin="round" />
-                        <path d="M20 13V31" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
-                        <path d="M20 24C16.6 23.6 14.3 21.8 13 18.5" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
-                    </svg>
-                </span>
-                <span>
-                    <span class="block text-xl font-black leading-none tracking-tight text-emerald-800 sm:text-2xl">CUANTAH</span>
-                    <span class="mt-1 hidden text-[10px] font-black uppercase tracking-[0.24em] text-emerald-700/70 sm:block">Cuan dari minyak jelantah</span>
-                </span>
+                <x-brand-lockup variant="header" />
             </a>
             <div class="hidden items-center gap-7 text-sm font-bold text-slate-600 xl:flex">
                 @foreach ($publicNavItems as $item)
@@ -152,17 +142,7 @@
                 <div class="grid gap-10 lg:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)] lg:gap-20">
                     <div class="max-w-sm">
                         <a href="{{ route('home') }}" class="inline-flex items-center gap-3">
-                            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-lg shadow-black/15 sm:h-11 sm:w-11 sm:rounded-2xl">
-                                <svg class="h-6 w-6 sm:h-7 sm:w-7" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-                                    <path d="M20 4C13.5 10.8 8 17.6 8 25.2C8 32.1 13.4 36 20 36C26.6 36 32 32.1 32 25.2C32 17.6 26.5 10.8 20 4Z" stroke="currentColor" stroke-width="4" stroke-linejoin="round" />
-                                    <path d="M20 13V31" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
-                                    <path d="M20 24C16.6 23.6 14.3 21.8 13 18.5" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
-                                </svg>
-                            </span>
-                            <span>
-                                <span class="block text-xl font-black leading-none tracking-tight sm:text-2xl">CUANTAH</span>
-                                <span class="mt-1 block text-[10px] font-black uppercase tracking-[0.2em] text-emerald-200">Cuan dari minyak jelantah</span>
-                            </span>
+                            <x-brand-lockup variant="footer" />
                         </a>
                         <p class="mt-5 text-sm leading-6 text-emerald-100/75">
                             Menghubungkan rumah tangga dan UMKM dengan pengelolaan minyak jelantah yang lebih mudah, transparan, dan terorganisir.
