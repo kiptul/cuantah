@@ -49,7 +49,21 @@
                 <h2 class="font-black tracking-tight text-emerald-950">Sebaran lokasi</h2>
                 <p class="text-sm text-slate-600">{{ count($pickupPoints) }} titik di halaman ini</p>
             </div>
-            <div id="pickupMap" class="h-64 w-full sm:h-80"></div>
+            {{-- isolate mengurung z-index Leaflet.
+
+                     Leaflet menaruh pane petanya di z-index 400 dan kotak
+                     kontrolnya di 1000, sedangkan wadah peta hanya
+                     position:relative tanpa z-index sehingga tidak membentuk
+                     konteks penumpukan sendiri. Akibatnya angka-angka itu
+                     bocor ke konteks akar dan mengalahkan setiap elemen
+                     melayang di halaman: panel notifikasi, menu akun, dan menu
+                     navigasi, yang semuanya berada di z-40 dan z-50.
+
+                     Dikurung di sumbernya, bukan dengan menaikkan z-index tiap
+                     elemen melayang satu per satu. Cara kedua hanya menang
+                     untuk elemen yang kebetulan sudah dibuat, dan kalah lagi
+                     pada elemen berikutnya. --}}
+            <div id="pickupMap" class="isolate h-64 w-full sm:h-80"></div>
         </section>
     @endif
 

@@ -5,7 +5,7 @@
     <div class="mb-5"><a href="{{ route('transactions.index') }}" class="text-sm font-bold text-emerald-700">Kembali</a><h1 class="mt-2 text-3xl font-black">{{ $transaction->code }}</h1></div>
     <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
         <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <div id="map" class="h-[360px] rounded-lg border border-slate-200"></div>
+            <div id="map" class="isolate h-[360px] rounded-lg border border-slate-200"></div>
             <div class="mt-5">
                 <p class="font-bold">Lokasi {{ $transaction->method === 'pickup' ? 'Rumah Tangga/UMKM' : 'Pengumpulan CUANTAH' }}</p>
                 <p class="mt-1 text-slate-600">{{ $transaction->pickup?->address }}</p>

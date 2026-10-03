@@ -46,7 +46,7 @@
             <input name="latitude" id="lat-new" type="hidden" value="-6.3055">
             <input name="longitude" id="lng-new" type="hidden" value="107.3053">
         </div>
-        <div id="partner-map-new" class="mt-4 h-56 rounded-lg border border-slate-200"></div>
+        <div id="partner-map-new" class="isolate mt-4 h-56 rounded-lg border border-slate-200"></div>
         <div class="mt-4">
             <div class="flex items-center justify-between gap-3">
                 <p class="text-sm font-bold">Aturan ongkir jemput</p>
@@ -109,7 +109,7 @@
                     <input name="latitude" id="lat-{{ $partner->id }}" type="hidden" value="{{ $partner->latitude }}">
                     <input name="longitude" id="lng-{{ $partner->id }}" type="hidden" value="{{ $partner->longitude }}">
                 </div>
-                <div id="partner-map-{{ $partner->id }}" class="mt-4 h-56 rounded-lg border border-slate-200"></div>
+                <div id="partner-map-{{ $partner->id }}" class="isolate mt-4 h-56 rounded-lg border border-slate-200"></div>
 
                 <div class="mt-4">
                     <div class="flex items-center justify-between gap-3">
