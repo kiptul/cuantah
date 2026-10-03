@@ -11,7 +11,7 @@
     <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
         <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
             @if($transaction->pickup)
-                <div id="employee-map" class="h-[360px] rounded-lg border border-slate-200"></div>
+                <div id="employee-map" class="isolate h-[360px] rounded-lg border border-slate-200"></div>
             @endif
             <p class="mt-4 font-bold">Lokasi</p>
             <p class="mt-1 text-sm text-slate-600">{{ $transaction->pickup?->address ?? 'Lokasi belum tercatat.' }}</p>

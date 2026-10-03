@@ -70,10 +70,17 @@ class MapStackingTest extends TestCase
 
             foreach (file($file->getPathname()) as $nomor => $baris) {
                 /**
-                 * Wadah peta dikenali dari id-nya, sebab itulah yang dipakai
-                 * berkas JavaScript untuk memasang Leaflet.
+                 * Wadah peta dikenali dari id yang memuat kata "map", bukan
+                 * dari daftar nama yang ditulis tangan.
+                 *
+                 * Daftar nama pernah dipakai dan langsung meleset: id
+                 * "employee-map" di halaman proses transaksi karyawan tidak
+                 * masuk pola "map|pickupMap|partner-map", sehingga petanya
+                 * tidak pernah diperiksa sekaligus tidak pernah dikurung.
+                 * Pencarian yang ikut buta pada titik yang sama dengan
+                 * perbaikannya tidak menjaga apa pun.
                  */
-                if (preg_match('/<div id="(map|pickupMap|partner-map[^"]*)"[^>]*class="([^"]*)"/', $baris, $cocok)) {
+                if (preg_match('/<div id="([^"]*map[^"]*)"[^>]*class="([^"]*)"/i', $baris, $cocok)) {
                     $ditemukan[] = [
                         'berkas' => str_replace(resource_path('views').DIRECTORY_SEPARATOR, '', $file->getPathname()),
                         'baris' => $nomor + 1,
@@ -91,9 +98,9 @@ class MapStackingTest extends TestCase
         $wadah = $this->wadahPeta();
 
         $this->assertGreaterThanOrEqual(
-            5,
+            6,
             count($wadah),
-            'Lima wadah peta diketahui ada; bila jumlahnya menyusut, pola pencariannya yang perlu diperiksa.'
+            'Enam wadah peta diketahui ada; bila jumlahnya menyusut, pola pencariannya yang perlu diperiksa.'
         );
 
         foreach ($wadah as $satu) {
