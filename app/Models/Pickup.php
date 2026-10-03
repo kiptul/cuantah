@@ -47,6 +47,42 @@ class Pickup extends Model
      * waktu QR-nya dipindai, atau waktu penugasan bila admin menugaskannya
      * tanpa pemindaian.
      */
+    /**
+     * Tahapan hidup sebuah pickup, dipakai sebagai kategori penyaringan.
+     *
+     * Dikelompokkan, bukan satu kategori per status, karena "menunggu" punya
+     * dua bentuk yang sama saja artinya bagi admin: setoran jemput yang belum
+     * ditugaskan, dan drop-off yang sudah dipindai tetapi belum dipegang
+     * siapa pun. Keduanya sama-sama menunggu diambil alih.
+     *
+     * Ditolak dan dibatalkan sengaja tidak punya kategori sendiri. Keduanya
+     * sudah berakhir dan tidak menuntut tindakan apa pun, jadi tempatnya di
+     * daftar lengkap, bukan di tahapan yang dipantau sehari-hari.
+     *
+     * @var array<string, array{label: string, statuses: array<int, string>}>
+     */
+    public const CATEGORIES = [
+        'menunggu' => ['label' => 'Menunggu', 'statuses' => ['pending', 'awaiting_dropoff']],
+        'ditugaskan' => ['label' => 'Ditugaskan', 'statuses' => ['assigned']],
+        'selesai' => ['label' => 'Selesai', 'statuses' => ['completed']],
+    ];
+
+    /**
+     * @return array<int, string>
+     */
+    public static function categories(): array
+    {
+        return array_keys(self::CATEGORIES);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function statusesForCategory(string $category): array
+    {
+        return self::CATEGORIES[$category]['statuses'] ?? [];
+    }
+
     public function isOverdue(): bool
     {
         if ($this->pickup_date !== null) {

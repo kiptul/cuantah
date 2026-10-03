@@ -15,21 +15,57 @@
         ];
     @endphp
 
-    <div class="grid gap-5 lg:grid-cols-[238px_minmax(0,1fr)] lg:gap-7">
-        <aside class="h-fit rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-950/5 lg:sticky lg:top-24">
+    {{-- Di bawah lg menu ini dulu menumpuk sebagai delapan kartu yang
+         membungkus di atas isi halaman, sehingga layar ponsel habis oleh
+         navigasi sebelum satu pun data terlihat. Sekarang ia menjadi laci yang
+         menggeser masuk dari kiri.
+
+         Dibuat dengan checkbox dan peer, bukan JavaScript, mengikuti menu
+         publik yang juga tidak memakai skrip. Checkbox-nya sr-only, yang
+         berarti position:absolute, sehingga ia tidak ikut menempati sel grid;
+         begitu pula lapisan gelapnya yang fixed. Keduanya harus bersaudara
+         langsung dengan aside, sebab peer-checked memakai pemilih saudara. --}}
+    <div class="relative grid gap-5 lg:grid-cols-[238px_minmax(0,1fr)] lg:gap-7">
+        <input id="adminDrawer" type="checkbox" class="peer sr-only" aria-label="Buka menu operasional">
+
+        {{-- Lapisan gelap merangkap tombol tutup. Tanpa ini laci hanya bisa
+             ditutup lewat tombol yang tertutup oleh laci itu sendiri. --}}
+        {{-- Angkanya 1050 dan 1100, bukan 40 dan 50. Leaflet menaruh pane
+             petanya di z-index 400 dan kotak kontrolnya di 1000, sedangkan wadah
+             peta hanya position:relative tanpa z-index sehingga tidak
+             membentuk konteks penumpukan sendiri. Akibatnya peta di halaman
+             Pickup menimpa laci yang sedang terbuka. --}}
+        <label
+            for="adminDrawer"
+            class="fixed inset-0 z-[1050] hidden bg-slate-950/50 peer-checked:block lg:peer-checked:hidden"
+            aria-hidden="true"
+        ></label>
+
+        <aside class="fixed inset-y-0 left-0 z-[1100] w-72 max-w-[85vw] -translate-x-full overflow-y-auto border-r border-slate-200 bg-white p-3 shadow-xl shadow-slate-950/10 transition-transform duration-200 ease-out peer-checked:translate-x-0 lg:sticky lg:inset-y-auto lg:top-24 lg:z-auto lg:h-fit lg:w-auto lg:max-w-none lg:translate-x-0 lg:overflow-visible lg:rounded-2xl lg:border lg:shadow-sm lg:shadow-slate-950/5">
+            {{-- Tombol tutup hanya ada selama laci berwujud laci. --}}
+            <label
+                for="adminDrawer"
+                class="mb-2 flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50 lg:hidden"
+            >
+                Tutup menu
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </label>
             <div class="border-b border-slate-100 px-3 pb-3">
                 <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Operasional</p>
                 <p class="mt-1 text-sm font-black text-slate-900">Kelola CUANTAH</p>
             </div>
-            {{-- Membungkus, bukan menggulir. Dengan gulir mendatar, menu sesudah
-                 item keempat tidak pernah terlihat di layar kecil karena tidak
-                 ada isyarat bahwa area ini bisa digeser. --}}
-            <nav class="mt-3 flex flex-wrap gap-1 pb-1 lg:block" aria-label="Navigasi admin">
+            {{-- Menumpuk ke bawah di semua ukuran. Pembungkusan mendatar dulu
+                 dipakai agar kedelapan menu muat di atas isi halaman; di dalam
+                 laci yang tingginya penuh layar, menumpuk justru lebih terbaca
+                 dan tiap sasaran sentuhnya selebar laci. --}}
+            <nav class="mt-3 block" aria-label="Navigasi admin">
                 @foreach($adminNavItems as $item)
                     <a
                         href="{{ $item['url'] }}"
                         @class([
-                            'flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition lg:mb-1',
+                            'mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition',
                             'bg-emerald-700 text-white shadow-sm shadow-emerald-900/20' => request()->routeIs($item['route']),
                             'text-slate-600 hover:bg-emerald-50 hover:text-emerald-800' => ! request()->routeIs($item['route']),
                         ])
@@ -61,6 +97,17 @@
                 Pantau transaksi, pickup, dan penyaluran dari satu tempat.
             </div>
         </aside>
-        <section class="min-w-0">{{ $slot }}</section>
+        <section class="min-w-0">
+            <label
+                for="adminDrawer"
+                class="mb-4 inline-flex cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-700 shadow-sm shadow-slate-950/5 transition hover:bg-emerald-50 hover:text-emerald-800 lg:hidden"
+            >
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 7H20M4 12H20M4 17H20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+                </svg>
+                Menu operasional
+            </label>
+            {{ $slot }}
+        </section>
     </div>
 </x-layouts.app>
