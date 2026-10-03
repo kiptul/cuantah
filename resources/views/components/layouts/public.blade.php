@@ -66,35 +66,70 @@
                     </a>
                 @endauth
 
-                <details class="dropdown dropdown-end xl:hidden">
-                    <summary class="btn btn-ghost btn-square rounded-xl text-emerald-900" aria-label="Buka menu navigasi">
-                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M4 7H20M4 12H20M4 17H20" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
-                        </svg>
-                    </summary>
-                    <div class="menu dropdown-content z-50 mt-4 w-[calc(100vw-2rem)] max-w-72 rounded-3xl border border-emerald-100 bg-white p-3 text-slate-700 shadow-2xl shadow-emerald-950/10">
-                        @foreach ($publicNavItems as $item)
-                            <a
-                                href="{{ $item['url'] }}"
-                                @class([
-                                    'rounded-2xl px-4 py-3 text-sm font-bold transition hover:bg-emerald-50 hover:text-emerald-800',
-                                    'bg-emerald-50 text-emerald-800' => $item['active'],
-                                ])
-                            >
-                                {{ $item['label'] }}
-                            </a>
-                        @endforeach
+                {{-- Laci, bukan dropdown.
 
-                        <div class="mt-2 border-t border-emerald-100 pt-2">
-                            @auth
-                                <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : (auth()->user()->isEmployee() ? route('employee.dashboard') : route('dashboard')) }}" class="rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-black text-white hover:bg-emerald-800">Dashboard</a>
-                            @else
-                                <a href="{{ route('login') }}" class="rounded-2xl px-4 py-3 text-sm font-bold hover:bg-emerald-50 hover:text-emerald-800">Login</a>
-                            @endauth
-                        </div>
-                    </div>
-                </details>
+                     Dropdown menggantung dari tombolnya dan lebarnya dibatasi
+                     max-w-72, sehingga tujuh menu publik menumpuk di pojok
+                     kanan atas layar ponsel. Laci memakai pola yang sama
+                     dengan sisi admin dan sisi aplikasi: checkbox dan peer,
+                     tanpa JavaScript. --}}
+                <label
+                    for="publicDrawer"
+                    class="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl text-emerald-900 transition hover:bg-emerald-50 xl:hidden"
+                    aria-label="Buka menu navigasi"
+                >
+                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M4 7H20M4 12H20M4 17H20" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+                    </svg>
+                </label>
             </div>
+
+            {{-- Saklar laci. sr-only berarti position:absolute, sehingga ia
+                 tidak menempati kolom flex; begitu pula lapisan gelap dan
+                 lacinya yang fixed. Ketiganya harus bersaudara langsung,
+                 sebab peer-checked memakai pemilih saudara. --}}
+            <input id="publicDrawer" type="checkbox" class="peer sr-only" aria-label="Buka menu navigasi">
+
+            <label
+                for="publicDrawer"
+                class="fixed inset-0 z-[1050] hidden bg-slate-950/50 peer-checked:block xl:hidden"
+                aria-hidden="true"
+            ></label>
+
+            <aside class="fixed inset-y-0 left-0 z-[1100] w-72 max-w-[85vw] -translate-x-full overflow-y-auto border-r border-emerald-100 bg-white p-3 shadow-xl shadow-emerald-950/10 transition-transform duration-200 ease-out peer-checked:translate-x-0 xl:hidden">
+                <label
+                    for="publicDrawer"
+                    class="mb-2 flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-emerald-50"
+                >
+                    Tutup menu
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </label>
+
+                <nav class="border-t border-emerald-100 pt-2" aria-label="Navigasi publik">
+                    @foreach ($publicNavItems as $item)
+                        <a
+                            href="{{ $item['url'] }}"
+                            @class([
+                                'mb-1 flex min-h-11 items-center rounded-xl px-4 py-2.5 text-sm font-bold transition',
+                                'bg-emerald-700 text-white shadow-sm shadow-emerald-900/20' => $item['active'],
+                                'text-slate-700 hover:bg-emerald-50 hover:text-emerald-800' => ! $item['active'],
+                            ])
+                            @if($item['active']) aria-current="page" @endif
+                        >{{ $item['label'] }}</a>
+                    @endforeach
+                </nav>
+
+                <div class="mt-2 border-t border-emerald-100 pt-2">
+                    @auth
+                        <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : (auth()->user()->isEmployee() ? route('employee.dashboard') : route('dashboard')) }}" class="flex min-h-11 items-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-emerald-800">Dashboard</a>
+                    @else
+                        <a href="{{ route('login') }}" class="mb-1 flex min-h-11 items-center rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-emerald-50 hover:text-emerald-800">Login</a>
+                        <a href="{{ route('register') }}" class="flex min-h-11 items-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-emerald-800">Setor Sekarang</a>
+                    @endauth
+                </div>
+            </aside>
         </nav>
     </header>
     <main>{{ $slot }}</main>
