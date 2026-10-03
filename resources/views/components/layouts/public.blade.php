@@ -55,17 +55,6 @@
                 @endforeach
             </div>
             <div class="flex items-center gap-2">
-                @auth
-                    <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : (auth()->user()->isEmployee() ? route('employee.dashboard') : route('dashboard')) }}" class="hidden rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 sm:inline-flex">Dashboard</a>
-                @else
-                    <a href="{{ route('login') }}" class="hidden px-4 py-3 text-sm font-bold text-slate-700 xl:inline-flex">Login</a>
-                    <a href="{{ route('register') }}" class="hidden items-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-800 sm:inline-flex">
-                        <span class="hidden md:inline">Setor Sekarang</span>
-                        <span class="md:hidden">Setor</span>
-                        <span aria-hidden="true">→</span>
-                    </a>
-                @endauth
-
                 {{-- Laci, bukan dropdown.
 
                      Dropdown menggantung dari tombolnya dan lebarnya dibatasi
@@ -82,6 +71,18 @@
                         <path d="M4 7H20M4 12H20M4 17H20" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
                     </svg>
                 </label>
+                @auth
+                    <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : (auth()->user()->isEmployee() ? route('employee.dashboard') : route('dashboard')) }}" class="hidden rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 sm:inline-flex">Dashboard</a>
+                @else
+                    <a href="{{ route('login') }}" class="hidden px-4 py-3 text-sm font-bold text-slate-700 xl:inline-flex">Login</a>
+                    <a href="{{ route('register') }}" class="hidden items-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-800 sm:inline-flex">
+                        <span class="hidden md:inline">Setor Sekarang</span>
+                        <span class="md:hidden">Setor</span>
+                        <span aria-hidden="true">→</span>
+                    </a>
+                @endauth
+
+
             </div>
 
             {{-- Saklar laci. sr-only berarti position:absolute, sehingga ia

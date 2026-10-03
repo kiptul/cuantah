@@ -65,7 +65,29 @@ class AdminDrawerTest extends TestCase
 
         $this->assertStringContainsString('id="adminDrawer"', $isi);
         $this->assertStringContainsString('for="adminDrawer"', $isi);
-        $this->assertStringContainsString('Menu operasional', $isi);
+    }
+
+    public function test_pemicu_laci_berada_di_navbar_bukan_di_badan_halaman(): void
+    {
+        $isi = $this->halaman();
+
+        preg_match('/<header.*?<\/header>/s', $isi, $header);
+
+        $this->assertNotEmpty($header, 'Header harus ditemukan.');
+        $this->assertStringContainsString(
+            'for="adminDrawer"',
+            $header[0],
+            'Pemicunya duduk sebaris dengan lonceng, sama seperti sisi penyetor dan karyawan.'
+        );
+
+        /**
+         * Dulu ia tombol terpisah bertuliskan "Menu operasional" di atas isi
+         * halaman, sehingga tiga peran membuka menunya dari tiga tempat yang
+         * berbeda.
+         */
+        $tanpaHeader = preg_replace('/<header.*?<\/header>/s', '', $isi);
+
+        $this->assertStringNotContainsString('Menu operasional', $tanpaHeader);
     }
 
     public function test_saklar_bersaudara_langsung_dengan_lacinya(): void

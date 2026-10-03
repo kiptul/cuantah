@@ -97,17 +97,8 @@
                 Pantau transaksi, pickup, dan penyaluran dari satu tempat.
             </div>
         </aside>
-        <section class="min-w-0">
-            <label
-                for="adminDrawer"
-                class="mb-4 inline-flex cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-700 shadow-sm shadow-slate-950/5 transition hover:bg-emerald-50 hover:text-emerald-800 lg:hidden"
-            >
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M4 7H20M4 12H20M4 17H20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
-                </svg>
-                Menu operasional
-            </label>
-            {{ $slot }}
-        </section>
+        {{-- Pemicunya kini di navbar, sebaris dengan lonceng, bukan tombol
+             terpisah di atas isi halaman. --}}
+        <section class="min-w-0">{{ $slot }}</section>
     </div>
 </x-layouts.app>

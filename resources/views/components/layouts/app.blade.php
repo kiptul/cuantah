@@ -71,6 +71,26 @@
             <div class="flex max-w-full items-center gap-2 overflow-x-auto text-sm">
                 @if($adalahAdmin)
                     <span class="hidden rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 sm:inline-flex">Admin CUANTAH</span>
+
+                    {{-- Pemicu laci admin duduk di navbar, sebaris dengan
+                         lonceng dan menu akun, sama seperti sisi penyetor dan
+                         karyawan. Sebelumnya ia berupa tombol terpisah di
+                         badan halaman, sehingga tiga peran membuka menunya
+                         dari tiga tempat yang berbeda.
+
+                         Saklarnya tetap tinggal di layout admin karena
+                         peer-checked menuntut hubungan saudara dengan
+                         lacinya; yang berpindah hanya labelnya, dan label
+                         bekerja dari mana pun lewat atribut for. --}}
+                    <label
+                        for="adminDrawer"
+                        class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-slate-700 transition hover:bg-slate-100 lg:hidden"
+                        aria-label="Buka menu operasional"
+                    >
+                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M4 7H20M4 12H20M4 17H20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+                        </svg>
+                    </label>
                 @elseif($menuUtama !== [])
                     {{-- Di sm ke atas menu tetap di header seperti semula. Di
                          bawah itu header membungkus menjadi dua baris setinggi
