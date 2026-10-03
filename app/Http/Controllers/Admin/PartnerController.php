@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StorePartnerRequest;
 use App\Models\Partner;
 use App\Models\User;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
 
 class PartnerController extends Controller
 {
@@ -14,7 +15,7 @@ class PartnerController extends Controller
     {
         return view('admin.partners.index', [
             'partners' => Partner::with('deliveryFees')
-                ->accessibleTo(auth()->user())
+                ->accessibleTo(Auth::user())
                 ->latest()
                 ->paginate(10),
         ]);
@@ -34,7 +35,7 @@ class PartnerController extends Controller
 
     public function update(StorePartnerRequest $request, Partner $partner)
     {
-        abort_unless(auth()->user()->canAccessPartnerId($partner->id), 403);
+        abort_unless(Auth::user()->canAccessPartnerId($partner->id), 403);
 
         $data = $request->validated();
         $partner->update(Arr::except($data, 'delivery_fees'));
@@ -64,7 +65,7 @@ class PartnerController extends Controller
      */
     private function syncNewPartnerUsers(Partner $partner, array $previousPartnerIds): void
     {
-        $creator = auth()->user();
+        $creator = Auth::user();
         $partner->users()->syncWithoutDetaching([$creator->id]);
 
         User::query()

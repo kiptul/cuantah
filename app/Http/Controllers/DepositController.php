@@ -8,6 +8,7 @@ use App\Models\Partner;
 use App\Models\Pickup;
 use App\Models\Transaction;
 use App\Services\TransactionService;
+use Illuminate\Support\Facades\Auth;
 
 class DepositController extends Controller
 {
@@ -68,7 +69,7 @@ class DepositController extends Controller
     {
         $pickup = Pickup::query()
             ->whereHas('transaction', fn ($transaction) => $transaction
-                ->where('user_id', auth()->id())
+                ->where('user_id', Auth::id())
                 ->where('method', Transaction::METHOD_PICKUP))
             ->latest('id')
             ->first();

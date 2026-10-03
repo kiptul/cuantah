@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Services\TransactionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PickupController extends Controller
 {
@@ -33,7 +34,7 @@ class PickupController extends Controller
         return view('employee.transactions.index', [
             'transactions' => Transaction::with('user', 'pickup')
                 ->with('partner')
-                ->whereHas('pickup', fn ($pickup) => $pickup->where('assigned_user_id', auth()->id()))
+                ->whereHas('pickup', fn ($pickup) => $pickup->where('assigned_user_id', Auth::id()))
                 ->latest()
                 ->paginate(12),
         ]);
@@ -119,7 +120,7 @@ class PickupController extends Controller
      */
     private function ensureAssigned(Transaction $transaction): void
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $ditugaskan = $transaction->pickup?->assigned_user_id === $user->id;
         $adminMitraIni = $user->isAdmin() && $user->canAccessPartnerId($transaction->partner_id);

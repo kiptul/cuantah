@@ -10,6 +10,7 @@ use App\Models\Partner;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -101,7 +102,7 @@ class UserController extends Controller
      */
     private function beritahuPerubahanKredensial(User $user, bool $gantiPassword, string $emailLama): void
     {
-        if (auth()->id() === $user->id) {
+        if (Auth::id() === $user->id) {
             return;
         }
 
@@ -122,7 +123,7 @@ class UserController extends Controller
         Notification::create([
             'user_id' => $user->id,
             'title' => 'Data masuk akunmu diubah admin',
-            'message' => 'Admin '.auth()->user()->name.' mengubah '.implode(' dan ', $perubahan)
+            'message' => 'Admin '.Auth::user()->name.' mengubah '.implode(' dan ', $perubahan)
                 .' akunmu. Bila kamu tidak meminta perubahan ini, segera hubungi mitramu.',
             'type' => 'account',
         ]);
@@ -146,7 +147,7 @@ class UserController extends Controller
         }
 
         $terlihat = Partner::query()
-            ->accessibleTo(auth()->user())
+            ->accessibleTo(Auth::user())
             ->pluck('id')
             ->all();
 
@@ -172,7 +173,7 @@ class UserController extends Controller
         }
 
         $availableIds = Partner::query()
-            ->accessibleTo(auth()->user())
+            ->accessibleTo(Auth::user())
             ->pluck('id')
             ->all();
 

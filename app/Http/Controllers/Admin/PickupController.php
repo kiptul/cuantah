@@ -11,6 +11,7 @@ use App\Services\TransactionService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PickupController extends Controller
 {
@@ -37,7 +38,7 @@ class PickupController extends Controller
             'category' => $category,
             'categoryCounts' => $this->categoryCounts(),
             'employees' => User::where('role', 'employee')
-                ->whereHas('partners', fn ($partner) => $partner->whereIn('partners.id', auth()->user()->accessiblePartnerIds()))
+                ->whereHas('partners', fn ($partner) => $partner->whereIn('partners.id', Auth::user()->accessiblePartnerIds()))
                 ->with('partners:id')
                 ->orderBy('name')
                 ->get(),
@@ -54,7 +55,7 @@ class PickupController extends Controller
     {
         return Pickup::query()
             ->with('transaction.user', 'assignedUser', 'partner')
-            ->visibleTo(auth()->user())
+            ->visibleTo(Auth::user())
             ->where(function ($query) {
                 $query->whereHas('transaction', fn ($transaction) => $transaction->where('method', Transaction::METHOD_PICKUP))
                     ->orWhereNotNull('scanned_at');
@@ -113,7 +114,7 @@ class PickupController extends Controller
 
     public function assign(AssignPickupRequest $request, Pickup $pickup, TransactionService $service)
     {
-        abort_unless(auth()->user()->canAccessPartnerId($pickup->transaction->partner_id), 403);
+        abort_unless(Auth::user()->canAccessPartnerId($pickup->transaction->partner_id), 403);
         abort_unless($pickup->isAssignable(), 422, 'Pickup yang sudah selesai atau ditolak tidak bisa di-assign.');
 
         $employee = User::findOrFail($request->validated('assigned_user_id'));
@@ -126,7 +127,7 @@ class PickupController extends Controller
 
     public function unassign(Pickup $pickup, TransactionService $service)
     {
-        abort_unless(auth()->user()->canAccessPartnerId($pickup->transaction->partner_id), 403);
+        abort_unless(Auth::user()->canAccessPartnerId($pickup->transaction->partner_id), 403);
         abort_unless($pickup->isAssignable(), 422, 'Pickup yang sudah selesai atau ditolak tidak bisa dilepas.');
 
         $service->unassignPickup($pickup);

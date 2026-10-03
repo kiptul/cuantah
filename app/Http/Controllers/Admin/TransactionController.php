@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\VerifyTransactionRequest;
 use App\Models\Transaction;
 use App\Services\TransactionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class TransactionController extends Controller
 {
@@ -113,7 +114,7 @@ class TransactionController extends Controller
 
     private function ensureVisible(Transaction $transaction): void
     {
-        abort_unless(auth()->user()->canAccessPartnerId($transaction->partner_id), 403);
+        abort_unless(Auth::user()->canAccessPartnerId($transaction->partner_id), 403);
     }
 
     public function resolveDispute(Request $request, Transaction $transaction, TransactionService $service)

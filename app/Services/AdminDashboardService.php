@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AdminDashboardService
@@ -18,7 +19,7 @@ class AdminDashboardService
      */
     public function summary(): array
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $thisMonth = now()->startOfMonth();
         $lastMonth = now()->subMonthNoOverflow()->startOfMonth();
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreDistributionRequest;
 use App\Models\Distribution;
 use App\Models\Partner;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 class DistributionController extends Controller
@@ -14,11 +15,11 @@ class DistributionController extends Controller
     {
         return view('admin.distributions.index', [
             'distributions' => Distribution::with('partner')
-                ->whereHas('partner', fn ($partner) => $partner->accessibleTo(auth()->user()))
+                ->whereHas('partner', fn ($partner) => $partner->accessibleTo(Auth::user()))
                 ->latest('distributed_at')
                 ->paginate(10),
             'partners' => Partner::where('status', 'active')
-                ->accessibleTo(auth()->user())
+                ->accessibleTo(Auth::user())
                 ->withAvailableLiter()
                 ->orderBy('name')
                 ->get()
@@ -28,7 +29,7 @@ class DistributionController extends Controller
 
     public function store(StoreDistributionRequest $request)
     {
-        abort_unless(auth()->user()->canAccessPartnerId((int) $request->validated('partner_id')), 403);
+        abort_unless(Auth::user()->canAccessPartnerId((int) $request->validated('partner_id')), 403);
 
         $partner = Partner::findOrFail($request->validated('partner_id'));
         $tersedia = $partner->availableLiter();

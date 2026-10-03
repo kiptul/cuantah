@@ -23,7 +23,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended($this->homeRouteFor(auth()->user()));
+        return redirect()->intended($this->homeRouteFor(Auth::user()));
     }
 
     public function showRegister()

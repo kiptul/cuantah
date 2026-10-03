@@ -6,6 +6,7 @@ use App\Models\Transaction;
 use App\Services\TransactionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -13,7 +14,7 @@ class TransactionController extends Controller
 {
     public function index()
     {
-        $transactions = auth()->user()
+        $transactions = Auth::user()
             ->transactions()
             ->with('partner', 'pickup.assignedUser')
             ->latest()
