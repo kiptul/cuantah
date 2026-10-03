@@ -6,6 +6,7 @@ use App\Models\OilPrice;
 use App\Models\Partner;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\AdminDashboardService;
 use App\Services\DashboardService;
 use App\Services\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -15,8 +16,10 @@ use Tests\TestCase;
 /**
  * Patokan waktu untuk hitungan "bulan ini".
  *
- * Dasbor penyetor memakai created_at dan dasbor karyawan memakai updated_at,
- * padahal keduanya menanyakan hal yang sama: berapa yang selesai bulan ini.
+ * Dasbor penyetor memakai created_at, dasbor karyawan memakai updated_at, dan
+ * dasbor admin memakai created_at, padahal ketiganya menanyakan hal yang sama:
+ * berapa yang selesai bulan ini. Bulan yang sama karenanya bisa menunjukkan
+ * angka berbeda tergantung siapa yang membukanya.
  * created_at adalah waktu pengajuan, dan updated_at adalah waktu tulis
  * terakhir; yang pertama salah bila penimbangan berbeda bulan dengan
  * pengajuan, yang kedua salah bila transaksi lama tersentuh lagi.
@@ -192,6 +195,121 @@ class CompletedAtAnchorTest extends TestCase
         $this->stempel($transaksi, $waktu);
 
         return $transaksi->refresh();
+    }
+
+    /**
+     * Transaksi selesai milik satu mitra, dengan stempel waktu yang ditentukan.
+     */
+    private function setoranMitra(Partner $mitra, float $liter, array $waktu): Transaction
+    {
+        $transaksi = Transaction::factory()->create([
+            'user_id' => User::factory()->create(['role' => 'user'])->id,
+            'partner_id' => $mitra->id,
+            'oil_price_id' => OilPrice::factory(),
+            'status' => Transaction::STATUS_COMPLETED,
+            'actual_liter' => $liter,
+            'total_value' => 10000,
+            'payment_status' => 'paid',
+        ]);
+
+        $this->stempel($transaksi, $waktu);
+
+        return $transaksi->refresh();
+    }
+
+    private function adminMitra(Partner $mitra): User
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $admin->partners()->sync([$mitra->id]);
+
+        return $admin;
+    }
+
+    public function test_dasbor_admin_memakai_patokan_yang_sama(): void
+    {
+        $mitra = Partner::factory()->create();
+
+        $this->setoranMitra($mitra, 4.25, [
+            'created_at' => now()->subMonthNoOverflow()->startOfMonth()->addDays(2),
+            /**
+             * Beberapa detik lalu, bukan tepat now(). Batas atas periodenya
+             * eksklusif, dan MySQL menyimpan datetime dalam satuan detik,
+             * sehingga stempel yang jatuh pada detik yang sama dengan now()
+             * tertolak di batas dan membuat test ini gagal karena alasan yang
+             * tidak ada hubungannya dengan patokan waktunya.
+             */
+            'completed_at' => now()->subSeconds(5)->max(now()->startOfMonth()),
+            'updated_at' => now(),
+        ]);
+
+        $data = $this->actingAs($this->adminMitra($mitra))->app
+            ->make(AdminDashboardService::class)
+            ->summary();
+
+        $this->assertSame(
+            4.25,
+            $data['kpis']['liter']['current'],
+            'Patokan created_at akan membuang setoran ini ke bulan lalu, padahal jelantahnya ditimbang bulan ini.'
+        );
+        $this->assertSame(0.0, $data['kpis']['liter']['previous']);
+    }
+
+    public function test_grafik_bulanan_admin_memakai_patokan_yang_sama(): void
+    {
+        $mitra = Partner::factory()->create();
+
+        $this->setoranMitra($mitra, 7.5, [
+            'created_at' => now()->subMonthNoOverflow()->startOfMonth()->addDays(2),
+            /**
+             * Beberapa detik lalu, bukan tepat now(). Batas atas periodenya
+             * eksklusif, dan MySQL menyimpan datetime dalam satuan detik,
+             * sehingga stempel yang jatuh pada detik yang sama dengan now()
+             * tertolak di batas dan membuat test ini gagal karena alasan yang
+             * tidak ada hubungannya dengan patokan waktunya.
+             */
+            'completed_at' => now()->subSeconds(5)->max(now()->startOfMonth()),
+            'updated_at' => now(),
+        ]);
+
+        $data = $this->actingAs($this->adminMitra($mitra))->app
+            ->make(AdminDashboardService::class)
+            ->summary();
+
+        $bulanIni = collect($data['monthly'])->firstWhere('month', now()->format('Y-m'));
+        $bulanLalu = collect($data['monthly'])->firstWhere('month', now()->subMonthNoOverflow()->format('Y-m'));
+
+        /**
+         * Batang grafik dan angka kartu KPI harus bercerita hal yang sama.
+         * Keduanya dulu memakai created_at, jadi keliru bersama-sama; kekeliruan
+         * yang seragam justru paling sulit disadari.
+         */
+        $this->assertSame(7.5, $bulanIni['volume']);
+        $this->assertSame(0.0, $bulanLalu['volume']);
+    }
+
+    public function test_setoran_lama_yang_baru_selesai_tetap_masuk_grafik(): void
+    {
+        $mitra = Partner::factory()->create();
+
+        /**
+         * Jendela grafiknya dua belas bulan ke belakang. Dengan saringan
+         * created_at, setoran yang diajukan lebih dari setahun lalu dan baru
+         * ditimbang bulan ini tersaring habis sebelum sempat dikelompokkan,
+         * sehingga volumenya hilang sama sekali, bukan sekadar salah bulan.
+         */
+        $this->setoranMitra($mitra, 3.5, [
+            'created_at' => now()->subMonthsNoOverflow(13),
+            'completed_at' => now()->subSeconds(5)->max(now()->startOfMonth()),
+            'updated_at' => now(),
+        ]);
+
+        $data = $this->actingAs($this->adminMitra($mitra))->app
+            ->make(AdminDashboardService::class)
+            ->summary();
+
+        $bulanIni = collect($data['monthly'])->firstWhere('month', now()->format('Y-m'));
+
+        $this->assertSame(3.5, $bulanIni['volume']);
     }
 
     public function test_riwayat_lama_terisi_mundur_saat_migrasi(): void

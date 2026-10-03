@@ -114,8 +114,8 @@ class AdminDashboardService
     private function periodTotals(Builder $completed, Carbon $from, Carbon $until): array
     {
         $row = $completed
-            ->where('created_at', '>=', $from)
-            ->where('created_at', '<', $until)
+            ->where('completed_at', '>=', $from)
+            ->where('completed_at', '<', $until)
             ->selectRaw('COALESCE(SUM(actual_liter), 0) as liter')
             ->selectRaw('COALESCE(SUM(total_value), 0) as value')
             ->selectRaw('COUNT(*) as count')
@@ -149,7 +149,7 @@ class AdminDashboardService
             ->join('users', 'users.id', '=', 'pickups.assigned_user_id')
             ->whereIn('transactions.partner_id', $partnerIds)
             ->where('transactions.status', Transaction::STATUS_COMPLETED)
-            ->where('transactions.created_at', '>=', $from)
+            ->where('transactions.completed_at', '>=', $from)
             ->groupBy('users.id', 'users.name')
             ->select('users.id', 'users.name')
             ->selectRaw('COUNT(*) as completed_count')
@@ -162,6 +162,13 @@ class AdminDashboardService
 
     /**
      * Volume dan nilai transaksi selesai selama 12 bulan, bulan kosong diisi nol.
+     *
+     * Berpatokan pada completed_at, bukan created_at. created_at adalah waktu
+     * pengajuan, sehingga setoran yang diajukan akhir September dan ditimbang
+     * awal Oktober terhitung September, padahal jelantahnya baru masuk pada
+     * Oktober. Sisi penyetor sudah dipindahkan lebih dulu; dasbor admin
+     * tertinggal, sehingga bulan yang sama bisa menunjukkan dua angka berbeda
+     * tergantung siapa yang membukanya.
      *
      * Sebelumnya bulan tanpa transaksi hilang dari grafik sehingga jarak
      * antarbatang menyesatkan, dan transaksi batal ikut terhitung.
@@ -176,7 +183,7 @@ class AdminDashboardService
         $rows = Transaction::query()
             ->visibleTo($user)
             ->where('status', Transaction::STATUS_COMPLETED)
-            ->where('created_at', '>=', $start)
+            ->where('completed_at', '>=', $start)
             ->selectRaw("{$monthExpression} as month")
             ->selectRaw('COALESCE(SUM(actual_liter), 0) as volume')
             ->selectRaw('COUNT(*) as count')
@@ -211,9 +218,9 @@ class AdminDashboardService
     private function monthExpression(): string
     {
         return match (DB::connection()->getDriverName()) {
-            'sqlite' => "strftime('%Y-%m', created_at)",
-            'pgsql' => "to_char(created_at, 'YYYY-MM')",
-            default => 'DATE_FORMAT(created_at, "%Y-%m")',
+            'sqlite' => "strftime('%Y-%m', completed_at)",
+            'pgsql' => "to_char(completed_at, 'YYYY-MM')",
+            default => 'DATE_FORMAT(completed_at, "%Y-%m")',
         };
     }
 }

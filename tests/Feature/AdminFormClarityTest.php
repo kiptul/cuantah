@@ -177,9 +177,9 @@ class AdminFormClarityTest extends TestCase
             'payment_status' => 'paid',
             'completed_at' => $kapan,
             /**
-             * AdminDashboardService menghitung periodenya dari created_at,
-             * bukan completed_at. Keduanya diisi supaya test ini menguji
-             * tampilan angkanya, bukan ikut mengunci kolom mana yang dipakai.
+             * Keduanya diisi supaya test ini menguji tampilan angkanya saja.
+             * Kolom mana yang menjadi patokan periode diuji tersendiri di
+             * CompletedAtAnchorTest.
              */
             'created_at' => $kapan,
         ]);
