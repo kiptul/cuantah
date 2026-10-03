@@ -56,8 +56,16 @@ class PickupController extends Controller
             'actual_liter' => ['required', 'numeric', 'min:0.1', 'max:500'],
             'payment_method' => ['required', 'in:cash,transfer'],
             'payment_status' => ['required', 'in:paid,unpaid'],
+            /**
+             * Bukti hanya diminta bila pembayaran dicatat lunas. Karyawan
+             * yang mencatat pembayaran ditunda belum memegang uang apa pun,
+             * jadi buktinya ditagih di sisi admin saat ditandai lunas.
+             */
+            'payment_proof' => Transaction::paymentProofRules('required_if:payment_status,paid'),
             'notes' => ['nullable', 'string', 'max:700'],
         ]);
+
+        $data['payment_proof'] = $request->file('payment_proof');
 
         $transaction = $service->verify($transaction, $data);
 

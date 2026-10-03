@@ -8,6 +8,7 @@ use App\Models\Partner;
 use App\Models\Pickup;
 use App\Models\Transaction;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -238,7 +239,11 @@ class TransactionService
     {
         $this->pastikanBelumFinal($transaction, 'diverifikasi');
 
-        return DB::transaction(function () use ($transaction, $data) {
+        $buktiPath = ($data['payment_proof'] ?? null) instanceof UploadedFile
+            ? $this->simpanBuktiBayar($data['payment_proof'], $transaction)
+            : null;
+
+        return DB::transaction(function () use ($transaction, $data, $buktiPath) {
             $actualLiter = (float) $data['actual_liter'];
             $total = max((int) round($actualLiter * $transaction->price_per_liter) - (int) $transaction->pickup_fee, 0);
 
@@ -248,6 +253,7 @@ class TransactionService
                 'payment_method' => $data['payment_method'],
                 'payment_status' => $data['payment_status'],
                 'paid_at' => $data['payment_status'] === 'paid' ? now() : null,
+                'payment_proof_path' => $buktiPath ?? $transaction->payment_proof_path,
                 'status' => Transaction::STATUS_COMPLETED,
                 'completed_at' => now(),
                 'notes' => $data['notes'] ?? $transaction->notes,
@@ -413,7 +419,7 @@ class TransactionService
      *
      * @throws ValidationException
      */
-    public function markPaid(Transaction $transaction): Transaction
+    public function markPaid(Transaction $transaction, UploadedFile $bukti): Transaction
     {
         if ($transaction->status !== Transaction::STATUS_COMPLETED || $transaction->payment_status !== 'unpaid') {
             throw ValidationException::withMessages([
@@ -421,10 +427,13 @@ class TransactionService
             ]);
         }
 
-        return DB::transaction(function () use ($transaction) {
+        $buktiPath = $this->simpanBuktiBayar($bukti, $transaction);
+
+        return DB::transaction(function () use ($transaction, $buktiPath) {
             $transaction->update([
                 'payment_status' => 'paid',
                 'paid_at' => now(),
+                'payment_proof_path' => $buktiPath,
             ]);
 
             Notification::create([
@@ -441,6 +450,28 @@ class TransactionService
     /**
      * Mengirim notifikasi ke seluruh admin yang terhubung dengan mitra transaksi.
      */
+    /**
+     * Menyimpan bukti pembayaran dan mengembalikan jalur berkasnya.
+     *
+     * Disimpan di disk privat, bukan di public/storage. Foto ini memuat
+     * nominal uang dan kerap memuat wajah orang, sehingga tautan yang bisa
+     * ditebak sudah cukup untuk membocorkannya tanpa perlu masuk akun.
+     * Penyajiannya lewat rute yang memeriksa TransactionPolicy.
+     *
+     * Nama berkas dibuat oleh Laravel, tidak memakai nama asli dari
+     * pengunggah, supaya nama yang disusun untuk menyesatkan tidak ikut
+     * tersimpan.
+     *
+     * Berkas ditulis sebelum transaksi basis data dibuka. Bila basis data
+     * gagal sesudahnya, yang tertinggal hanyalah berkas yang tidak ditunjuk
+     * siapa pun; sebaliknya, menulis berkas di dalam transaksi tidak membuat
+     * penulisannya ikut dibatalkan, sebab disk tidak mengenal rollback.
+     */
+    private function simpanBuktiBayar(UploadedFile $bukti, Transaction $transaction): string
+    {
+        return $bukti->store('bukti-bayar/'.$transaction->getKey(), 'local');
+    }
+
     private function notifyPartnerAdmins(Transaction $transaction, string $title, string $message): void
     {
         User::query()

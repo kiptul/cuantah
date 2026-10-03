@@ -79,7 +79,7 @@
                     @endif
                 </div>
             @else
-                <form method="post" action="{{ route('employee.transactions.verify', $transaction) }}" class="space-y-4 border-t border-slate-100 pt-5"
+                <form method="post" action="{{ route('employee.transactions.verify', $transaction) }}" enctype="multipart/form-data" class="space-y-4 border-t border-slate-100 pt-5"
                       data-complete-form data-price="{{ $transaction->price_per_liter }}" data-fee="{{ $transaction->pickup_fee }}" data-code="{{ $transaction->code }}">
                     @csrf
                     <div>
@@ -108,6 +108,18 @@
                             <span>Uang sudah diserahkan ke penyetor. <span class="text-slate-500">Kosongkan bila dibayar menyusul; admin bisa melunasinya nanti.</span></span>
                         </label>
                     </fieldset>
+
+                    {{-- accept dipakai tanpa capture. capture memaksa kamera
+                         terbuka dan menutup akses galeri, padahal bukti
+                         transfer justru berupa tangkapan layar yang sudah
+                         tersimpan di sana. --}}
+                    <div>
+                        <label for="payment_proof" class="text-sm font-bold">Bukti pembayaran</label>
+                        <input id="payment_proof" name="payment_proof" type="file" accept="image/*"
+                               class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-emerald-800 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+                        <p class="mt-1.5 text-xs text-slate-500">Foto serah terima uang atau tangkapan layar transfer. Wajib bila uang sudah diserahkan.</p>
+                        @error('payment_proof')<p class="mt-1.5 text-sm font-semibold text-rose-700">{{ $message }}</p>@enderror
+                    </div>
 
                     <textarea name="notes" rows="2" maxlength="700" placeholder="Catatan (opsional)" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">{{ old('notes', $transaction->notes) }}</textarea>
 

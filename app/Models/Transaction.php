@@ -83,6 +83,7 @@ class Transaction extends Model
         'payment_method',
         'payment_status',
         'paid_at',
+        'payment_proof_path',
         'completed_at',
         'rejection_reason',
         'disputed_at',
@@ -236,6 +237,31 @@ class Transaction extends Model
     public static function methods(): array
     {
         return [self::METHOD_PICKUP, self::METHOD_DROP_OFF];
+    }
+
+    /**
+     * Aturan berkas untuk bukti pembayaran.
+     *
+     * Uang berpindah di tiga tempat: verifikasi oleh karyawan, verifikasi
+     * oleh admin, dan penandaan lunas menyusul. Ketiganya memanggil daftar
+     * ini supaya tidak ada pintu yang syaratnya lebih longgar tanpa
+     * disengaja. Yang berbeda hanya kapan berkasnya diwajibkan, karena pada
+     * verifikasi pembayaran bisa saja ditunda.
+     *
+     * Dipakai aturan image dan mimes, bukan extensions. Keduanya membaca isi
+     * berkas, sedangkan extensions hanya memeriksa akhiran nama yang
+     * ditentukan pengunggah.
+     *
+     * @return array<int, string>
+     */
+    public static function paymentProofRules(string $kehadiran): array
+    {
+        return [$kehadiran, 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'];
+    }
+
+    public function hasPaymentProof(): bool
+    {
+        return $this->payment_proof_path !== null;
     }
 
     /**

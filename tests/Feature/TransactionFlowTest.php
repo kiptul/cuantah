@@ -9,6 +9,8 @@ use App\Models\Pickup;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class TransactionFlowTest extends TestCase
@@ -121,10 +123,13 @@ class TransactionFlowTest extends TestCase
             'status' => 'assigned',
         ]);
 
+        Storage::fake('local');
+
         $this->actingAs($admin)->post(route('admin.transactions.verify', $transaction), [
             'actual_liter' => 4.8,
             'payment_method' => 'transfer',
             'payment_status' => 'paid',
+            'payment_proof' => UploadedFile::fake()->image('transfer.jpg'),
         ])->assertRedirect();
 
         $this->assertDatabaseHas('transactions', [
@@ -293,11 +298,14 @@ class TransactionFlowTest extends TestCase
 
         // Tanpa langkah "Dijemput" dan "Verifikasi": form penjemputan langsung
         // menutup transaksi dari status dijadwalkan.
+        Storage::fake('local');
+
         $this->actingAs($employee)
             ->post(route('employee.transactions.verify', $transaction), [
                 'actual_liter' => 7.5,
                 'payment_method' => 'cash',
                 'payment_status' => 'paid',
+                'payment_proof' => UploadedFile::fake()->image('serah-terima.jpg'),
             ])
             ->assertRedirect(route('employee.dashboard'))
             ->assertSessionHas('success');
@@ -333,8 +341,12 @@ class TransactionFlowTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $admin->partners()->attach($transaction->partner_id);
 
+        Storage::fake('local');
+
         $this->actingAs($admin)
-            ->post(route('admin.transactions.mark-paid', $transaction))
+            ->post(route('admin.transactions.mark-paid', $transaction), [
+                'payment_proof' => UploadedFile::fake()->image('transfer.jpg'),
+            ])
             ->assertSessionHas('success');
 
         $transaction->refresh();
@@ -351,8 +363,12 @@ class TransactionFlowTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $admin->partners()->attach($transaction->partner_id);
 
+        Storage::fake('local');
+
         $this->actingAs($admin)
-            ->post(route('admin.transactions.mark-paid', $transaction))
+            ->post(route('admin.transactions.mark-paid', $transaction), [
+                'payment_proof' => UploadedFile::fake()->image('transfer.jpg'),
+            ])
             ->assertSessionHasErrors('payment_status');
 
         $this->assertEquals($paidAt, $transaction->fresh()->paid_at);

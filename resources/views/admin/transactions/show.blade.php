@@ -95,14 +95,38 @@
                     </div>
                 </div>
 
+                {{-- Tanpa ini admin mengunggah tanpa pernah bisa memeriksa
+                     berkas mana yang akhirnya tersimpan, dan saat menutup
+                     sanggahan ia tidak punya bukti untuk dilihat. --}}
+                @if($transaction->hasPaymentProof())
+                    <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-xs font-black uppercase tracking-[0.12em] text-slate-500">Bukti pembayaran</p>
+                        <a href="{{ route('transactions.payment-proof', $transaction) }}" target="_blank" rel="noopener">
+                            <img src="{{ route('transactions.payment-proof', $transaction) }}"
+                                 alt="Bukti pembayaran transaksi {{ $transaction->code }}"
+                                 class="mt-2 max-h-72 w-full rounded-lg border border-slate-200 bg-white object-contain">
+                        </a>
+                    </div>
+                @endif
+
                 {{-- Satu-satunya jalan keluar bagi transaksi selesai yang
                      dibayar menyusul, karena statusnya sudah terkunci. --}}
                 @if($transaction->status === 'completed' && $transaction->payment_status === 'unpaid')
-                    <form method="post" action="{{ route('admin.transactions.mark-paid', $transaction) }}" class="mt-4 flex flex-col gap-3 rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-900/10 sm:flex-row sm:items-center sm:justify-between"
+                    <form method="post" action="{{ route('admin.transactions.mark-paid', $transaction) }}" enctype="multipart/form-data"
+                          class="mt-4 space-y-3 rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-900/10"
                           onsubmit="return confirm('Tandai transaksi ini sudah dibayar ke penyetor?')">
                         @csrf
                         <p class="text-sm leading-6 text-amber-900">Penyetor belum menerima Rp{{ number_format($transaction->total_value, 0, ',', '.') }}.</p>
-                        <button class="shrink-0 rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-amber-800">Tandai Lunas</button>
+                        {{-- Dulu ini satu tombol tanpa isian. Bukti transfer
+                             menjadikannya form, sebab pembayaran menyusul
+                             justru yang paling perlu dibuktikan: tidak ada
+                             saksi serah terima seperti pada pembayaran tunai. --}}
+                        <label class="block">
+                            <span class="text-sm font-bold text-amber-900">Bukti transfer</span>
+                            <input name="payment_proof" type="file" accept="image/*" required class="mt-1.5 w-full rounded-xl border border-amber-900/20 bg-white px-3 py-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-amber-100 file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-amber-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100">
+                            @error('payment_proof')<span class="mt-1.5 block text-sm font-semibold text-rose-700">{{ $message }}</span>@enderror
+                        </label>
+                        <button class="w-full rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-amber-800 sm:w-auto">Tandai Lunas</button>
                     </form>
                 @endif
             </div>
@@ -154,7 +178,7 @@
             @else
                 <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
                     <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Selesaikan transaksi</h2>
-                    <form method="post" action="{{ route('admin.transactions.verify', $transaction) }}" class="mt-4 space-y-4">
+                    <form method="post" action="{{ route('admin.transactions.verify', $transaction) }}" enctype="multipart/form-data" class="mt-4 space-y-4">
                         @csrf
                         <x-form-field label="Volume aktual (L)" name="actual_liter" type="number"
                                       :value="old('actual_liter', $transaction->actual_liter)" required
@@ -173,6 +197,14 @@
                                 <option value="paid" @selected(old('payment_status', $transaction->payment_status) === 'paid')>Sudah dibayar</option>
                                 <option value="unpaid" @selected(old('payment_status', $transaction->payment_status) === 'unpaid')>Belum dibayar</option>
                             </select>
+                        </label>
+                        {{-- accept tanpa capture: bukti transfer berupa
+                             tangkapan layar yang sudah ada di galeri. --}}
+                        <label class="block">
+                            <span class="text-sm font-bold text-slate-700">Bukti pembayaran</span>
+                            <input name="payment_proof" type="file" accept="image/*" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-emerald-800 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+                            <span class="mt-1.5 block text-xs text-slate-500">Wajib bila status pembayaran dipilih sudah dibayar.</span>
+                            @error('payment_proof')<span class="mt-1.5 block text-sm font-semibold text-rose-700">{{ $message }}</span>@enderror
                         </label>
                         <label class="block">
                             <span class="text-sm font-bold text-slate-700">Catatan</span>

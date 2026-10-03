@@ -27,6 +27,29 @@
                 <div class="flex justify-between"><dt>Status bayar</dt><dd>{{ $transaction->payment_status ? '' : '-' }}@if($transaction->payment_status)<x-status-badge :status="$transaction->payment_status" />@endif</dd></div>
                 <div class="flex justify-between"><dt>Karyawan</dt><dd class="font-bold">{{ $transaction->pickup?->assignedUser?->name ?? '-' }}</dd></div>
             </dl>
+
+            {{-- Bukti bayar diletakkan tepat di atas tombol sanggah. Selama
+                 ini penyetor menyanggah dengan mengandalkan ingatan; dengan
+                 fotonya di sini ia punya pembanding sebelum memutuskan. --}}
+            @if($transaction->payment_status === 'paid')
+                <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p class="text-xs font-black uppercase tracking-[0.12em] text-slate-500">Bukti pembayaran</p>
+                    @if($transaction->hasPaymentProof())
+                        <a href="{{ route('transactions.payment-proof', $transaction) }}" target="_blank" rel="noopener">
+                            <img src="{{ route('transactions.payment-proof', $transaction) }}"
+                                 alt="Bukti pembayaran transaksi {{ $transaction->code }}"
+                                 class="mt-2 w-full rounded-lg border border-slate-200 bg-white object-contain">
+                        </a>
+                        <p class="mt-2 text-xs text-slate-500">Ketuk gambar untuk membukanya lebih besar.</p>
+                    @else
+                        {{-- Transaksi yang selesai sebelum fitur ini ada. Dinyatakan
+                             terus terang supaya tidak terbaca sebagai bukti yang
+                             sengaja tidak dilampirkan. --}}
+                        <p class="mt-1.5 text-sm leading-6 text-slate-600">Tidak tersedia. Transaksi ini selesai sebelum bukti pembayaran mulai dilampirkan.</p>
+                    @endif
+                </div>
+            @endif
+
             {{-- Sanggahan takaran. Verifikasi sebelumnya satu arah sepenuhnya:
                  angka karyawan langsung jadi dasar bayaran tanpa bisa dibantah. --}}
             @if($transaction->disputed_at)

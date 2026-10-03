@@ -69,7 +69,10 @@ class TransactionController extends Controller
     public function verify(VerifyTransactionRequest $request, Transaction $transaction, TransactionService $service)
     {
         $this->ensureVisible($transaction);
-        $service->verify($transaction, $request->validated());
+        $service->verify($transaction, [
+            ...$request->validated(),
+            'payment_proof' => $request->file('payment_proof'),
+        ]);
 
         return back()->with('success', 'Transaksi selesai diverifikasi.');
     }
@@ -77,10 +80,15 @@ class TransactionController extends Controller
     /**
      * Melunasi transaksi selesai yang sebelumnya dicatat belum dibayar.
      */
-    public function markPaid(Transaction $transaction, TransactionService $service)
+    public function markPaid(Request $request, Transaction $transaction, TransactionService $service)
     {
         $this->ensureVisible($transaction);
-        $service->markPaid($transaction);
+
+        $request->validate([
+            'payment_proof' => Transaction::paymentProofRules('required'),
+        ]);
+
+        $service->markPaid($transaction, $request->file('payment_proof'));
 
         return back()->with('success', 'Transaksi '.$transaction->code.' ditandai lunas.');
     }

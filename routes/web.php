@@ -52,6 +52,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/transaksi', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transaksi/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
     Route::get('/transaksi/{transaction}/qr', [QrCodeController::class, 'show'])->name('transactions.qr');
+    /**
+     * Bukti bayar disajikan lewat rute, bukan lewat public/storage, supaya
+     * TransactionPolicy yang menentukan siapa boleh melihat. Penyetor pemilik
+     * transaksi dan staf mitra terkait lolos; yang lain tidak, termasuk
+     * karyawan mitra lain.
+     */
+    Route::get('/transaksi/{transaction}/bukti-bayar', [TransactionController::class, 'paymentProof'])->name('transactions.payment-proof');
     Route::post('/transaksi/{transaction}/batal', [TransactionController::class, 'cancel'])->name('transactions.cancel');
     Route::post('/transaksi/{transaction}/sanggah', [TransactionController::class, 'dispute'])->name('transactions.dispute');
 });
