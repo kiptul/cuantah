@@ -139,9 +139,15 @@
     </section>
 
     <section class="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/5 sm:p-6">
+        {{-- min-w-0 wajib di sini. Sebagai grid item, kartunya mewarisi
+             min-width:auto, sehingga lebar minimum intrinsik canvas yang 300px
+             memaksa kolomnya melebar melewati layar. Di bawah 340px seluruh
+             halaman ikut tergeser dan teksnya terpotong di tepi kiri. Pada
+             xl ke atas gejalanya tertutup oleh minmax(0,1fr), jadi hanya
+             tampak di layar sempit. --}}
+        <div class="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/5 sm:p-6">
             <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
+                <div class="min-w-0">
                     <h2 class="text-lg font-black text-slate-950">Tren bulanan</h2>
                     <p class="mt-1 text-sm text-slate-500">Volume dan nilai transaksi selesai, 12 bulan terakhir.</p>
                 </div>
