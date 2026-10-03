@@ -78,39 +78,60 @@
             </div>
 
                 <div class="rounded-[2rem] bg-white px-6 py-8 shadow-sm ring-1 ring-emerald-100 [--color-primary:#047857] [--color-primary-content:#ffffff]">
-                    {{-- mt-3, max-w-xs, dan text-center hanya masuk akal pada
-                         tata letak mendatar di lg, tempat isi langkah berada di
-                         bawah titik nomornya. Di ponsel daftarnya menurun dan
-                         isinya berada di samping titik, sehingga teks yang
-                         ditengahkan dengan lebar yang berbeda-beda membuat tepi
-                         kirinya bergerigi, dan mt-3 menggeser teks turun dari
-                         titik nomor yang seharusnya sejajar dengannya. --}}
-                    <ul class="steps steps-vertical w-full lg:steps-horizontal">
-                    <li class="step step-primary">
-                        <span class="block text-left lg:mt-3 lg:max-w-xs lg:text-center">
-                            <span class="block font-black text-emerald-950">Kumpulkan</span>
-                            <span class="mt-1 block text-sm font-medium leading-6 text-slate-500">Simpan jelantah dalam wadah tertutup.</span>
-                        </span>
-                    </li>
-                    <li class="step step-primary">
-                        <span class="block text-left lg:mt-3 lg:max-w-xs lg:text-center">
-                            <span class="block font-black text-emerald-950">Setorkan</span>
-                            <span class="mt-1 block text-sm font-medium leading-6 text-slate-500">Ajukan pickup atau setor mandiri.</span>
-                        </span>
-                    </li>
-                    <li class="step step-primary">
-                        <span class="block text-left lg:mt-3 lg:max-w-xs lg:text-center">
-                            <span class="block font-black text-emerald-950">Diverifikasi</span>
-                            <span class="mt-1 block text-sm font-medium leading-6 text-slate-500">Volume dicek sebelum transaksi selesai.</span>
-                        </span>
-                    </li>
-                    <li class="step step-primary">
-                        <span class="block text-left lg:mt-3 lg:max-w-xs lg:text-center">
-                            <span class="block font-black text-emerald-950">Diolah ulang</span>
-                            <span class="mt-1 block text-sm font-medium leading-6 text-slate-500">Jelantah masuk rantai pengolahan yang lebih rapi.</span>
-                        </span>
-                    </li>
-                </ul>
+                    @php
+                        $langkahAlur = [
+                            ['judul' => 'Kumpulkan', 'isi' => 'Simpan jelantah dalam wadah tertutup.'],
+                            ['judul' => 'Setorkan', 'isi' => 'Ajukan pickup atau setor mandiri.'],
+                            ['judul' => 'Diverifikasi', 'isi' => 'Volume dicek sebelum transaksi selesai.'],
+                            ['judul' => 'Diolah ulang', 'isi' => 'Jelantah masuk rantai pengolahan yang lebih rapi.'],
+                        ];
+                    @endphp
+
+                    {{-- Dua susunan dari satu sumber isi.
+
+                         Komponen steps DaisyUI menempatkan titik nomornya di
+                         tengah seluruh blok isi. Pada tata letak mendatar itu
+                         benar, sebab isinya berada di bawah titik. Pada tata
+                         letak menurun isinya berada di samping, sehingga pada
+                         langkah berisi dua baris nomornya sejajar dengan
+                         keterangan, bukan dengan judul yang diterangkannya.
+
+                         Karena itu versi menurun disusun sendiri: nomor dan
+                         judul sejajar, dan garis penghubungnya digambar
+                         terpisah. Versi mendatar tetap memakai steps, yang di
+                         sana memang sudah pas. Isinya satu larik supaya tidak
+                         ada teks yang ditulis dua kali. --}}
+                    <ol class="lg:hidden">
+                        @foreach($langkahAlur as $nomor => $langkah)
+                            <li class="relative flex gap-4 @if(! $loop->last) pb-7 @endif">
+                                @if(! $loop->last)
+                                    {{-- Garis penghubung berhenti di titik berikutnya,
+                                         bukan di tepi bawah daftar. --}}
+                                    <span class="absolute left-[15px] top-8 bottom-0 w-0.5 bg-emerald-700" aria-hidden="true"></span>
+                                @endif
+
+                                <span class="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-black text-white">{{ $nomor + 1 }}</span>
+
+                                {{-- pt-1 menyejajarkan titik tengah baris judul
+                                     dengan titik tengah lingkaran nomor. --}}
+                                <span class="min-w-0 pt-1">
+                                    <span class="block font-black text-emerald-950">{{ $langkah['judul'] }}</span>
+                                    <span class="mt-1 block text-sm font-medium leading-6 text-slate-500">{{ $langkah['isi'] }}</span>
+                                </span>
+                            </li>
+                        @endforeach
+                    </ol>
+
+                    <ul class="hidden w-full steps steps-horizontal lg:inline-grid">
+                        @foreach($langkahAlur as $langkah)
+                            <li class="step step-primary">
+                                <span class="mt-3 block max-w-xs text-center">
+                                    <span class="block font-black text-emerald-950">{{ $langkah['judul'] }}</span>
+                                    <span class="mt-1 block text-sm font-medium leading-6 text-slate-500">{{ $langkah['isi'] }}</span>
+                                </span>
+                            </li>
+                        @endforeach
+                    </ul>
                 </div>
             </div>
         </div>
