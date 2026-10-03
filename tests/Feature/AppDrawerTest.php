@@ -111,6 +111,61 @@ class AppDrawerTest extends TestCase
         );
     }
 
+    /**
+     * Memastikan laci tidak terkurung di dalam elemen yang membentuk
+     * containing block bagi position:fixed.
+     *
+     * Properti seperti backdrop-filter, transform, dan filter membuat
+     * inset-y-0 berhenti berarti setinggi layar dan menjadi setinggi
+     * pembungkusnya. Header publik memakai backdrop-blur, dan lacinya
+     * memang menciut menjadi kotak pendek menempel di atas, lengkap dengan
+     * bilah gulir sendiri. Header aplikasi belum memakainya, jadi lacinya
+     * selamat secara kebetulan saja.
+     *
+     * Yang diperiksa letaknya, bukan daftar propertinya, sebab properti
+     * yang membentuk containing block bisa bertambah kapan saja pada
+     * elemen mana pun di atasnya.
+     */
+    private function assertLaciTidakDiDalamHeader(string $isi, string $id): void
+    {
+        $sebelumnya = libxml_use_internal_errors(true);
+
+        $dom = new \DOMDocument;
+        $dom->loadHTML('<?xml encoding="utf-8" ?>'.$isi);
+
+        libxml_clear_errors();
+        libxml_use_internal_errors($sebelumnya);
+
+        $saklar = $dom->getElementById($id);
+
+        $this->assertNotNull($saklar, 'Saklar #'.$id.' harus ada.');
+
+        $induk = $saklar->parentNode;
+
+        while ($induk instanceof \DOMElement) {
+            $this->assertNotSame(
+                'header',
+                $induk->tagName,
+                'Laci #'.$id.' berada di dalam <header>, sehingga tingginya ikut tinggi header begitu header diberi backdrop-filter.'
+            );
+
+            $induk = $induk->parentNode;
+        }
+    }
+
+    public function test_laci_tidak_terkurung_di_dalam_header(): void
+    {
+        $this->assertLaciTidakDiDalamHeader(
+            $this->actingAs($this->penyetor())->get(route('dashboard'))->assertOk()->getContent(),
+            'appDrawer'
+        );
+
+        $this->assertLaciTidakDiDalamHeader(
+            $this->get(route('home'))->assertOk()->getContent(),
+            'publicDrawer'
+        );
+    }
+
     public function test_penyetor_punya_laci(): void
     {
         $isi = $this->actingAs($this->penyetor())->get(route('dashboard'))->assertOk()->getContent();

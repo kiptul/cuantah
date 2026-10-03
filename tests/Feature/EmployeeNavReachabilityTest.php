@@ -130,13 +130,20 @@ class EmployeeNavReachabilityTest extends TestCase
     }
 
     /**
-     * Badan dasbor di luar header, yaitu bagian yang bukan navigasi.
+     * Badan dasbor, yaitu bagian yang bukan navigasi.
+     *
+     * Header dan laci sama-sama dibuang. Laci diletakkan di luar <header>
+     * sejak properti seperti backdrop-filter terbukti mengurung elemen
+     * fixed di dalam pembungkusnya; membuang header saja membuat menu di
+     * laci terbaca sebagai pengulangan di badan halaman.
      */
     private function badanDasbor(User $karyawan): string
     {
         $isi = $this->actingAs($karyawan)->get(route('employee.dashboard'))->assertOk()->getContent();
 
-        return preg_replace('/<header.*?<\/header>/s', '', $isi);
+        $isi = preg_replace('/<header.*?<\/header>/s', '', $isi);
+
+        return preg_replace('/<aside[^>]*peer-checked:translate-x-0.*?<\/aside>/s', '', $isi);
     }
 
     public function test_dasbor_tidak_mengulang_menu_yang_sudah_ada_di_header(): void

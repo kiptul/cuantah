@@ -85,54 +85,66 @@
 
             </div>
 
-            {{-- Saklar laci. sr-only berarti position:absolute, sehingga ia
-                 tidak menempati kolom flex; begitu pula lapisan gelap dan
-                 lacinya yang fixed. Ketiganya harus bersaudara langsung,
-                 sebab peer-checked memakai pemilih saudara. --}}
-            <input id="publicDrawer" type="checkbox" class="peer sr-only" aria-label="Buka menu navigasi">
-
-            <label
-                for="publicDrawer"
-                class="fixed inset-0 z-[1050] hidden bg-slate-950/50 peer-checked:block xl:hidden"
-                aria-hidden="true"
-            ></label>
-
-            <aside class="fixed inset-y-0 left-0 z-[1100] w-72 max-w-[85vw] -translate-x-full overflow-y-auto border-r border-emerald-100 bg-white p-3 shadow-xl shadow-emerald-950/10 transition-transform duration-200 ease-out peer-checked:translate-x-0 xl:hidden">
-                <label
-                    for="publicDrawer"
-                    class="mb-2 flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-emerald-50"
-                >
-                    Tutup menu
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                    </svg>
-                </label>
-
-                <nav class="border-t border-emerald-100 pt-2" aria-label="Navigasi publik">
-                    @foreach ($publicNavItems as $item)
-                        <a
-                            href="{{ $item['url'] }}"
-                            @class([
-                                'mb-1 flex min-h-11 items-center rounded-xl px-4 py-2.5 text-sm font-bold transition',
-                                'bg-emerald-700 text-white shadow-sm shadow-emerald-900/20' => $item['active'],
-                                'text-slate-700 hover:bg-emerald-50 hover:text-emerald-800' => ! $item['active'],
-                            ])
-                            @if($item['active']) aria-current="page" @endif
-                        >{{ $item['label'] }}</a>
-                    @endforeach
-                </nav>
-
-                <div class="mt-2 border-t border-emerald-100 pt-2">
-                    @auth
-                        <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : (auth()->user()->isEmployee() ? route('employee.dashboard') : route('dashboard')) }}" class="flex min-h-11 items-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-emerald-800">Dashboard</a>
-                    @else
-                        <a href="{{ route('login') }}" class="mb-1 flex min-h-11 items-center rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-emerald-50 hover:text-emerald-800">Login</a>
-                        <a href="{{ route('register') }}" class="flex min-h-11 items-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-emerald-800">Setor Sekarang</a>
-                    @endauth
-                </div>
-            </aside>
         </nav>
     </header>
+
+    {{-- Laci dipasang di luar <header>, bukan di dalamnya.
+
+         Header memakai backdrop-blur, dan backdrop-filter membentuk
+         containing block bagi elemen position:fixed di dalamnya. Akibatnya
+         inset-y-0 tidak lagi berarti setinggi layar melainkan setinggi
+         header, sehingga lacinya muncul sebagai kotak pendek menempel di
+         atas, lengkap dengan bilah gulir sendiri. z-40 pada header juga
+         mengurung z-index laci di dalam konteks penumpukannya.
+
+         Pemicunya tetap tinggal di navbar; label bekerja dari mana pun
+         lewat atribut for. --}}
+        {{-- Saklar laci. sr-only berarti position:absolute, sehingga ia
+             tidak menempati kolom flex; begitu pula lapisan gelap dan
+             lacinya yang fixed. Ketiganya harus bersaudara langsung,
+             sebab peer-checked memakai pemilih saudara. --}}
+        <input id="publicDrawer" type="checkbox" class="peer sr-only" aria-label="Buka menu navigasi">
+
+        <label
+            for="publicDrawer"
+            class="fixed inset-0 z-[1050] hidden bg-slate-950/50 peer-checked:block xl:hidden"
+            aria-hidden="true"
+        ></label>
+
+        <aside class="fixed inset-y-0 left-0 z-[1100] w-72 max-w-[85vw] -translate-x-full overflow-y-auto border-r border-emerald-100 bg-white p-3 shadow-xl shadow-emerald-950/10 transition-transform duration-200 ease-out peer-checked:translate-x-0 xl:hidden">
+            <label
+                for="publicDrawer"
+                class="mb-2 flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-emerald-50"
+            >
+                Tutup menu
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </label>
+
+            <nav class="border-t border-emerald-100 pt-2" aria-label="Navigasi publik">
+                @foreach ($publicNavItems as $item)
+                    <a
+                        href="{{ $item['url'] }}"
+                        @class([
+                            'mb-1 flex min-h-11 items-center rounded-xl px-4 py-2.5 text-sm font-bold transition',
+                            'bg-emerald-700 text-white shadow-sm shadow-emerald-900/20' => $item['active'],
+                            'text-slate-700 hover:bg-emerald-50 hover:text-emerald-800' => ! $item['active'],
+                        ])
+                        @if($item['active']) aria-current="page" @endif
+                    >{{ $item['label'] }}</a>
+                @endforeach
+            </nav>
+
+            <div class="mt-2 border-t border-emerald-100 pt-2">
+                @auth
+                    <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : (auth()->user()->isEmployee() ? route('employee.dashboard') : route('dashboard')) }}" class="flex min-h-11 items-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-emerald-800">Dashboard</a>
+                @else
+                    <a href="{{ route('login') }}" class="mb-1 flex min-h-11 items-center rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-emerald-50 hover:text-emerald-800">Login</a>
+                    <a href="{{ route('register') }}" class="flex min-h-11 items-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-emerald-800">Setor Sekarang</a>
+                @endauth
+            </div>
+        </aside>
     <main>{{ $slot }}</main>
 
     <footer class="border-t border-emerald-900/10 bg-emerald-950 text-emerald-50">

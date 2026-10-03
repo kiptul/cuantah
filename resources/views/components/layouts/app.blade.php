@@ -46,13 +46,6 @@
                 };
             @endphp
 
-            {{-- Saklar laci. sr-only berarti position:absolute, sehingga ia
-                 tidak ikut menempati kolom flex; begitu pula lapisan gelap dan
-                 lacinya yang fixed. Ketiganya harus bersaudara langsung, sebab
-                 peer-checked memakai pemilih saudara. --}}
-            @if($menuUtama !== [])
-                <input id="appDrawer" type="checkbox" class="peer sr-only" aria-label="Buka menu">
-            @endif
             <a href="{{ $homeRoute }}" class="flex items-center gap-2.5 font-black text-emerald-800">
                 @if($adalahAdmin)
                     {{-- Panel admin tetap memakai penanda sendiri: ia perlu
@@ -126,58 +119,80 @@
                 @endauth
             </div>
 
-            @if($menuUtama !== [])
-                {{-- Lapisan gelap merangkap tombol tutup. Tanpa ini laci hanya
-                     bisa ditutup lewat tombol yang tertutup oleh laci sendiri.
-                     z-index-nya di atas 1000 karena kontrol Leaflet berada di
-                     sana, dan beberapa halaman memuat peta. --}}
-                <label
-                    for="appDrawer"
-                    class="fixed inset-0 z-[1050] hidden bg-slate-950/50 peer-checked:block sm:hidden"
-                    aria-hidden="true"
-                ></label>
-
-                <aside class="fixed inset-y-0 left-0 z-[1100] w-72 max-w-[85vw] -translate-x-full overflow-y-auto border-r border-slate-200 bg-white p-3 shadow-xl shadow-slate-950/10 transition-transform duration-200 ease-out peer-checked:translate-x-0 sm:hidden">
-                    <label
-                        for="appDrawer"
-                        class="mb-2 flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
-                    >
-                        Tutup menu
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                        </svg>
-                    </label>
-
-                    <nav class="border-t border-slate-100 pt-2" aria-label="Menu utama">
-                        @foreach($menuUtama as $item)
-                            <a
-                                href="{{ $item['url'] }}"
-                                @class([
-                                    'mb-1 flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition',
-                                    'bg-emerald-700 text-white shadow-sm shadow-emerald-900/20' => request()->routeIs($item['route']),
-                                    'text-slate-700 hover:bg-emerald-50 hover:text-emerald-800' => ! request()->routeIs($item['route']),
-                                ])
-                                @if(request()->routeIs($item['route'])) aria-current="page" @endif
-                            >
-                                <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-current/10" aria-hidden="true">
-                                @if($item['icon'] === 'grid')
-                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 4H10V10H4V4ZM14 4H20V10H14V4ZM4 14H10V20H4V14ZM14 14H20V20H14V14Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
-                                @elseif($item['icon'] === 'scan')
-                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
-                                @elseif($item['icon'] === 'drop')
-                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3s6 6.5 6 10.5a6 6 0 0 1-12 0C6 9.5 12 3 12 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
-                                @elseif($item['icon'] === 'receipt')
-                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 4H19V20H5V4ZM8 8H16M8 12H16M8 16H13" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
-                                @endif
-                                </span>
-                                {{ $item['label'] }}
-                            </a>
-                        @endforeach
-                    </nav>
-                </aside>
-            @endif
         </nav>
     </header>
+
+    {{-- Laci dipasang di luar <header>, bukan di dalamnya.
+
+         Properti seperti backdrop-filter, transform, dan filter membentuk
+         containing block bagi elemen position:fixed di dalamnya, sehingga
+         inset-y-0 berhenti berarti setinggi layar dan menjadi setinggi
+         pembungkusnya. Header aplikasi ini belum memakai satu pun dari
+         ketiganya, tetapi header publik memakai backdrop-blur dan lacinya
+         memang menciut menjadi kotak pendek menempel di atas. Menaruhnya di
+         luar header membuat kekeliruan itu tidak mungkin terulang ketika
+         suatu saat header ini ikut diberi efek serupa.
+
+         Pemicunya tetap tinggal di navbar; label bekerja dari mana pun lewat
+         atribut for. --}}
+        {{-- Saklar laci. sr-only berarti position:absolute, sehingga ia
+             tidak ikut menempati kolom flex; begitu pula lapisan gelap dan
+             lacinya yang fixed. Ketiganya harus bersaudara langsung, sebab
+             peer-checked memakai pemilih saudara. --}}
+        @if($menuUtama !== [])
+            <input id="appDrawer" type="checkbox" class="peer sr-only" aria-label="Buka menu">
+        @endif
+
+        @if($menuUtama !== [])
+            {{-- Lapisan gelap merangkap tombol tutup. Tanpa ini laci hanya
+                 bisa ditutup lewat tombol yang tertutup oleh laci sendiri.
+                 z-index-nya di atas 1000 karena kontrol Leaflet berada di
+                 sana, dan beberapa halaman memuat peta. --}}
+            <label
+                for="appDrawer"
+                class="fixed inset-0 z-[1050] hidden bg-slate-950/50 peer-checked:block sm:hidden"
+                aria-hidden="true"
+            ></label>
+
+            <aside class="fixed inset-y-0 left-0 z-[1100] w-72 max-w-[85vw] -translate-x-full overflow-y-auto border-r border-slate-200 bg-white p-3 shadow-xl shadow-slate-950/10 transition-transform duration-200 ease-out peer-checked:translate-x-0 sm:hidden">
+                <label
+                    for="appDrawer"
+                    class="mb-2 flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+                >
+                    Tutup menu
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </label>
+
+                <nav class="border-t border-slate-100 pt-2" aria-label="Menu utama">
+                    @foreach($menuUtama as $item)
+                        <a
+                            href="{{ $item['url'] }}"
+                            @class([
+                                'mb-1 flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition',
+                                'bg-emerald-700 text-white shadow-sm shadow-emerald-900/20' => request()->routeIs($item['route']),
+                                'text-slate-700 hover:bg-emerald-50 hover:text-emerald-800' => ! request()->routeIs($item['route']),
+                            ])
+                            @if(request()->routeIs($item['route'])) aria-current="page" @endif
+                        >
+                            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-current/10" aria-hidden="true">
+                            @if($item['icon'] === 'grid')
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 4H10V10H4V4ZM14 4H20V10H14V4ZM4 14H10V20H4V14ZM14 14H20V20H14V14Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
+                            @elseif($item['icon'] === 'scan')
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+                            @elseif($item['icon'] === 'drop')
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3s6 6.5 6 10.5a6 6 0 0 1-12 0C6 9.5 12 3 12 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
+                            @elseif($item['icon'] === 'receipt')
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 4H19V20H5V4ZM8 8H16M8 12H16M8 16H13" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+                            @endif
+                            </span>
+                            {{ $item['label'] }}
+                        </a>
+                    @endforeach
+                </nav>
+            </aside>
+        @endif
     <main class="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6">
         @if(session('success'))
             <div class="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{{ session('success') }}</div>
