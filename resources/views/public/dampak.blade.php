@@ -78,27 +78,34 @@
             </div>
 
                 <div class="rounded-[2rem] bg-white px-6 py-8 shadow-sm ring-1 ring-emerald-100 [--color-primary:#047857] [--color-primary-content:#ffffff]">
+                    {{-- mt-3, max-w-xs, dan text-center hanya masuk akal pada
+                         tata letak mendatar di lg, tempat isi langkah berada di
+                         bawah titik nomornya. Di ponsel daftarnya menurun dan
+                         isinya berada di samping titik, sehingga teks yang
+                         ditengahkan dengan lebar yang berbeda-beda membuat tepi
+                         kirinya bergerigi, dan mt-3 menggeser teks turun dari
+                         titik nomor yang seharusnya sejajar dengannya. --}}
                     <ul class="steps steps-vertical w-full lg:steps-horizontal">
                     <li class="step step-primary">
-                        <span class="mt-3 block max-w-xs text-center">
+                        <span class="block text-left lg:mt-3 lg:max-w-xs lg:text-center">
                             <span class="block font-black text-emerald-950">Kumpulkan</span>
                             <span class="mt-1 block text-sm font-medium leading-6 text-slate-500">Simpan jelantah dalam wadah tertutup.</span>
                         </span>
                     </li>
                     <li class="step step-primary">
-                        <span class="mt-3 block max-w-xs text-center">
+                        <span class="block text-left lg:mt-3 lg:max-w-xs lg:text-center">
                             <span class="block font-black text-emerald-950">Setorkan</span>
                             <span class="mt-1 block text-sm font-medium leading-6 text-slate-500">Ajukan pickup atau setor mandiri.</span>
                         </span>
                     </li>
                     <li class="step step-primary">
-                        <span class="mt-3 block max-w-xs text-center">
+                        <span class="block text-left lg:mt-3 lg:max-w-xs lg:text-center">
                             <span class="block font-black text-emerald-950">Diverifikasi</span>
                             <span class="mt-1 block text-sm font-medium leading-6 text-slate-500">Volume dicek sebelum transaksi selesai.</span>
                         </span>
                     </li>
                     <li class="step step-primary">
-                        <span class="mt-3 block max-w-xs text-center">
+                        <span class="block text-left lg:mt-3 lg:max-w-xs lg:text-center">
                             <span class="block font-black text-emerald-950">Diolah ulang</span>
                             <span class="mt-1 block text-sm font-medium leading-6 text-slate-500">Jelantah masuk rantai pengolahan yang lebih rapi.</span>
                         </span>
