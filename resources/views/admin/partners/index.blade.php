@@ -27,10 +27,12 @@
         <div class="mt-4">
             <div class="flex items-center justify-between gap-3">
                 <p class="text-sm font-bold">Aturan ongkir jemput</p>
-                <button type="button" data-fee-add="new" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 text-sm font-bold text-slate-700">Tambah Range</button>
+                <button type="button" data-fee-add="new" class="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-emerald-700 px-3.5 py-2 text-sm font-bold text-emerald-800 transition hover:bg-emerald-50">
+                    <span aria-hidden="true">+</span> Tambah Range
+                </button>
             </div>
             <div data-fee-list="new" class="mt-3 grid gap-2"></div>
-            <p class="mt-2 text-xs text-slate-500">Kosongkan jarak maksimal untuk range terakhir seperti di atas 10 km. Radius di bawah range pertama otomatis gratis.</p>
+            <p class="mt-2 text-xs text-slate-500">Kosongkan jarak maksimal untuk range terakhir, artinya berlaku untuk jarak berapa pun di atas jarak minimumnya. Jarak di bawah range pertama otomatis gratis.</p>
         </div>
         <button class="mt-4 rounded-md bg-emerald-700 px-4 py-2 font-bold text-white">Tambah Mitra</button>
     </form>
@@ -64,18 +66,38 @@
                 <div class="mt-4">
                     <div class="flex items-center justify-between gap-3">
                         <p class="text-sm font-bold">Aturan ongkir jemput</p>
-                        <button type="button" data-fee-add="{{ $partner->id }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 text-sm font-bold text-slate-700">Tambah Range</button>
+                        <button type="button" data-fee-add="{{ $partner->id }}" class="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-emerald-700 px-3.5 py-2 text-sm font-bold text-emerald-800 transition hover:bg-emerald-50">
+                    <span aria-hidden="true">+</span> Tambah Range
+                </button>
                     </div>
                     <div data-fee-list="{{ $partner->id }}" class="mt-3 grid gap-2">
                         @foreach($partner->deliveryFees as $index => $fee)
-                            <div data-fee-row class="grid gap-2 rounded-md bg-slate-50 p-3 md:grid-cols-[1fr_1fr_1fr_auto]">
-                                <input name="delivery_fees[{{ $index }}][min_distance_km]" type="number" step="0.01" min="0" value="{{ $fee->min_distance_km }}" placeholder="Min km" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                                <input name="delivery_fees[{{ $index }}][max_distance_km]" type="number" step="0.01" min="0" value="{{ $fee->max_distance_km }}" placeholder="Max km kosong = lebih dari" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
-                                <input name="delivery_fees[{{ $index }}][fee]" type="number" min="0" value="{{ $fee->fee }}" placeholder="Ongkir" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                                <button type="button" data-fee-remove class="rounded-md border border-rose-300 px-3 py-2 text-sm font-bold text-rose-700">Hapus</button>
+                            {{-- Label, bukan placeholder. Placeholder lenyap begitu
+                                 kotaknya diisi, sehingga baris yang sudah tersimpan
+                                 berubah menjadi tiga angka telanjang: 3, 5, 10000.
+                                 Keterangannya justru paling dibutuhkan setelah terisi,
+                                 yaitu ketika admin membacanya kembali. --}}
+                            <div data-fee-row class="grid gap-3 rounded-xl bg-slate-50 p-3 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
+                                <label class="block">
+                                    <span class="mb-1 block text-xs font-bold text-slate-600">Jarak minimum (km)</span>
+                                    <input name="delivery_fees[{{ $index }}][min_distance_km]" type="number" step="0.01" min="0" value="{{ $fee->min_distance_km }}" placeholder="0" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                                </label>
+                                <label class="block">
+                                    <span class="mb-1 block text-xs font-bold text-slate-600">Jarak maksimum (km)</span>
+                                    <input name="delivery_fees[{{ $index }}][max_distance_km]" type="number" step="0.01" min="0" value="{{ $fee->max_distance_km }}" placeholder="Kosongkan = tanpa batas" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+                                </label>
+                                <label class="block">
+                                    <span class="mb-1 block text-xs font-bold text-slate-600">Ongkir (Rp)</span>
+                                    <input name="delivery_fees[{{ $index }}][fee]" type="number" min="0" value="{{ $fee->fee }}" placeholder="0" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                                </label>
+                                <button type="button" data-fee-remove class="rounded-xl border border-rose-300 px-3 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50">Hapus</button>
                             </div>
                         @endforeach
                     </div>
+                    {{-- Keterangan yang sama sudah ada di form tambah mitra tetapi
+                         tidak pernah ada di sini, padahal justru di sinilah admin
+                         membaca ulang aturan yang dibuat orang lain. --}}
+                    <p class="mt-2 text-xs text-slate-500">Kosongkan jarak maksimal untuk range terakhir, artinya berlaku untuk jarak berapa pun di atas jarak minimumnya. Jarak di bawah range pertama otomatis gratis.</p>
                 </div>
 
                 <button class="mt-4 rounded-md bg-emerald-700 px-4 py-2 font-bold text-white">Simpan Perubahan</button>
@@ -110,10 +132,19 @@
                 row.dataset.feeRow = '';
                 row.className = 'grid gap-2 rounded-md bg-slate-50 p-3 md:grid-cols-[1fr_1fr_1fr_auto]';
                 row.innerHTML = `
-                    <input name="delivery_fees[${index}][min_distance_km]" type="number" step="0.01" min="0" value="${values.min ?? ''}" placeholder="Min km" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                    <input name="delivery_fees[${index}][max_distance_km]" type="number" step="0.01" min="0" value="${values.max ?? ''}" placeholder="Max km kosong = lebih dari" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
-                    <input name="delivery_fees[${index}][fee]" type="number" min="0" value="${values.fee ?? ''}" placeholder="Ongkir" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                    <button type="button" data-fee-remove class="rounded-md border border-rose-300 px-3 py-2 text-sm font-bold text-rose-700">Hapus</button>
+                    <label class="block">
+                        <span class="mb-1 block text-xs font-bold text-slate-600">Jarak minimum (km)</span>
+                        <input name="delivery_fees[${index}][min_distance_km]" type="number" step="0.01" min="0" value="${values.min ?? ''}" placeholder="0" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    </label>
+                    <label class="block">
+                        <span class="mb-1 block text-xs font-bold text-slate-600">Jarak maksimum (km)</span>
+                        <input name="delivery_fees[${index}][max_distance_km]" type="number" step="0.01" min="0" value="${values.max ?? ''}" placeholder="Kosongkan = tanpa batas" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+                    </label>
+                    <label class="block">
+                        <span class="mb-1 block text-xs font-bold text-slate-600">Ongkir (Rp)</span>
+                        <input name="delivery_fees[${index}][fee]" type="number" min="0" value="${values.fee ?? ''}" placeholder="0" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    </label>
+                    <button type="button" data-fee-remove class="rounded-xl border border-rose-300 px-3 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50">Hapus</button>
                 `;
                 list.appendChild(row);
             }
