@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
@@ -19,6 +20,10 @@ use Tests\TestCase;
  */
 class PublicTimelineTest extends TestCase
 {
+    // Halaman publik membaca harga jelantah yang berlaku, jadi tabelnya harus
+    // ada. Tanpa ini seluruh test di berkas ini menerima 500, bukan 200.
+    use RefreshDatabase;
+
     /**
      * @var array<int, string>
      */

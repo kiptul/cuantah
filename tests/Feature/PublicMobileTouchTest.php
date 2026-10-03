@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
@@ -18,6 +19,10 @@ use Tests\TestCase;
  */
 class PublicMobileTouchTest extends TestCase
 {
+    // Halaman publik membaca harga jelantah yang berlaku, jadi tabelnya harus
+    // ada. Tanpa ini seluruh test di berkas ini menerima 500, bukan 200.
+    use RefreshDatabase;
+
     public function test_ikon_mata_uang_memakai_rupiah(): void
     {
         $isi = $this->get(route('public.page', 'edukasi'))->assertOk()->getContent();
