@@ -45,7 +45,7 @@
                             'shrink-0 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums',
                             'bg-emerald-50 text-emerald-700' => $delta >= 0,
                             'bg-rose-50 text-rose-700' => $delta < 0,
-                        ]) title="Dibanding bulan lalu">{{ $delta >= 0 ? '▲' : '▼' }} {{ number_format(abs($delta), 0, ',', '.') }}%</span>
+                        ]) title="Dibanding tanggal yang sama bulan lalu">{{ $delta >= 0 ? '▲' : '▼' }} {{ number_format(abs($delta), 0, ',', '.') }}%</span>
                     @endif
                 </div>
                 <p class="mt-3 text-2xl font-black tracking-tight tabular-nums text-slate-950">{{ $value }}</p>

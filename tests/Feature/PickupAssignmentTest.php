@@ -118,4 +118,118 @@ class PickupAssignmentTest extends TestCase
             'Daftar pickup harus memakai satu peta bersama, bukan satu peta per baris.'
         );
     }
+
+    /**
+     * Satu pickup jemput per status transaksi, semuanya di mitra yang sama.
+     *
+     * @return array{admin: User, pickups: array<string, Pickup>}
+     */
+    private function pickupDiSetiapStatus(): array
+    {
+        $partner = Partner::factory()->create();
+        $pickups = [];
+
+        foreach (Transaction::statuses() as $status) {
+            $transaction = Transaction::factory()->pickup()->create([
+                'partner_id' => $partner->id,
+                'status' => $status,
+                'code' => 'CNT-KAT-'.strtoupper($status),
+            ]);
+            $pickups[$status] = Pickup::factory()->create(['transaction_id' => $transaction->id, 'partner_id' => $partner->id]);
+        }
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $admin->partners()->attach($partner->id);
+
+        return ['admin' => $admin, 'pickups' => $pickups];
+    }
+
+    public function test_daftar_pickup_bawaannya_hanya_yang_menunggu(): void
+    {
+        ['admin' => $admin] = $this->pickupDiSetiapStatus();
+
+        $this->actingAs($admin)
+            ->get(route('admin.pickups.index'))
+            ->assertOk()
+            ->assertSee('CNT-KAT-PENDING')
+            ->assertDontSee('CNT-KAT-SCHEDULED')
+            ->assertDontSee('CNT-KAT-COMPLETED');
+    }
+
+    public function test_setiap_kategori_hanya_memuat_statusnya_sendiri(): void
+    {
+        ['admin' => $admin] = $this->pickupDiSetiapStatus();
+
+        $harapan = [
+            'ditugaskan' => ['SCHEDULED', 'PICKED_UP', 'VERIFICATION'],
+            'selesai' => ['COMPLETED'],
+            'dibatalkan' => ['CANCELLED', 'REJECTED'],
+            'semua' => ['PENDING', 'SCHEDULED', 'COMPLETED', 'CANCELLED'],
+        ];
+
+        foreach ($harapan as $kategori => $kode) {
+            $response = $this->actingAs($admin)->get(route('admin.pickups.index', ['kategori' => $kategori]))->assertOk();
+
+            foreach ($kode as $status) {
+                $response->assertSee('CNT-KAT-'.$status);
+            }
+
+            if ($kategori !== 'semua') {
+                $response->assertDontSee('CNT-KAT-PENDING');
+            }
+        }
+    }
+
+    public function test_jumlah_tiap_kategori_ditampilkan(): void
+    {
+        ['admin' => $admin] = $this->pickupDiSetiapStatus();
+
+        $this->actingAs($admin)
+            ->get(route('admin.pickups.index'))
+            ->assertViewHas('categories', fn ($kategori) => $kategori['menunggu']['count'] === 1
+                && $kategori['ditugaskan']['count'] === 3
+                && $kategori['selesai']['count'] === 1
+                && $kategori['dibatalkan']['count'] === 2
+                && $kategori['semua']['count'] === 7);
+    }
+
+    public function test_paginasi_tetap_membawa_kategori(): void
+    {
+        $partner = Partner::factory()->create();
+        Transaction::factory()->pickup()->completed()->count(13)->create(['partner_id' => $partner->id])
+            ->each(fn (Transaction $transaction) => Pickup::factory()->create(['transaction_id' => $transaction->id, 'partner_id' => $partner->id, 'status' => 'completed']));
+        $admin = User::factory()->create(['role' => 'admin']);
+        $admin->partners()->attach($partner->id);
+
+        $this->actingAs($admin)
+            ->get(route('admin.pickups.index', ['kategori' => 'selesai']))
+            ->assertOk()
+            ->assertSee('kategori=selesai&amp;page=2', false);
+
+        $this->actingAs($admin)
+            ->get(route('admin.pickups.index', ['kategori' => 'selesai', 'page' => 2]))
+            ->assertOk()
+            ->assertViewHas('pickups', fn ($pickups) => $pickups->count() === 1);
+    }
+
+    public function test_kategori_tak_dikenal_kembali_ke_menunggu(): void
+    {
+        ['admin' => $admin] = $this->pickupDiSetiapStatus();
+
+        $this->actingAs($admin)
+            ->get(route('admin.pickups.index', ['kategori' => 'ngawur']))
+            ->assertOk()
+            ->assertViewHas('category', 'menunggu');
+    }
+
+    public function test_pickup_dibatalkan_tidak_menawarkan_assignment(): void
+    {
+        $pickup = $this->pickupWithStatus('cancelled');
+        $admin = $this->staffFor($pickup, 'admin');
+        $employee = $this->staffFor($pickup, 'employee');
+
+        $this->actingAs($admin)
+            ->post(route('admin.pickups.assign', $pickup), ['assigned_user_id' => $employee->id])
+            ->assertStatus(422);
+    }
 }

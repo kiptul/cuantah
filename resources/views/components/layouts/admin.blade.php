@@ -15,21 +15,33 @@
         ];
     @endphp
 
+    {{-- Di layar kecil sidebar menjadi laci yang dibuka dari tombol menu di
+         navbar. Sebelumnya ia tampil sebagai kotak tombol yang menggantung di
+         atas setiap halaman dan mendorong isi utama jauh ke bawah. --}}
+    <div class="fixed inset-0 z-40 hidden bg-slate-950/40 lg:hidden" data-admin-nav-backdrop aria-hidden="true"></div>
+
     <div class="grid gap-5 lg:grid-cols-[238px_minmax(0,1fr)] lg:gap-7">
-        <aside class="h-fit rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-950/5 lg:sticky lg:top-24">
-            <div class="border-b border-slate-100 px-3 pb-3">
-                <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Operasional</p>
-                <p class="mt-1 text-sm font-black text-slate-900">Kelola CUANTAH</p>
+        <aside id="admin-sidebar" data-admin-nav
+               class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] -translate-x-full flex-col overflow-y-auto bg-white p-3 shadow-2xl transition-transform duration-200 motion-reduce:transition-none
+                      lg:sticky lg:top-24 lg:bottom-auto lg:z-auto lg:h-fit lg:w-auto lg:max-w-none lg:translate-x-0 lg:overflow-visible lg:rounded-2xl lg:border lg:border-slate-200 lg:shadow-sm lg:shadow-slate-950/5">
+            <div class="flex items-start justify-between gap-3 border-b border-slate-100 px-3 pb-3">
+                <div>
+                    <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Operasional</p>
+                    <p class="mt-1 text-sm font-black text-slate-900">Kelola CUANTAH</p>
+                </div>
+                <button type="button" data-admin-nav-close aria-label="Tutup menu admin"
+                        class="-mr-1 flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 lg:hidden">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
             </div>
-            {{-- Membungkus, bukan menggulir. Dengan gulir mendatar, menu sesudah
-                 item keempat tidak pernah terlihat di layar kecil karena tidak
-                 ada isyarat bahwa area ini bisa digeser. --}}
-            <nav class="mt-3 flex flex-wrap gap-1 pb-1 lg:block" aria-label="Navigasi admin">
+            <nav class="mt-3 pb-1" aria-label="Navigasi admin">
                 @foreach($adminNavItems as $item)
                     <a
                         href="{{ $item['url'] }}"
                         @class([
-                            'flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition lg:mb-1',
+                            'mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition',
                             'bg-emerald-700 text-white shadow-sm shadow-emerald-900/20' => request()->routeIs($item['route']),
                             'text-slate-600 hover:bg-emerald-50 hover:text-emerald-800' => ! request()->routeIs($item['route']),
                         ])
@@ -61,6 +73,52 @@
                 Pantau transaksi, pickup, dan penyaluran dari satu tempat.
             </div>
         </aside>
-        <section class="min-w-0">{{ $slot }}</section>
+        {{-- isolate mengurung z-index isi halaman, terutama panel peta Leaflet
+             (z-index 400), supaya tidak menembus laci sidebar di layar kecil. --}}
+        <section class="isolate min-w-0">{{ $slot }}</section>
     </div>
+
+    <script>
+        (() => {
+            const sidebar = document.querySelector('[data-admin-nav]');
+            const backdrop = document.querySelector('[data-admin-nav-backdrop]');
+            const openButton = document.querySelector('[data-admin-nav-open]');
+            const closeButton = sidebar?.querySelector('[data-admin-nav-close]');
+            if (!sidebar || !backdrop || !openButton) return;
+
+            const desktop = window.matchMedia('(min-width: 1024px)');
+            openButton.hidden = false;
+
+            const setOpen = (open) => {
+                sidebar.classList.toggle('-translate-x-full', !open);
+                backdrop.classList.toggle('hidden', !open);
+                openButton.setAttribute('aria-expanded', String(open));
+                document.body.classList.toggle('overflow-hidden', open);
+
+                if (open) {
+                    closeButton?.focus();
+                }
+            };
+
+            openButton.addEventListener('click', () => setOpen(true));
+            closeButton?.addEventListener('click', () => {
+                setOpen(false);
+                openButton.focus();
+            });
+            backdrop.addEventListener('click', () => setOpen(false));
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && openButton.getAttribute('aria-expanded') === 'true') {
+                    setOpen(false);
+                    openButton.focus();
+                }
+            });
+            // Laci yang masih terbuka saat layar dilebarkan ke ukuran desktop
+            // dibereskan, supaya latar gelap dan kunci gulir tidak tertinggal.
+            desktop.addEventListener('change', (event) => {
+                if (event.matches) {
+                    setOpen(false);
+                }
+            });
+        })();
+    </script>
 </x-layouts.app>

@@ -50,13 +50,13 @@ class Pickup extends Model
     }
 
     /**
-     * Pickup yang sudah selesai atau ditolak tidak lagi bisa dipindah
+     * Pickup yang sudah selesai, ditolak, atau dibatalkan tidak lagi bisa dipindah
      * karyawannya. Tanpa penjaga ini daftar admin menawarkan tombol
      * assign pada pickup yang perjalanannya sudah berakhir.
      */
     public function isAssignable(): bool
     {
-        return ! in_array($this->status, ['completed', 'rejected'], true);
+        return ! in_array($this->status, ['completed', 'rejected', 'cancelled'], true);
     }
 
     public function scopeVisibleTo(Builder $query, User $user): Builder

@@ -18,6 +18,18 @@
                     default => route('dashboard'),
                 };
             @endphp
+            <div class="flex items-center gap-2">
+            @if(auth()->user()?->isAdmin())
+                {{-- Pembuka sidebar admin di layar kecil. Sidebar-nya ada di
+                     layouts/admin, dan skrip di sana yang memunculkan tombol ini.
+                     Di halaman tanpa sidebar (mis. profil) tombol tetap tersembunyi. --}}
+                <button type="button" hidden data-admin-nav-open aria-controls="admin-sidebar" aria-expanded="false" aria-label="Buka menu admin"
+                        class="flex h-10 w-10 items-center justify-center rounded-xl text-slate-700 ring-1 ring-slate-900/10 transition hover:bg-emerald-50 hover:text-emerald-800 lg:hidden">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            @endif
             <a href="{{ $homeRoute }}" class="flex items-center gap-2.5 font-black text-emerald-800">
                 @if(auth()->user()?->isAdmin())
                     <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-700 text-white shadow-sm shadow-emerald-900/20">C</span>
@@ -29,6 +41,7 @@
                     @endif
                 </span>
             </a>
+            </div>
             <div class="flex max-w-full items-center gap-2 overflow-x-auto text-sm">
                 @if(auth()->user()?->isAdmin())
                     <span class="hidden rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 sm:inline-flex">Admin CUANTAH</span>

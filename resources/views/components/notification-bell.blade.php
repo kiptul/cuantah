@@ -135,15 +135,18 @@
         });
 
         backdrop.addEventListener('click', tutup);
+        // Hanya bila panel memang terbuka. Tanpa syarat ini setiap klik di
+        // mana pun ikut melepas kunci gulir milik komponen lain, misalnya
+        // laci sidebar admin yang baru saja dibuka.
         document.addEventListener('click', (event) => {
-            if (!root.contains(event.target)) tutup();
+            if (terbuka() && !root.contains(event.target)) tutup();
         });
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') tutup();
+            if (event.key === 'Escape' && terbuka()) tutup();
         });
         // Lebar layar berubah saat panel terbuka membuat kunci guliran tidak
         // lagi sesuai, jadi panel ditutup saja.
-        window.addEventListener('resize', tutup);
+        window.addEventListener('resize', () => { if (terbuka()) tutup(); });
         window.addEventListener('scroll', () => { if (terbuka()) posisikan(); }, { passive: true });
     })();
 </script>

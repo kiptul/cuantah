@@ -7,6 +7,29 @@
         Pickup jemput muncul otomatis. Drop-off baru muncul setelah barcode discan karyawan.
     </x-page-header>
 
+    {{-- Kategori dipisah supaya pickup yang perlu ditugaskan tidak tenggelam
+         di antara ratusan pickup yang sudah selesai. Paginasi tetap berlaku
+         di dalam tiap kategori. --}}
+    <nav class="mb-5 flex gap-2 overflow-x-auto pb-1" aria-label="Kategori pickup">
+        @foreach($categories as $key => $item)
+            <a href="{{ route('admin.pickups.index', ['kategori' => $key]) }}"
+               @if($category === $key) aria-current="page" @endif
+               @class([
+                   'inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition',
+                   'bg-emerald-700 text-white shadow-sm shadow-emerald-900/20' => $category === $key,
+                   'bg-white text-slate-600 ring-1 ring-slate-900/10 hover:text-emerald-800 hover:ring-emerald-300' => $category !== $key,
+               ])>
+                {{ $item['label'] }}
+                <span @class([
+                    'rounded-full px-2 py-0.5 text-xs font-black tabular-nums',
+                    'bg-white/20 text-white' => $category === $key,
+                    'bg-amber-100 text-amber-800' => $category !== $key && $key === 'menunggu' && $item['count'] > 0,
+                    'bg-slate-100 text-slate-500' => $category !== $key && ! ($key === 'menunggu' && $item['count'] > 0),
+                ])>{{ $item['count'] }}</span>
+            </a>
+        @endforeach
+    </nav>
+
     @if($pickupPoints !== [])
         {{-- Satu peta untuk seluruh halaman, bukan satu peta per baris. Selain
              jauh lebih ringan, sebaran titik justru baru terbaca ketika semua
@@ -111,14 +134,18 @@
                             @endif
                         @else
                             <p class="mt-4 rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-600">
-                                Pickup sudah {{ $pickup->status === 'completed' ? 'selesai' : 'ditolak' }}, assignment tidak bisa diubah.
+                                Pickup sudah {{ ['completed' => 'selesai', 'cancelled' => 'dibatalkan'][$pickup->status] ?? 'ditolak' }}, assignment tidak bisa diubah.
                             </p>
                         @endif
                     </aside>
                 </div>
             </article>
         @empty
-            <x-empty-state title="Belum ada pickup aktif" body="Pickup jemput dan drop-off yang sudah discan akan muncul di sini." />
+            @if($category === 'menunggu')
+                <x-empty-state title="Tidak ada pickup yang menunggu" body="Semua pickup sudah ditugaskan ke karyawan. Pickup jemput baru dan drop-off yang sudah discan akan muncul di sini." />
+            @else
+                <x-empty-state title="Belum ada pickup {{ strtolower($categories[$category]['label']) }}" body="Pilih kategori lain untuk melihat pickup lainnya." />
+            @endif
         @endforelse
     </div>
 
