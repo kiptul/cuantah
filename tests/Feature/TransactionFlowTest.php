@@ -9,6 +9,8 @@ use App\Models\Pickup;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class TransactionFlowTest extends TestCase
@@ -121,10 +123,15 @@ class TransactionFlowTest extends TestCase
             'status' => 'assigned',
         ]);
 
+        Storage::fake('local');
+
         $this->actingAs($admin)->post(route('admin.transactions.verify', $transaction), [
             'actual_liter' => 4.8,
             'payment_method' => 'transfer',
             'payment_status' => 'paid',
+            // create() dengan tipe MIME, bukan image(): image() menuntut
+            // ekstensi GD, sedangkan aplikasinya tidak pernah mendekode gambar.
+            'payment_proof' => UploadedFile::fake()->create('transfer.jpg', 120, 'image/jpeg'),
         ])->assertRedirect();
 
         $this->assertDatabaseHas('transactions', [
@@ -293,11 +300,14 @@ class TransactionFlowTest extends TestCase
 
         // Tanpa langkah "Dijemput" dan "Verifikasi": form penjemputan langsung
         // menutup transaksi dari status dijadwalkan.
+        Storage::fake('local');
+
         $this->actingAs($employee)
             ->post(route('employee.transactions.verify', $transaction), [
                 'actual_liter' => 7.5,
                 'payment_method' => 'cash',
                 'payment_status' => 'paid',
+                'payment_proof' => UploadedFile::fake()->create('serah-terima.jpg', 120, 'image/jpeg'),
             ])
             ->assertRedirect(route('employee.dashboard'))
             ->assertSessionHas('success');
@@ -333,8 +343,12 @@ class TransactionFlowTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $admin->partners()->attach($transaction->partner_id);
 
+        Storage::fake('local');
+
         $this->actingAs($admin)
-            ->post(route('admin.transactions.mark-paid', $transaction))
+            ->post(route('admin.transactions.mark-paid', $transaction), [
+                'payment_proof' => UploadedFile::fake()->create('transfer.jpg', 120, 'image/jpeg'),
+            ])
             ->assertSessionHas('success');
 
         $transaction->refresh();
@@ -351,8 +365,12 @@ class TransactionFlowTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $admin->partners()->attach($transaction->partner_id);
 
+        Storage::fake('local');
+
         $this->actingAs($admin)
-            ->post(route('admin.transactions.mark-paid', $transaction))
+            ->post(route('admin.transactions.mark-paid', $transaction), [
+                'payment_proof' => UploadedFile::fake()->create('transfer.jpg', 120, 'image/jpeg'),
+            ])
             ->assertSessionHasErrors('payment_status');
 
         $this->assertEquals($paidAt, $transaction->fresh()->paid_at);
@@ -460,41 +478,6 @@ class TransactionFlowTest extends TestCase
             'user_id' => $user->id,
             'message' => 'Transaksi '.$transaction->code.' ditolak. Alasan: '.$alasan,
         ]);
-    }
-
-    public function test_available_pickups_are_ordered_by_schedule_not_by_newest(): void
-    {
-        $employee = User::factory()->create(['role' => 'employee']);
-        $partner = $this->partnerWithPickupFee();
-        $employee->partners()->attach($partner->id);
-        $price = OilPrice::create(['price_per_liter' => 4000, 'effective_date' => now()->toDateString(), 'is_active' => true]);
-        $user = User::factory()->create(['role' => 'user']);
-
-        // Dibuat terbalik: yang didaftarkan belakangan justru berjadwal lebih awal.
-        foreach ([['LAMBAT', 5], ['CEPAT', 1]] as [$kode, $hari]) {
-            $transaction = Transaction::create([
-                'code' => 'CNT-'.$kode, 'user_id' => $user->id, 'partner_id' => $partner->id,
-                'oil_price_id' => $price->id, 'estimated_liter' => 8, 'price_per_liter' => 4000,
-                'estimated_total' => 32000, 'method' => Transaction::METHOD_PICKUP,
-                'status' => Transaction::STATUS_PENDING,
-            ]);
-            Pickup::create([
-                'transaction_id' => $transaction->id, 'partner_id' => $partner->id,
-                'address' => 'Jl. Uji', 'latitude' => -6.3, 'longitude' => 107.3,
-                'pickup_date' => now()->addDays($hari)->toDateString(),
-                'pickup_time' => '08:00', 'status' => 'pending',
-            ]);
-        }
-
-        $urutan = $this->actingAs($employee)
-            ->get(route('employee.pickups.available'))
-            ->assertOk()
-            ->viewData('pickups')
-            ->pluck('transaction.code')
-            ->all();
-
-        $this->assertSame(['CNT-CEPAT', 'CNT-LAMBAT'], $urutan,
-            'Jadwal terdekat harus di atas, bukan pendaftaran terbaru.');
     }
 
     public function test_deposit_is_blocked_when_partner_is_already_full(): void
@@ -609,8 +592,13 @@ class TransactionFlowTest extends TestCase
     public function test_dispute_closes_after_three_days(): void
     {
         $user = User::factory()->create(['role' => 'user']);
-        $transaction = Transaction::factory()->completed(6)->create(['user_id' => $user->id]);
-        $transaction->forceFill(['updated_at' => now()->subDays(4)])->saveQuietly();
+
+        // Yang dituakan completed_at, bukan updated_at. Tenggatnya dihitung dari
+        // waktu selesai, dan menuakan updated_at tidak menggeser apa pun.
+        $transaction = Transaction::factory()->completed(6)->create([
+            'user_id' => $user->id,
+            'completed_at' => now()->subDays(4),
+        ]);
 
         $this->actingAs($user)->post(route('transactions.dispute', $transaction), [
             'dispute_reason' => 'Keberatan yang diajukan terlambat sesudah batas waktu.',
@@ -619,13 +607,35 @@ class TransactionFlowTest extends TestCase
         $this->assertNull($transaction->fresh()->disputed_at);
     }
 
+    public function test_dispute_is_still_open_on_the_last_day(): void
+    {
+        // Pasangan dari test di atas. Tanpa ini, penolakan yang terlalu rajin
+        // ikut lolos: menolak semua sanggahan juga memenuhi test tenggat.
+        $user = User::factory()->create(['role' => 'user']);
+        $transaction = Transaction::factory()->completed(6)->create([
+            'user_id' => $user->id,
+            'completed_at' => now()->subDays(3)->addMinutes(5),
+        ]);
+
+        $this->actingAs($user)->post(route('transactions.dispute', $transaction), [
+            'dispute_reason' => 'Keberatan yang diajukan tepat sebelum batas waktu.',
+        ])->assertSessionHas('success');
+
+        $this->assertNotNull($transaction->fresh()->disputed_at);
+    }
+
     public function test_dispute_cannot_be_filed_twice(): void
     {
         $user = User::factory()->create(['role' => 'user']);
         $transaction = Transaction::factory()->completed(6)->create(['user_id' => $user->id]);
         $alasan = ['dispute_reason' => 'Takaran tidak sesuai dengan yang saya serahkan.'];
 
-        $this->actingAs($user)->post(route('transactions.dispute', $transaction), $alasan);
+        // Yang pertama harus benar-benar berhasil. Tanpa memeriksanya, dua kali
+        // penolakan juga memenuhi test ini, dan itu sempat terjadi.
+        $this->actingAs($user)->post(route('transactions.dispute', $transaction), $alasan)
+            ->assertSessionHas('success');
+        $this->assertNotNull($transaction->fresh()->disputed_at);
+
         $this->actingAs($user)->post(route('transactions.dispute', $transaction), $alasan)->assertForbidden();
     }
 

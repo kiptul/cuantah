@@ -124,14 +124,14 @@ class AuthSecurityTest extends TestCase
             $this->post('/reset-password', [
                 'token' => $notification->token,
                 'email' => $user->email,
-                'password' => 'password-baru',
-                'password_confirmation' => 'password-baru',
+                'password' => 'sandibaru2026',
+                'password_confirmation' => 'sandibaru2026',
             ])->assertRedirect(route('login'));
 
             return true;
         });
 
-        $this->assertTrue(Hash::check('password-baru', $user->fresh()->password));
+        $this->assertTrue(Hash::check('sandibaru2026', $user->fresh()->password));
     }
 
     public function test_reset_request_does_not_reveal_whether_email_is_registered(): void

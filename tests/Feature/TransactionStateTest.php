@@ -149,25 +149,4 @@ class TransactionStateTest extends TestCase
 
         $this->assertNull($this->service()->scanDropOff($transaksi->code, $karyawan));
     }
-
-    public function test_finished_pickup_cannot_be_claimed_by_an_employee(): void
-    {
-        $harga = OilPrice::factory()->create();
-        $mitra = Partner::factory()->create();
-        $karyawan = User::factory()->create(['role' => 'employee']);
-        $karyawan->partners()->attach($mitra->id);
-
-        $transaksi = Transaction::factory()->pickup()->completed(5)->create([
-            'partner_id' => $mitra->id,
-            'oil_price_id' => $harga->id,
-        ]);
-        $pickup = Pickup::factory()->create([
-            'transaction_id' => $transaksi->id,
-            'partner_id' => $mitra->id,
-            'status' => 'completed',
-        ]);
-
-        $this->assertFalse($this->service()->claimPickup($pickup, $karyawan));
-        $this->assertNull($pickup->fresh()->assigned_user_id);
-    }
 }

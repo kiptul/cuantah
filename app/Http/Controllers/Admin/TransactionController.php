@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CorrectTransactionRequest;
 use App\Http\Requests\Admin\VerifyTransactionRequest;
 use App\Models\Transaction;
 use App\Services\TransactionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class TransactionController extends Controller
 {
@@ -62,25 +64,58 @@ class TransactionController extends Controller
         $this->ensureVisible($transaction);
 
         return view('admin.transactions.show', [
-            'transaction' => $transaction->load('user', 'partner', 'pickup.assignedUser'),
+            'transaction' => $transaction->load('user', 'partner', 'pickup.assignedUser', 'corrections.correctedBy'),
         ]);
     }
 
     public function verify(VerifyTransactionRequest $request, Transaction $transaction, TransactionService $service)
     {
         $this->ensureVisible($transaction);
-        $service->verify($transaction, $request->validated());
+        $service->verify($transaction, [
+            ...$request->validated(),
+            'payment_proof' => $request->file('payment_proof'),
+        ]);
 
         return back()->with('success', 'Transaksi selesai diverifikasi.');
     }
 
     /**
+     * Mengoreksi volume yang salah diketik karyawan.
+     *
+     * Transaksi selesai terkunci oleh pastikanBelumFinal, dan penyelesaian
+     * sanggahan hanya menulis tanggapan tanpa menyentuh angkanya. Tanpa
+     * pintu ini, satu-satunya "perbaikan" yang tersedia adalah permintaan
+     * maaf tertulis.
+     */
+    public function correct(CorrectTransactionRequest $request, Transaction $transaction, TransactionService $service)
+    {
+        $transaction = $service->correctVolume(
+            $transaction,
+            (float) $request->validated('actual_liter'),
+            $request->validated('reason'),
+            $request->user(),
+        );
+
+        return back()->with('success', sprintf(
+            'Volume %s dikoreksi menjadi %s L, nilainya Rp%s.',
+            $transaction->code,
+            number_format((float) $transaction->actual_liter, 2, ',', '.'),
+            number_format((int) $transaction->total_value, 0, ',', '.'),
+        ));
+    }
+
+    /**
      * Melunasi transaksi selesai yang sebelumnya dicatat belum dibayar.
      */
-    public function markPaid(Transaction $transaction, TransactionService $service)
+    public function markPaid(Request $request, Transaction $transaction, TransactionService $service)
     {
         $this->ensureVisible($transaction);
-        $service->markPaid($transaction);
+
+        $request->validate([
+            'payment_proof' => Transaction::paymentProofRules('required'),
+        ]);
+
+        $service->markPaid($transaction, $request->file('payment_proof'));
 
         return back()->with('success', 'Transaksi '.$transaction->code.' ditandai lunas.');
     }
@@ -105,7 +140,7 @@ class TransactionController extends Controller
 
     private function ensureVisible(Transaction $transaction): void
     {
-        abort_unless(auth()->user()->canAccessPartnerId($transaction->partner_id), 403);
+        abort_unless(Auth::user()->canAccessPartnerId($transaction->partner_id), 403);
     }
 
     public function resolveDispute(Request $request, Transaction $transaction, TransactionService $service)

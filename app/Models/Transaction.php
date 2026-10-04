@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 
 class Transaction extends Model
 {
@@ -29,6 +31,16 @@ class Transaction extends Model
     public const STATUS_REJECTED = 'rejected';
 
     public const STATUS_CANCELLED = 'cancelled';
+
+    /**
+     * Lamanya penyetor boleh menyanggah takaran, dihitung sejak transaksi
+     * dinyatakan selesai.
+     *
+     * Ditulis sekali di sini karena angkanya dipakai tiga pihak sekaligus:
+     * policy yang mengizinkan, dasbor yang mendaftar, dan teks yang
+     * menjanjikannya kepada penyetor. Ketiganya tidak boleh berbeda.
+     */
+    public const DISPUTE_WINDOW_DAYS = 3;
 
     /**
      * Status akhir: transaksi tidak boleh berpindah lagi dari sini.
@@ -72,6 +84,8 @@ class Transaction extends Model
         'payment_method',
         'payment_status',
         'paid_at',
+        'payment_proof_path',
+        'completed_at',
         'rejection_reason',
         'disputed_at',
         'dispute_reason',
@@ -86,19 +100,25 @@ class Transaction extends Model
             'estimated_liter' => 'decimal:2',
             'actual_liter' => 'decimal:2',
             'paid_at' => 'datetime',
+            'completed_at' => 'datetime',
             'disputed_at' => 'datetime',
             'dispute_resolved_at' => 'datetime',
         ];
     }
 
+    /**
+     * Riwayat koreksi volume, terbaru lebih dulu.
+     *
+     * @return HasMany<TransactionCorrection, $this>
+     */
+    public function corrections(): HasMany
+    {
+        return $this->hasMany(TransactionCorrection::class)->latest('id');
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function oilPrice(): BelongsTo
-    {
-        return $this->belongsTo(OilPrice::class);
     }
 
     public function partner(): BelongsTo
@@ -121,6 +141,82 @@ class Transaction extends Model
     public function isFinal(): bool
     {
         return in_array($this->status, self::FINAL_STATUSES, true);
+    }
+
+    /**
+     * Batas akhir penyetor boleh menyanggah takaran.
+     *
+     * Dihitung dari completed_at, bukan updated_at. Dengan updated_at, satu
+     * kali admin menyunting catatan atau menutup sanggahan lain, hitungan
+     * tiga hari dimulai lagi dari nol untuk transaksi yang sudah lama
+     * selesai.
+     */
+    public function disputeDeadline(): ?Carbon
+    {
+        return $this->completed_at?->copy()->addDays(self::DISPUTE_WINDOW_DAYS);
+    }
+
+    /**
+     * Apakah jendela sanggahan masih terbuka.
+     *
+     * Transaksi selesai tanpa completed_at tidak pernah terjadi lewat alur
+     * verifikasi, dan bila toh muncul, lebih aman ditolak daripada dibuka
+     * selamanya.
+     */
+    public function withinDisputeWindow(): bool
+    {
+        return $this->disputeDeadline()?->isFuture() ?? false;
+    }
+
+    /**
+     * Tahapan yang sedang dijalani transaksi, bernilai 0 sampai 2.
+     *
+     * Penanda kemajuan di dasbor penyetor sebelumnya menyimpulkan tahapan dari
+     * ada-tidaknya karyawan yang ditugaskan, bukan dari status transaksinya.
+     * Penugasan bukan kemajuan: begitu seorang karyawan mengambil jadwal,
+     * penanda melompat ke tahap terakhir, sehingga setoran yang penjemputannya
+     * masih dua hari lagi tampak hampir selesai.
+     *
+     * picked_up dan verification ikut dipetakan meski alur sekarang tidak
+     * pernah menuliskannya, supaya penanda tidak diam-diam mundur ke tahap
+     * awal bila keduanya dipakai kembali.
+     */
+    public function progressStep(): int
+    {
+        return match ($this->status) {
+            self::STATUS_SCHEDULED, self::STATUS_PICKED_UP => 1,
+            self::STATUS_VERIFICATION, self::STATUS_COMPLETED => 2,
+            default => 0,
+        };
+    }
+
+    /**
+     * Nilai yang benar-benar menjadi hak penyetor, atau null bila tidak ada.
+     *
+     * Transaksi yang ditolak maupun dibatalkan tidak pernah berujung
+     * pembayaran, dan keduanya meninggalkan total_value kosong. Membaca
+     * estimasi sebagai gantinya membuat angka perkiraan tampil sebagai uang
+     * yang sudah diterima, lengkap dengan lencana "Ditolak" di sebelahnya.
+     */
+    public function settledValue(): ?int
+    {
+        if ($this->status !== self::STATUS_COMPLETED) {
+            return null;
+        }
+
+        return $this->total_value === null ? null : (int) $this->total_value;
+    }
+
+    /**
+     * Liter hasil timbangan mitra, atau null bila tidak pernah ditimbang.
+     */
+    public function settledLiter(): ?float
+    {
+        if ($this->status !== self::STATUS_COMPLETED) {
+            return null;
+        }
+
+        return $this->actual_liter === null ? null : (float) $this->actual_liter;
     }
 
     public function statusLabel(): string
@@ -152,6 +248,31 @@ class Transaction extends Model
     public static function methods(): array
     {
         return [self::METHOD_PICKUP, self::METHOD_DROP_OFF];
+    }
+
+    /**
+     * Aturan berkas untuk bukti pembayaran.
+     *
+     * Uang berpindah di tiga tempat: verifikasi oleh karyawan, verifikasi
+     * oleh admin, dan penandaan lunas menyusul. Ketiganya memanggil daftar
+     * ini supaya tidak ada pintu yang syaratnya lebih longgar tanpa
+     * disengaja. Yang berbeda hanya kapan berkasnya diwajibkan, karena pada
+     * verifikasi pembayaran bisa saja ditunda.
+     *
+     * Dipakai aturan image dan mimes, bukan extensions. Keduanya membaca isi
+     * berkas, sedangkan extensions hanya memeriksa akhiran nama yang
+     * ditentukan pengunggah.
+     *
+     * @return array<int, string>
+     */
+    public static function paymentProofRules(string $kehadiran): array
+    {
+        return [$kehadiran, 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'];
+    }
+
+    public function hasPaymentProof(): bool
+    {
+        return $this->payment_proof_path !== null;
     }
 
     /**

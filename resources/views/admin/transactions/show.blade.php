@@ -95,14 +95,110 @@
                     </div>
                 </div>
 
+                {{-- Tanpa ini admin mengunggah tanpa pernah bisa memeriksa
+                     berkas mana yang akhirnya tersimpan, dan saat menutup
+                     sanggahan ia tidak punya bukti untuk dilihat. --}}
+                @if($transaction->hasPaymentProof())
+                    <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-xs font-black uppercase tracking-[0.12em] text-slate-500">Bukti pembayaran</p>
+                        <a href="{{ route('transactions.payment-proof', $transaction) }}" target="_blank" rel="noopener">
+                            <img src="{{ route('transactions.payment-proof', $transaction) }}"
+                                 alt="Bukti pembayaran transaksi {{ $transaction->code }}"
+                                 class="mt-2 max-h-72 w-full rounded-lg border border-slate-200 bg-white object-contain">
+                        </a>
+                    </div>
+                @endif
+
+                {{-- Koreksi volume. Karyawan menakar di lapangan dan mengetik
+                     angkanya di ponsel, jadi salah ketik tidak terhindarkan.
+                     Panelnya ditaruh di kartu ini, tepat di sebelah angka yang
+                     keliru, bukan di panel terpisah. --}}
+                @if($transaction->status === 'completed')
+                    <details class="mt-4">
+                        <summary class="flex min-h-11 cursor-pointer list-none items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                            Koreksi volume
+                        </summary>
+                        <form method="post" action="{{ route('admin.transactions.correct', $transaction) }}" class="mt-3 space-y-3 rounded-xl bg-slate-50 px-4 py-4 ring-1 ring-slate-900/10"
+                              data-correct-form data-price="{{ $transaction->price_per_liter }}" data-fee="{{ $transaction->pickup_fee }}">
+                            @csrf
+                            <label class="block">
+                                <span class="text-sm font-bold text-slate-700">Volume aktual (L)</span>
+                                <input name="actual_liter" type="number" step="0.01" min="0.1" max="500"
+                                       value="{{ old('actual_liter', $transaction->actual_liter) }}" required
+                                       class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm tabular-nums outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" data-correct-liter>
+                                @error('actual_liter')<span class="mt-1.5 block text-sm font-semibold text-rose-700">{{ $message }}</span>@enderror
+                            </label>
+
+                            <label class="block">
+                                <span class="text-sm font-bold text-slate-700">Alasan koreksi</span>
+                                <textarea name="reason" rows="2" minlength="10" maxlength="500" required
+                                          placeholder="Karyawan salah ketik, hasil timbangan sebenarnya 15 L."
+                                          class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">{{ old('reason') }}</textarea>
+                                @error('reason')<span class="mt-1.5 block text-sm font-semibold text-rose-700">{{ $message }}</span>@enderror
+                            </label>
+
+                            {{-- Pratinjau dihitung di peramban supaya admin melihat
+                                 akibatnya sebelum mengirim, bukan sesudahnya. --}}
+                            <div class="flex items-baseline justify-between rounded-xl bg-white px-4 py-3 ring-1 ring-slate-900/10">
+                                <span class="text-sm font-bold text-slate-700">Total setelah koreksi</span>
+                                <span class="text-base font-black tabular-nums text-emerald-900" data-correct-total>&mdash;</span>
+                            </div>
+
+                            <button class="w-full rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-emerald-800">Simpan Koreksi</button>
+                        </form>
+                    </details>
+                @endif
+
+                @if($transaction->corrections->isNotEmpty())
+                    <div class="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                        <p class="text-xs font-black uppercase tracking-[0.12em] text-slate-500">Riwayat koreksi</p>
+                        <ul class="mt-2 space-y-3">
+                            @foreach($transaction->corrections as $koreksi)
+                                <li class="border-t border-slate-100 pt-3 first:border-t-0 first:pt-0">
+                                    <p class="text-sm font-bold text-slate-900">
+                                        {{ number_format((float) $koreksi->liter_before, 2, ',', '.') }} L
+                                        &rarr;
+                                        {{ number_format((float) $koreksi->liter_after, 2, ',', '.') }} L
+                                        <span class="font-medium text-slate-500">
+                                            (Rp{{ number_format($koreksi->value_before, 0, ',', '.') }} &rarr; Rp{{ number_format($koreksi->value_after, 0, ',', '.') }})
+                                        </span>
+                                    </p>
+                                    <p class="mt-1 text-sm leading-6 text-slate-600">{{ $koreksi->reason }}</p>
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        {{ $koreksi->correctedBy?->name ?? 'Admin terhapus' }} &middot; {{ $koreksi->created_at->format('d M Y H:i') }}
+                                    </p>
+                                    {{-- Bukti yang berlaku sebelum koreksi. Begitu
+                                         kekurangannya dilunasi, kolom bukti di
+                                         transaksi menunjuk foto yang baru, dan tanpa
+                                         tautan ini bukti pembayaran pertama hilang
+                                         dari halaman. --}}
+                                    @if($koreksi->hasProofBefore())
+                                        <p class="mt-1 text-xs text-slate-500">Bukti bayar sebelum koreksi tersimpan.</p>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 {{-- Satu-satunya jalan keluar bagi transaksi selesai yang
                      dibayar menyusul, karena statusnya sudah terkunci. --}}
                 @if($transaction->status === 'completed' && $transaction->payment_status === 'unpaid')
-                    <form method="post" action="{{ route('admin.transactions.mark-paid', $transaction) }}" class="mt-4 flex flex-col gap-3 rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-900/10 sm:flex-row sm:items-center sm:justify-between"
+                    <form method="post" action="{{ route('admin.transactions.mark-paid', $transaction) }}" enctype="multipart/form-data"
+                          class="mt-4 space-y-3 rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-900/10"
                           onsubmit="return confirm('Tandai transaksi ini sudah dibayar ke penyetor?')">
                         @csrf
                         <p class="text-sm leading-6 text-amber-900">Penyetor belum menerima Rp{{ number_format($transaction->total_value, 0, ',', '.') }}.</p>
-                        <button class="shrink-0 rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-amber-800">Tandai Lunas</button>
+                        {{-- Dulu ini satu tombol tanpa isian. Bukti transfer
+                             menjadikannya form, sebab pembayaran menyusul
+                             justru yang paling perlu dibuktikan: tidak ada
+                             saksi serah terima seperti pada pembayaran tunai. --}}
+                        <label class="block">
+                            <span class="text-sm font-bold text-amber-900">Bukti transfer</span>
+                            <input name="payment_proof" type="file" accept="image/*" required class="mt-1.5 w-full rounded-xl border border-amber-900/20 bg-white px-3 py-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-amber-100 file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-amber-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100">
+                            @error('payment_proof')<span class="mt-1.5 block text-sm font-semibold text-rose-700">{{ $message }}</span>@enderror
+                        </label>
+                        <button class="w-full rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-amber-800 sm:w-auto">Tandai Lunas</button>
                     </form>
                 @endif
             </div>
@@ -154,7 +250,7 @@
             @else
                 <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
                     <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Selesaikan transaksi</h2>
-                    <form method="post" action="{{ route('admin.transactions.verify', $transaction) }}" class="mt-4 space-y-4">
+                    <form method="post" action="{{ route('admin.transactions.verify', $transaction) }}" enctype="multipart/form-data" class="mt-4 space-y-4">
                         @csrf
                         <x-form-field label="Volume aktual (L)" name="actual_liter" type="number"
                                       :value="old('actual_liter', $transaction->actual_liter)" required
@@ -173,6 +269,14 @@
                                 <option value="paid" @selected(old('payment_status', $transaction->payment_status) === 'paid')>Sudah dibayar</option>
                                 <option value="unpaid" @selected(old('payment_status', $transaction->payment_status) === 'unpaid')>Belum dibayar</option>
                             </select>
+                        </label>
+                        {{-- accept tanpa capture: bukti transfer berupa
+                             tangkapan layar yang sudah ada di galeri. --}}
+                        <label class="block">
+                            <span class="text-sm font-bold text-slate-700">Bukti pembayaran</span>
+                            <input name="payment_proof" type="file" accept="image/*" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-emerald-800 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+                            <span class="mt-1.5 block text-xs text-slate-500">Wajib bila status pembayaran dipilih sudah dibayar.</span>
+                            @error('payment_proof')<span class="mt-1.5 block text-sm font-semibold text-rose-700">{{ $message }}</span>@enderror
                         </label>
                         <label class="block">
                             <span class="text-sm font-bold text-slate-700">Catatan</span>
@@ -198,4 +302,35 @@
             @endif
         </aside>
     </div>
+
+    <script>
+        (() => {
+            const form = document.querySelector('[data-correct-form]');
+
+            if (! form) {
+                return;
+            }
+
+            const liter = form.querySelector('[data-correct-liter]');
+            const total = form.querySelector('[data-correct-total]');
+            const harga = Number(form.dataset.price || 0);
+            const ongkir = Number(form.dataset.fee || 0);
+            const rupiah = new Intl.NumberFormat('id-ID');
+
+            const hitung = () => {
+                const nilai = parseFloat(liter.value);
+
+                if (! Number.isFinite(nilai) || nilai <= 0) {
+                    total.textContent = '\u2014';
+
+                    return;
+                }
+
+                total.textContent = 'Rp' + rupiah.format(Math.max(Math.round(nilai * harga) - ongkir, 0));
+            };
+
+            liter.addEventListener('input', hitung);
+            hitung();
+        })();
+    </script>
 </x-layouts.admin>

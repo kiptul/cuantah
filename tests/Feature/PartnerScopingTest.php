@@ -112,40 +112,59 @@ class PartnerScopingTest extends TestCase
         $this->assertSame(Transaction::STATUS_COMPLETED, $trxB->fresh()->status, 'Status transaksi mitra lain tidak boleh berubah.');
     }
 
-    public function test_employee_cannot_claim_a_pickup_from_another_partner(): void
+    /**
+     * Menggantikan test pengambilan pickup lintas mitra.
+     *
+     * Pengambilan mandiri sudah dicabut: penjemputan kini hanya sampai ke
+     * karyawan lewat penugasan admin. Batas yang dijaga test lama tetap perlu
+     * dijaga, hanya pintunya berpindah ke halaman tugas dan verifikasinya.
+     *
+     * Penjagaannya sekarang bertumpu pada penugasan, bukan pada keanggotaan
+     * mitra, sehingga sebenarnya lebih rapat: karyawan mitra lain tidak pernah
+     * bisa ditugaskan, sebab penugasan dilakukan admin yang terikat mitra.
+     */
+    public function test_employee_cannot_reach_a_transaction_of_another_partner(): void
     {
         [$mitraA, $mitraB] = $this->duaMitraBerisi();
         $karyawan = User::factory()->create(['role' => 'employee']);
         $karyawan->partners()->attach($mitraA->id);
 
-        $trx = Transaction::factory()->pickup()->create(['partner_id' => $mitraB->id]);
-        $pickup = Pickup::factory()->create(['transaction_id' => $trx->id, 'partner_id' => $mitraB->id]);
+        $trx = Transaction::factory()->pickup()->create([
+            'partner_id' => $mitraB->id,
+            'status' => Transaction::STATUS_VERIFICATION,
+        ]);
+        Pickup::factory()->create(['transaction_id' => $trx->id, 'partner_id' => $mitraB->id]);
 
         $this->actingAs($karyawan)
-            ->post(route('employee.pickups.claim', $pickup))
+            ->get(route('employee.transactions.show', $trx))
             ->assertForbidden();
-
-        $this->assertNull($pickup->fresh()->assigned_user_id);
     }
 
-    public function test_employee_available_queue_excludes_other_partners(): void
+    public function test_employee_cannot_verify_a_transaction_of_another_partner(): void
     {
         [$mitraA, $mitraB] = $this->duaMitraBerisi();
         $karyawan = User::factory()->create(['role' => 'employee']);
         $karyawan->partners()->attach($mitraA->id);
 
-        foreach ([$mitraA, $mitraB] as $mitra) {
-            $trx = Transaction::factory()->pickup()->create(['partner_id' => $mitra->id]);
-            Pickup::factory()->scheduledInDays(1)->create(['transaction_id' => $trx->id, 'partner_id' => $mitra->id]);
-        }
+        $trx = Transaction::factory()->pickup()->create([
+            'partner_id' => $mitraB->id,
+            'status' => Transaction::STATUS_VERIFICATION,
+        ]);
+        Pickup::factory()->create(['transaction_id' => $trx->id, 'partner_id' => $mitraB->id]);
 
-        $antrian = $this->actingAs($karyawan)
-            ->get(route('employee.pickups.available'))
-            ->assertOk()
-            ->viewData('pickups');
+        $this->actingAs($karyawan)
+            ->post(route('employee.transactions.verify', $trx), [
+                'actual_liter' => 5,
+                'payment_method' => 'cash',
+                'payment_status' => 'paid',
+            ])
+            ->assertForbidden();
 
-        $this->assertCount(1, $antrian);
-        $this->assertSame($mitraA->id, $antrian->first()->partner_id);
+        $this->assertNotSame(
+            Transaction::STATUS_COMPLETED,
+            $trx->fresh()->status,
+            'Transaksi mitra lain tidak boleh ikut diselesaikan.',
+        );
     }
 
     public function test_depositor_only_sees_their_own_transactions(): void

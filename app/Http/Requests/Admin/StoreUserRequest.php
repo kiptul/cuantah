@@ -21,7 +21,7 @@ class StoreUserRequest extends FormRequest
             'email' => ['required', 'email', 'max:160', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:24'],
             'role' => ['required', Rule::in(['user', 'employee', 'admin'])],
-            'password' => ['required', Password::min(8)->letters()->numbers()],
+            'password' => ['required', Password::defaults()],
             'partner_ids' => ['nullable', 'array'],
             'partner_ids.*' => ['integer', Rule::exists('partners', 'id')],
         ];

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
 {
@@ -15,7 +16,7 @@ class NotificationController extends Controller
      */
     public function markRead(): JsonResponse
     {
-        Notification::where('user_id', auth()->id())
+        Notification::where('user_id', Auth::id())
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
 

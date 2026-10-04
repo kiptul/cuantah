@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Pickup;
 use App\Models\Transaction;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
 {
     public function index()
     {
-        $partnerIds = auth()->user()->accessiblePartnerIds();
+        $partnerIds = Auth::user()->accessiblePartnerIds();
         $employeeReports = User::query()
             ->where('role', 'employee')
             ->whereHas('partners', fn ($partner) => $partner->whereIn('partners.id', $partnerIds))
@@ -46,7 +47,7 @@ class ReportController extends Controller
 
         return view('admin.reports.index', [
             'transactions' => Transaction::with('user', 'partner', 'pickup.assignedUser')
-                ->visibleTo(auth()->user())
+                ->visibleTo(Auth::user())
                 ->where('status', Transaction::STATUS_COMPLETED)
                 ->latest()
                 ->paginate(15),
@@ -57,11 +58,11 @@ class ReportController extends Controller
     public function employee(User $user)
     {
         abort_unless($user->isEmployee(), 404);
-        abort_unless($user->partners()->whereIn('partners.id', auth()->user()->accessiblePartnerIds())->exists(), 403);
+        abort_unless($user->partners()->whereIn('partners.id', Auth::user()->accessiblePartnerIds())->exists(), 403);
 
         $completed = Transaction::query()
             ->with('user', 'partner', 'pickup')
-            ->visibleTo(auth()->user())
+            ->visibleTo(Auth::user())
             ->where('status', Transaction::STATUS_COMPLETED)
             ->whereHas('pickup', fn ($pickup) => $pickup->where('assigned_user_id', $user->id));
 

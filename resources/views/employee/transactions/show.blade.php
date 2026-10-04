@@ -10,9 +10,11 @@
 
     <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
         <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
-            <div id="employee-map" class="h-[360px] rounded-lg border border-slate-200"></div>
+            @if($transaction->pickup)
+                <div id="employee-map" class="isolate h-[360px] rounded-lg border border-slate-200"></div>
+            @endif
             <p class="mt-4 font-bold">Lokasi</p>
-            <p class="mt-1 text-sm text-slate-600">{{ $transaction->pickup?->address }}</p>
+            <p class="mt-1 text-sm text-slate-600">{{ $transaction->pickup?->address ?? 'Lokasi belum tercatat.' }}</p>
             @if($transaction->pickup)
                 <a target="_blank" class="mt-3 inline-flex rounded-md border border-slate-300 px-3 py-2 text-sm font-bold" href="https://www.google.com/maps?q={{ $transaction->pickup->latitude }},{{ $transaction->pickup->longitude }}">Buka Navigasi</a>
             @endif
@@ -25,16 +27,18 @@
             <div class="mb-5 rounded-xl bg-slate-50 px-4 py-3">
                 <p class="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Penyetor</p>
                 <p class="mt-1 font-bold text-slate-900">{{ $transaction->user->name }}</p>
-                @if($transaction->user->phone)
-                    <a href="tel:{{ preg_replace('/[^0-9+]/', '', $transaction->user->phone) }}"
+                @if($transaction->user->whatsappNumber())
+                    <a href="https://wa.me/{{ $transaction->user->whatsappNumber() }}"
+                       target="_blank" rel="noopener"
+                       aria-label="Hubungi {{ $transaction->user->name }} lewat WhatsApp"
                        class="mt-2 inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-bold text-emerald-800 shadow-sm ring-1 ring-slate-900/10 transition hover:ring-emerald-300">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M4 5a1 1 0 0 1 1-1h2.6a1 1 0 0 1 1 .76l.7 2.9a1 1 0 0 1-.3 1L7.6 10.1a12 12 0 0 0 5.4 5.4l1.4-1.4a1 1 0 0 1 1-.26l2.9.7a1 1 0 0 1 .76 1V19a1 1 0 0 1-1 1A15 15 0 0 1 4 5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                            <path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3.5 20.5l1.7-5A8.4 8.4 0 1 1 21 11.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
                         </svg>
                         {{ $transaction->user->phone }}
                     </a>
                 @else
-                    <p class="mt-1 text-sm text-slate-500">Nomor telepon belum diisi.</p>
+                    <p class="mt-1 text-sm text-slate-500">Nomor WhatsApp belum diisi.</p>
                 @endif
             </div>
 
@@ -75,8 +79,8 @@
                     @endif
                 </div>
             @else
-                <form method="post" action="{{ route('employee.transactions.verify', $transaction) }}" class="space-y-4 border-t border-slate-100 pt-5"
-                      data-complete-form data-price="{{ $transaction->price_per_liter }}" data-fee="{{ $transaction->pickup_fee }}">
+                <form method="post" action="{{ route('employee.transactions.verify', $transaction) }}" enctype="multipart/form-data" class="space-y-4 border-t border-slate-100 pt-5"
+                      data-complete-form data-price="{{ $transaction->price_per_liter }}" data-fee="{{ $transaction->pickup_fee }}" data-code="{{ $transaction->code }}">
                     @csrf
                     <div>
                         <p class="text-xs font-black uppercase tracking-[0.12em] text-emerald-700">Form penjemputan</p>
@@ -105,15 +109,55 @@
                         </label>
                     </fieldset>
 
+                    {{-- accept dipakai tanpa capture. capture memaksa kamera
+                         terbuka dan menutup akses galeri, padahal bukti
+                         transfer justru berupa tangkapan layar yang sudah
+                         tersimpan di sana. --}}
+                    <div>
+                        <label for="payment_proof" class="text-sm font-bold">Bukti pembayaran</label>
+                        <input id="payment_proof" name="payment_proof" type="file" accept="image/*"
+                               class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-emerald-800 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+                        <p class="mt-1.5 text-xs text-slate-500">Foto serah terima uang atau tangkapan layar transfer. Wajib bila uang sudah diserahkan.</p>
+                        @error('payment_proof')<p class="mt-1.5 text-sm font-semibold text-rose-700">{{ $message }}</p>@enderror
+                    </div>
+
                     <textarea name="notes" rows="2" maxlength="700" placeholder="Catatan (opsional)" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">{{ old('notes', $transaction->notes) }}</textarea>
 
                     <div class="flex items-baseline justify-between rounded-xl bg-emerald-50 px-4 py-3">
                         <span class="text-sm font-bold text-emerald-900">Diterima penyetor</span>
-                        <span class="text-lg font-black tabular-nums text-emerald-800" data-total>Rp{{ number_format($transaction->estimated_total, 0, ',', '.') }}</span>
+                        {{-- Dibiarkan kosong sampai volume diisi. Memulai dengan
+                             estimasi membuat angka perkiraan berdiri di bawah
+                             label "Diterima penyetor", dan karyawan dapat
+                             menyebutkannya sebelum apa pun ditimbang. --}}
+                        <span class="text-lg font-black tabular-nums text-emerald-800" data-total>&mdash;</span>
                     </div>
 
                     <button class="w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-black text-white shadow-sm shadow-emerald-900/20 transition hover:bg-emerald-800">Kirim &amp; Selesaikan</button>
                 </form>
+
+                {{-- Penolakan diletakkan terpisah di balik rincian yang harus
+                     dibuka sendiri. Dua tombol yang sama-sama menutup transaksi
+                     tetapi dengan akibat berlawanan tidak boleh bersebelahan
+                     dan serupa; yang satu membayar penyetor, yang satu lagi
+                     memulangkan jelantahnya. --}}
+                <details class="mt-5 border-t border-slate-100 pt-5">
+                    <summary class="cursor-pointer list-none text-sm font-bold text-rose-700 hover:text-rose-900">
+                        Jelantahnya tidak memenuhi kriteria?
+                    </summary>
+                    <form method="post" action="{{ route('employee.transactions.reject', $transaction) }}" class="mt-3 space-y-3" data-reject-form data-code="{{ $transaction->code }}">
+                        @csrf
+                        <label for="rejection_reason" class="block text-sm font-bold text-slate-700">Alasan penolakan</label>
+                        <textarea id="rejection_reason" name="rejection_reason" rows="2" minlength="5" maxlength="500" required
+                                  placeholder="Contoh: jelantah bercampur air dan sisa makanan."
+                                  class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-rose-400 focus:ring-4 focus:ring-rose-100" data-reason>{{ old('rejection_reason') }}</textarea>
+                        @error('rejection_reason')
+                            <p class="text-xs font-semibold text-rose-700">{{ $message }}</p>
+                        @enderror
+                        <p class="text-xs leading-5 text-slate-500">Penyetor akan menerima alasan ini, dan transaksinya tidak bisa dilanjutkan lagi.</p>
+                        <button class="w-full rounded-xl border border-rose-300 px-4 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50">Tolak Setoran</button>
+                    </form>
+                </details>
+
                 <script>
                     document.addEventListener('DOMContentLoaded', () => {
                         const form = document.querySelector('[data-complete-form]');
@@ -123,11 +167,73 @@
                         const fee = Number(form.dataset.fee);
                         const render = () => {
                             const value = parseFloat(liter.value);
-                            if (Number.isNaN(value)) return;
+                            // Isian kosong atau tidak sah mengosongkan angkanya.
+                            // Sebelumnya nilai lama dibiarkan bertahan, sehingga
+                            // angka yang tampil tidak lagi berasal dari isi kolom.
+                            if (! Number.isFinite(value) || value <= 0) {
+                                total.textContent = '—';
+                                return;
+                            }
                             total.textContent = 'Rp' + Math.max(Math.round(value * price) - fee, 0).toLocaleString('id-ID');
                         };
                         liter.addEventListener('input', render);
                         render();
+
+                        /**
+                         * Konfirmasi sebelum transaksi ditutup. Aksi ini tidak
+                         * bisa dibatalkan, dan satu-satunya jalan keluar bagi
+                         * penyetor adalah menyanggah dalam tiga hari.
+                         *
+                         * Pesannya menyebutkan angka yang akan tercatat, bukan
+                         * sekadar bertanya yakin atau tidak. Bahaya yang nyata
+                         * di sini adalah salah ketik volume, dan pertanyaan
+                         * umum tidak akan menangkapnya.
+                         */
+                        form.addEventListener('submit', (event) => {
+                            const value = parseFloat(liter.value);
+
+                            // Isian tidak sah dibiarkan ditangani validasi bawaan.
+                            if (! Number.isFinite(value) || value <= 0) {
+                                return;
+                            }
+
+                            const volume = value.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            // Satu baris, tanpa escape baris baru: lapisan
+                            // kutip Blade dan JS mudah membuatnya tertulis
+                            // sebagai baris baru sungguhan dan merusak skripnya.
+                            const pesan = 'Selesaikan ' + form.dataset.code + '? '
+                                + 'Volume ' + volume + ' L, penyetor menerima ' + total.textContent + '. '
+                                + 'Transaksi tidak bisa diubah setelah ini.';
+
+                            if (! window.confirm(pesan)) {
+                                event.preventDefault();
+                            }
+                        });
+
+                        // Penolakan juga tidak bisa dibatalkan, jadi diberi jeda
+                        // yang sama dan pesannya membacakan alasan yang diketik.
+                        const rejectForm = document.querySelector('[data-reject-form]');
+                        const reason = rejectForm?.querySelector('[data-reason]');
+
+                        rejectForm?.addEventListener('submit', (event) => {
+                            const alasan = (reason.value || '').trim();
+
+                            if (alasan.length < 5) {
+                                return;
+                            }
+
+                            // Titik di ujung alasan dibuang lebih dulu, supaya
+                            // kalimatnya tidak berakhir dengan titik ganda.
+                            const alasanRapi = alasan.replace(/[.\s]+$/, '');
+
+                            const pesan = 'Tolak ' + rejectForm.dataset.code + '? '
+                                + 'Alasan: ' + alasanRapi + '. '
+                                + 'Penyetor akan diberi tahu dan transaksi tidak bisa dilanjutkan.';
+
+                            if (! window.confirm(pesan)) {
+                                event.preventDefault();
+                            }
+                        });
                     });
                 </script>
             @endif

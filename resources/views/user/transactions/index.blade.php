@@ -26,7 +26,7 @@
                     </div>
                     <div>
                         <dt class="text-xs uppercase tracking-wide text-slate-400">Total</dt>
-                        <dd class="mt-0.5 text-sm font-bold">Rp{{ number_format($transaction->total_value ?? $transaction->estimated_total, 0, ',', '.') }}</dd>
+                        <dd class="mt-0.5 text-sm font-bold"><x-transaction-amount :transaction="$transaction" /></dd>
                     </div>
                 </dl>
             </a>
@@ -45,7 +45,7 @@
                         <td class="p-3">{{ $transaction->partner?->name ?? '-' }}</td>
                         <td class="p-3">{{ $transaction->method === 'pickup' ? 'Jemput' : 'Antar Sendiri' }}</td>
                         <td class="p-3">{{ number_format($transaction->estimated_liter, 2, ',', '.') }} L</td>
-                        <td class="p-3">Rp{{ number_format($transaction->total_value ?? $transaction->estimated_total, 0, ',', '.') }}</td>
+                        <td class="p-3"><x-transaction-amount :transaction="$transaction" /></td>
                         <td class="p-3"><x-status-badge :status="$transaction->status" /></td>
                     </tr>
                 @empty

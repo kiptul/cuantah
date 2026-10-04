@@ -18,7 +18,7 @@ class UpdatePasswordRequest extends FormRequest
             // Kata sandi lama diminta supaya sesi yang tertinggal terbuka di
             // perangkat orang lain tidak bisa dipakai mengunci pemiliknya.
             'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'password' => ['required', 'confirmed', Password::defaults()],
         ];
     }
 

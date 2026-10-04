@@ -55,6 +55,9 @@ class TransactionSeeder extends Seeder
     /** @var Collection<int, User> */
     private Collection $depositors;
 
+    /** @var array<string, array{address: string, latitude: float, longitude: float}> */
+    private array $locations;
+
     public function run(): void
     {
         if (Transaction::where('code', 'like', '%-DM%')->exists()) {
@@ -68,11 +71,10 @@ class TransactionSeeder extends Seeder
         $this->prices = OilPrice::where('is_active', true)->orderBy('effective_date')->get();
         $this->partners = Partner::with('deliveryFees')->where('status', 'active')->get();
         $this->employees = User::where('role', 'employee')->with('partners:id')->get();
+        $this->locations = DepositorSeeder::locations();
         $this->depositors = User::where('role', 'user')
-            ->with('addresses')
-            ->get()
-            ->filter(fn (User $user) => $user->addresses->isNotEmpty())
-            ->values();
+            ->whereIn('email', array_keys($this->locations))
+            ->get();
 
         if ($this->prices->isEmpty() || $this->partners->isEmpty() || $this->depositors->isEmpty()) {
             $this->command?->warn('  Harga, mitra, atau penyetor belum ada; TransactionSeeder dilewati.');
@@ -183,13 +185,13 @@ class TransactionSeeder extends Seeder
      */
     private function deposit(User $depositor, string $method, Carbon $createdAt, ?int $scheduleIn = null): Transaction
     {
-        $address = $depositor->addresses->first();
-        $partner = $this->nearestPartner((float) $address->latitude, (float) $address->longitude);
+        $address = $this->locations[$depositor->email];
+        $partner = $this->nearestPartner($address['latitude'], $address['longitude']);
         $price = $this->priceAt($createdAt);
         $isPickup = $method === Transaction::METHOD_PICKUP;
 
         $fee = $isPickup
-            ? $partner->deliveryFeeForDistance($this->distanceKm((float) $partner->latitude, (float) $partner->longitude, (float) $address->latitude, (float) $address->longitude))
+            ? $partner->deliveryFeeForDistance($this->distanceKm((float) $partner->latitude, (float) $partner->longitude, $address['latitude'], $address['longitude']))
             : 0;
 
         // Volume dibulatkan ke setengah liter dan dijamin melebihi ongkir,
@@ -226,9 +228,9 @@ class TransactionSeeder extends Seeder
         $pickup = (new Pickup)->forceFill([
             'transaction_id' => $transaction->id,
             'partner_id' => $partner->id,
-            'address' => $isPickup ? $address->address : $partner->address,
-            'latitude' => $isPickup ? $address->latitude : $partner->latitude,
-            'longitude' => $isPickup ? $address->longitude : $partner->longitude,
+            'address' => $isPickup ? $address['address'] : $partner->address,
+            'latitude' => $isPickup ? $address['latitude'] : $partner->latitude,
+            'longitude' => $isPickup ? $address['longitude'] : $partner->longitude,
             'pickup_date' => $pickupDate?->toDateString(),
             'pickup_time' => $isPickup ? fake()->randomElement(self::PICKUP_TIMES) : null,
             'status' => $isPickup ? 'pending' : 'awaiting_dropoff',

@@ -74,7 +74,7 @@
                         ['Bagaimana cara menyetor?',
                          'Buat akun, lalu pilih Setor Jelantah. Tentukan mitra tujuan, pilih dijemput atau diantar sendiri, isi perkiraan volume, dan kirim. Nilai perkiraan yang kamu terima sudah terlihat sebelum tombol kirim ditekan.'],
                         ['Apa bedanya dijemput dan antar sendiri?',
-                         'Dijemput berarti karyawan datang ke alamatmu pada tanggal dan jam yang kamu pilih, dan ada potongan ongkir sesuai jarak ke mitra. Antar sendiri berarti kamu membawanya ke lokasi mitra, tanpa potongan ongkir sama sekali; kamu cukup menunjukkan barcode transaksi untuk dipindai petugas.'],
+                         'Dijemput berarti karyawan datang ke alamatmu pada tanggal dan jam yang kamu pilih, dan ada potongan ongkir sesuai jarak ke mitra. Antar sendiri berarti kamu membawanya ke lokasi mitra, tanpa potongan ongkir sama sekali; kamu cukup menunjukkan QR transaksi untuk dipindai petugas.'],
                         ['Kenapa setoran jemput ada potongan ongkirnya?',
                          'Karena ada orang dan kendaraan yang berangkat ke alamatmu. Besarnya mengikuti jarak, dan aturannya ditetapkan tiap mitra. Bila volume setoranmu terlalu kecil sehingga nilainya habis termakan ongkir, sistem menolak pengajuan itu dan menyarankan volume minimal atau opsi antar sendiri, supaya tidak ada yang berangkat untuk hasil nol.'],
                         ['Harga per liternya berapa, dan apa bisa berubah setelah saya menyetor?',

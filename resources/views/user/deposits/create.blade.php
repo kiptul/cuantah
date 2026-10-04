@@ -58,7 +58,7 @@
                         <p id="mapHelp" class="text-sm font-semibold text-slate-700">Lokasi mitra terpilih untuk drop-off.</p>
                         <button type="button" id="useGps" class="hidden rounded-md border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700">Gunakan GPS Saya</button>
                     </div>
-                    <div id="map" class="h-[420px] rounded-lg border border-slate-200"></div>
+                    <div id="map" class="isolate h-[420px] rounded-lg border border-slate-200"></div>
                     <div id="feeLegend" class="mt-3 grid gap-2 text-sm sm:grid-cols-2"></div>
                 </div>
 

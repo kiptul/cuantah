@@ -8,6 +8,7 @@ use App\Models\Partner;
 use App\Models\Pickup;
 use App\Models\Transaction;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -27,15 +28,34 @@ class TransactionService
                 ->firstOrFail();
             abort_if($partner->latitude === null || $partner->longitude === null, 422, 'Lokasi mitra belum tersedia.');
 
-            // Kapasitas mitra sebelumnya hanya disimpan dan ditampilkan tanpa
-            // pernah dipakai, sehingga mitra yang sudah penuh tetap menerima
-            // setoran dan penyetor menunggu untuk sesuatu yang tidak muat.
-            if ($partner->availableLiter() >= $partner->capacity_liter) {
+            // Yang diperiksa adalah sisa daya tampung, bukan sekadar apakah
+            // mitranya sudah penuh. Pemeriksaan sebelumnya hanya menolak setoran
+            // yang datang ketika mitra sudah terisi penuh, sehingga mitra yang
+            // masih bersisa satu liter tetap menerima setoran empat ratus liter
+            // dan penyetor menunggu untuk sesuatu yang tidak muat.
+            $sisaLiter = round((float) $partner->capacity_liter - $partner->availableLiter(), 2);
+
+            if ($sisaLiter <= 0) {
+                // Mitra penuh bukan soal besarnya setoran, jadi galatnya menempel
+                // pada pilihan mitra: yang perlu diganti mitranya, bukan angkanya.
                 throw ValidationException::withMessages([
                     'partner_id' => sprintf(
                         'Mitra %s sedang penuh, kapasitasnya %s L dan belum ada penyaluran keluar. Pilih mitra lain dulu.',
                         $partner->name,
-                        number_format($partner->capacity_liter, 0, ',', '.'),
+                        number_format((float) $partner->capacity_liter, 0, ',', '.'),
+                    ),
+                ]);
+            }
+
+            if ($estimatedLiter > $sisaLiter) {
+                // Angkanya disebutkan supaya penyetor tahu harus turun ke berapa,
+                // bukan menebak-nebak sampai setorannya diterima.
+                throw ValidationException::withMessages([
+                    'estimated_liter' => sprintf(
+                        'Mitra %s hanya sanggup menerima %s L lagi, sedangkan kamu mengajukan %s L. Turunkan volumenya atau pilih mitra lain.',
+                        $partner->name,
+                        $this->angkaRapi($sisaLiter),
+                        $this->angkaRapi($estimatedLiter),
                     ),
                 ]);
             }
@@ -92,10 +112,27 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $user->id,
+                'transaction_id' => $transaction->id,
                 'title' => 'Pengajuan setor diterima',
                 'message' => 'Transaksi '.$transaction->code.' sedang menunggu proses berikutnya.',
                 'type' => 'transaction',
             ]);
+
+            /**
+             * Mitra ikut diberi tahu. Sebelumnya hanya penyetor yang menerima
+             * kabar, sehingga pihak yang justru harus menindaklanjuti tidak
+             * pernah tahu ada setoran masuk. Drop-off bahkan tidak muncul di
+             * daftar pickup sampai QR-nya dipindai, jadi tanpa pesan ini
+             * mitra tidak punya satu pun jalan untuk mengetahuinya.
+             */
+            $this->notifyPartnerAdmins(
+                $transaction,
+                'Setoran baru masuk',
+                $isPickup
+                    ? $user->name.' meminta penjemputan '.$transaction->code.' pada '
+                        .$transaction->pickup->pickup_date->translatedFormat('d M').'. Tugaskan karyawan untuk menjemputnya.'
+                    : $user->name.' akan mengantar sendiri setoran '.$transaction->code.' ke mitra.',
+            );
 
             return $transaction->load('pickup.partner', 'partner');
         });
@@ -116,8 +153,24 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $pickup->transaction->user_id,
+                'transaction_id' => $pickup->transaction->id,
                 'title' => 'Pickup dijadwalkan',
                 'message' => 'Pickup '.$pickup->transaction->code.' sudah di-assign ke karyawan CUANTAH.',
+                'type' => 'pickup',
+            ]);
+
+            /**
+             * Karyawannya sendiri ikut diberi tahu. Sebelumnya tugas muncul di
+             * dasbornya tanpa pemberitahuan apa pun, sehingga ia hanya tahu
+             * bila kebetulan membuka halaman itu.
+             */
+            Notification::create([
+                'user_id' => $employeeId,
+                'transaction_id' => $pickup->transaction->id,
+                'title' => 'Pickup ditugaskan kepadamu',
+                'message' => 'Jemput '.$pickup->transaction->code.' di '.$pickup->address
+                    .($pickup->pickup_date ? ' pada '.$pickup->pickup_date->translatedFormat('d M') : '')
+                    .($pickup->pickup_time ? ', '.substr((string) $pickup->pickup_time, 0, 5) : '').'.',
                 'type' => 'pickup',
             ]);
 
@@ -139,33 +192,6 @@ class TransactionService
             $pickup->transaction()->update(['status' => Transaction::STATUS_PENDING]);
 
             return $pickup->refresh()->load('transaction.user');
-        });
-    }
-
-    public function claimPickup(Pickup $pickup, User $employee): bool
-    {
-        return DB::transaction(function () use ($pickup, $employee) {
-            $updated = Pickup::query()
-                ->whereKey($pickup->id)
-                ->whereNull('assigned_user_id')
-                ->whereHas('transaction', fn ($transaction) => $transaction->visibleTo($employee)
-                    ->whereNotIn('status', Transaction::FINAL_STATUSES))
-                ->where(function ($query) {
-                    $query->whereNotNull('scanned_at')
-                        ->orWhereHas('transaction', fn ($transaction) => $transaction->where('method', Transaction::METHOD_PICKUP));
-                })
-                ->update([
-                    'assigned_user_id' => $employee->id,
-                    'status' => 'assigned',
-                    'assigned_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-            if ($updated === 1) {
-                $pickup->transaction()->update(['status' => Transaction::STATUS_SCHEDULED]);
-            }
-
-            return $updated === 1;
         });
     }
 
@@ -216,7 +242,11 @@ class TransactionService
     {
         $this->pastikanBelumFinal($transaction, 'diverifikasi');
 
-        return DB::transaction(function () use ($transaction, $data) {
+        $buktiPath = ($data['payment_proof'] ?? null) instanceof UploadedFile
+            ? $this->simpanBuktiBayar($data['payment_proof'], $transaction)
+            : null;
+
+        return DB::transaction(function () use ($transaction, $data, $buktiPath) {
             $actualLiter = (float) $data['actual_liter'];
             $total = max((int) round($actualLiter * $transaction->price_per_liter) - (int) $transaction->pickup_fee, 0);
 
@@ -226,7 +256,9 @@ class TransactionService
                 'payment_method' => $data['payment_method'],
                 'payment_status' => $data['payment_status'],
                 'paid_at' => $data['payment_status'] === 'paid' ? now() : null,
+                'payment_proof_path' => $buktiPath ?? $transaction->payment_proof_path,
                 'status' => Transaction::STATUS_COMPLETED,
+                'completed_at' => now(),
                 'notes' => $data['notes'] ?? $transaction->notes,
             ]);
 
@@ -234,6 +266,7 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $transaction->user_id,
+                'transaction_id' => $transaction->id,
                 'title' => 'Transaksi selesai',
                 'message' => sprintf(
                     'Transaksi %s selesai: %s L, total Rp%s%s.',
@@ -265,6 +298,7 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $transaction->user_id,
+                'transaction_id' => $transaction->id,
                 'title' => 'Keberatan terkirim',
                 'message' => 'Keberatanmu atas takaran transaksi '.$transaction->code.' sudah diteruskan ke mitra.',
                 'type' => 'transaction',
@@ -293,6 +327,7 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $transaction->user_id,
+                'transaction_id' => $transaction->id,
                 'title' => 'Keberatan ditanggapi',
                 'message' => 'Mitra menanggapi keberatanmu pada '.$transaction->code.': '.$resolution,
                 'type' => 'transaction',
@@ -313,10 +348,26 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $transaction->user_id,
+                'transaction_id' => $transaction->id,
                 'title' => 'Setoran dibatalkan',
                 'message' => 'Kamu membatalkan transaksi '.$transaction->code.'.',
                 'type' => 'transaction',
             ]);
+
+            /**
+             * Karyawan yang sudah ditugaskan ikut diberi tahu. Tanpa pesan ini
+             * ia dapat berkendara ke alamat yang setorannya sudah dibatalkan,
+             * sebab tugasnya hilang dari dasbor tanpa meninggalkan jejak.
+             */
+            if ($transaction->pickup?->assigned_user_id) {
+                Notification::create([
+                    'user_id' => $transaction->pickup->assigned_user_id,
+                    'transaction_id' => $transaction->id,
+                    'title' => 'Penjemputan dibatalkan',
+                    'message' => 'Penyetor membatalkan '.$transaction->code.'. Tidak perlu berangkat ke '.$transaction->pickup->address.'.',
+                    'type' => 'pickup',
+                ]);
+            }
 
             return $transaction->refresh();
         });
@@ -328,11 +379,11 @@ class TransactionService
      * Sebelumnya penyetor hanya menerima pesan generik, sehingga ia tidak
      * pernah tahu apa yang perlu diperbaiki pada setoran berikutnya.
      */
-    public function reject(Transaction $transaction, ?string $reason = null): Transaction
+    public function reject(Transaction $transaction, ?string $reason = null, ?User $penolak = null): Transaction
     {
         $this->pastikanBelumFinal($transaction, 'ditolak');
 
-        return DB::transaction(function () use ($transaction, $reason) {
+        return DB::transaction(function () use ($transaction, $reason, $penolak) {
             $transaction->update([
                 'status' => Transaction::STATUS_REJECTED,
                 'rejection_reason' => $reason,
@@ -341,12 +392,28 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $transaction->user_id,
+                'transaction_id' => $transaction->id,
                 'title' => 'Transaksi ditolak',
                 'message' => $reason
                     ? 'Transaksi '.$transaction->code.' ditolak. Alasan: '.$reason
                     : 'Transaksi '.$transaction->code.' tidak dapat diproses.',
                 'type' => 'transaction',
             ]);
+
+            /**
+             * Penolakan di lapangan ikut dikabarkan ke admin mitra. Merekalah
+             * yang perlu tahu ada penjemputan yang gagal tanpa harus memeriksa
+             * daftar sendiri. Penolakan oleh admin tidak mengirim kabar ini,
+             * sebab mengabari seseorang tentang tindakannya sendiri hanya
+             * menambah kebisingan.
+             */
+            if ($penolak !== null) {
+                $this->notifyPartnerAdmins(
+                    $transaction,
+                    'Setoran ditolak di lapangan',
+                    $penolak->name.' menolak '.$transaction->code.'.'.($reason ? ' Alasan: '.$reason : ''),
+                );
+            }
 
             return $transaction->refresh();
         });
@@ -361,7 +428,7 @@ class TransactionService
      *
      * @throws ValidationException
      */
-    public function markPaid(Transaction $transaction): Transaction
+    public function markPaid(Transaction $transaction, UploadedFile $bukti): Transaction
     {
         if ($transaction->status !== Transaction::STATUS_COMPLETED || $transaction->payment_status !== 'unpaid') {
             throw ValidationException::withMessages([
@@ -369,14 +436,18 @@ class TransactionService
             ]);
         }
 
-        return DB::transaction(function () use ($transaction) {
+        $buktiPath = $this->simpanBuktiBayar($bukti, $transaction);
+
+        return DB::transaction(function () use ($transaction, $buktiPath) {
             $transaction->update([
                 'payment_status' => 'paid',
                 'paid_at' => now(),
+                'payment_proof_path' => $buktiPath,
             ]);
 
             Notification::create([
                 'user_id' => $transaction->user_id,
+                'transaction_id' => $transaction->id,
                 'title' => 'Pembayaran diterima',
                 'message' => 'Pembayaran transaksi '.$transaction->code.' sebesar Rp'.number_format((int) $transaction->total_value, 0, ',', '.').' sudah dilunasi.',
                 'type' => 'payment',
@@ -389,6 +460,128 @@ class TransactionService
     /**
      * Mengirim notifikasi ke seluruh admin yang terhubung dengan mitra transaksi.
      */
+    /**
+     * Menyimpan bukti pembayaran dan mengembalikan jalur berkasnya.
+     *
+     * Disimpan di disk privat, bukan di public/storage. Foto ini memuat
+     * nominal uang dan kerap memuat wajah orang, sehingga tautan yang bisa
+     * ditebak sudah cukup untuk membocorkannya tanpa perlu masuk akun.
+     * Penyajiannya lewat rute yang memeriksa TransactionPolicy.
+     *
+     * Nama berkas dibuat oleh Laravel, tidak memakai nama asli dari
+     * pengunggah, supaya nama yang disusun untuk menyesatkan tidak ikut
+     * tersimpan.
+     *
+     * Berkas ditulis sebelum transaksi basis data dibuka. Bila basis data
+     * gagal sesudahnya, yang tertinggal hanyalah berkas yang tidak ditunjuk
+     * siapa pun; sebaliknya, menulis berkas di dalam transaksi tidak membuat
+     * penulisannya ikut dibatalkan, sebab disk tidak mengenal rollback.
+     */
+    /**
+     * Mengoreksi volume transaksi yang sudah selesai.
+     *
+     * Karyawan menakar di lapangan dan mengetik angkanya di ponsel, jadi
+     * salah ketik tidak terhindarkan. Sampai sekarang tidak ada jalan
+     * membetulkannya: transaksi selesai terkunci, dan penyelesaian sanggahan
+     * hanya menulis tanggapan tanpa menyentuh angkanya.
+     *
+     * Harga diambil dari price_per_liter yang tersimpan di transaksi, bukan
+     * harga hari ini. Mengoreksi salah ketik bulan lalu dengan harga bulan
+     * ini akan mengubah dua hal sekaligus, dan yang kedua tidak diminta
+     * siapa pun.
+     */
+    public function correctVolume(Transaction $transaction, float $liter, string $reason, ?User $admin = null): Transaction
+    {
+        if ($transaction->status !== Transaction::STATUS_COMPLETED) {
+            throw ValidationException::withMessages([
+                'actual_liter' => 'Hanya transaksi selesai yang bisa dikoreksi.',
+            ]);
+        }
+
+        $literSebelum = (float) $transaction->actual_liter;
+        $nilaiSebelum = (int) $transaction->total_value;
+        $nilaiSesudah = max((int) round($liter * $transaction->price_per_liter) - (int) $transaction->pickup_fee, 0);
+
+        $this->pastikanStokMitraTidakMinus($transaction, $literSebelum, $liter);
+
+        /**
+         * Status bayar hanya dikembalikan bila nilainya naik. Pada koreksi
+         * turun, uangnya sudah terlanjur keluar dan malah kelebihan;
+         * menandainya belum dibayar berarti mencatat sesuatu yang tidak
+         * terjadi, sedangkan aplikasi ini tidak punya alur pengembalian dana.
+         */
+        $kurangBayar = $transaction->payment_status === 'paid' && $nilaiSesudah > $nilaiSebelum;
+
+        return DB::transaction(function () use ($transaction, $liter, $reason, $admin, $literSebelum, $nilaiSebelum, $nilaiSesudah, $kurangBayar) {
+            $transaction->corrections()->create([
+                'corrected_by' => $admin?->id,
+                'liter_before' => $literSebelum,
+                'liter_after' => $liter,
+                'value_before' => $nilaiSebelum,
+                'value_after' => $nilaiSesudah,
+                'payment_status_before' => $transaction->payment_status,
+                'payment_proof_path_before' => $transaction->payment_proof_path,
+                'reason' => $reason,
+            ]);
+
+            $transaction->update([
+                'actual_liter' => $liter,
+                'total_value' => $nilaiSesudah,
+                'payment_status' => $kurangBayar ? 'unpaid' : $transaction->payment_status,
+                'paid_at' => $kurangBayar ? null : $transaction->paid_at,
+            ]);
+
+            Notification::create([
+                'user_id' => $transaction->user_id,
+                'transaction_id' => $transaction->id,
+                'title' => 'Volume transaksi dikoreksi',
+                'message' => sprintf(
+                    'Volume %s diperbaiki dari %s L menjadi %s L, sehingga nilainya menjadi Rp%s. Alasan: %s',
+                    $transaction->code,
+                    $this->angkaRapi($literSebelum),
+                    $this->angkaRapi($liter),
+                    number_format($nilaiSesudah, 0, ',', '.'),
+                    $reason,
+                ),
+                'type' => 'transaction',
+            ]);
+
+            return $transaction->refresh();
+        });
+    }
+
+    /**
+     * Menahan koreksi yang membuat jelantah tersalur melebihi yang terkumpul.
+     *
+     * Stok mitra adalah selisih terkumpul dan tersalur. Koreksi turun pada
+     * setoran yang jelantahnya sudah terlanjur disalurkan akan membuat
+     * selisih itu minus, dan laporan rantai pasoknya berhenti berarti.
+     */
+    private function pastikanStokMitraTidakMinus(Transaction $transaction, float $literSebelum, float $literSesudah): void
+    {
+        if ($literSesudah >= $literSebelum || $transaction->partner === null) {
+            return;
+        }
+
+        $sisa = $transaction->partner->availableLiter();
+        $pengurangan = $literSebelum - $literSesudah;
+
+        if ($pengurangan > $sisa + 0.001) {
+            throw ValidationException::withMessages([
+                'actual_liter' => sprintf(
+                    'Koreksi ini mengurangi %s L sedangkan sisa jelantah mitra tinggal %s L, jadi yang sudah disalurkan akan melebihi yang pernah masuk.',
+                    $this->angkaRapi($pengurangan),
+                    $this->angkaRapi($sisa),
+                ),
+            ]);
+        }
+    }
+
+    private function simpanBuktiBayar(UploadedFile $bukti, Transaction $transaction): string
+    {
+        return $bukti->store('bukti-bayar/'.$transaction->getKey(), 'local');
+    }
+
     private function notifyPartnerAdmins(Transaction $transaction, string $title, string $message): void
     {
         User::query()
@@ -397,6 +590,7 @@ class TransactionService
             ->pluck('id')
             ->each(fn (int $adminId) => Notification::create([
                 'user_id' => $adminId,
+                'transaction_id' => $transaction->id,
                 'title' => $title,
                 'message' => $message,
                 'type' => 'transaction',
@@ -426,6 +620,17 @@ class TransactionService
                 $tindakan,
             ),
         ]);
+    }
+
+    /**
+     * Angka liter tanpa nol di belakang yang tidak berarti.
+     *
+     * "100 L" lebih mudah dibaca daripada "100,00 L", tetapi "1,5 L" tetap
+     * perlu desimalnya.
+     */
+    private function angkaRapi(float $nilai): string
+    {
+        return rtrim(rtrim(number_format($nilai, 2, ',', '.'), '0'), ',');
     }
 
     private function distanceKm(float $originLatitude, float $originLongitude, float $destinationLatitude, float $destinationLongitude): float

@@ -10,6 +10,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /**
@@ -51,6 +52,75 @@ class PartnerStockTest extends TestCase
         }
 
         return $mitra;
+    }
+
+    /**
+     * Mengajukan setoran sebagai penyetor baru.
+     *
+     * @return TestResponse
+     */
+    private function ajukanSetoran(Partner $mitra, float $liter)
+    {
+        return $this->actingAs(User::factory()->create(['role' => 'user']))
+            ->post(route('deposits.store'), [
+                'partner_id' => $mitra->id,
+                'method' => Transaction::METHOD_DROP_OFF,
+                'estimated_liter' => $liter,
+                'address' => 'Jl. Melati 10',
+                'latitude' => -6.2,
+                'longitude' => 106.8,
+            ]);
+    }
+
+    public function test_a_deposit_larger_than_the_remaining_capacity_is_refused(): void
+    {
+        // Sisa daya tampung satu liter: mitra belum penuh, tetapi juga tidak
+        // sanggup menerima empat ratus liter.
+        $mitra = $this->mitraBerisi(999, 0);
+
+        $this->ajukanSetoran($mitra, 400)
+            ->assertSessionHasErrors('estimated_liter');
+
+        $this->assertSame(
+            1,
+            Transaction::count(),
+            'Hanya transaksi penyiapan yang boleh ada; setoran 400 L tidak boleh tercatat.',
+        );
+    }
+
+    public function test_the_refusal_names_how_much_the_partner_can_still_take(): void
+    {
+        $mitra = $this->mitraBerisi(900, 0);
+
+        $galat = $this->ajukanSetoran($mitra, 400)
+            ->assertSessionHasErrors('estimated_liter')
+            ->getSession()
+            ->get('errors')
+            ->get('estimated_liter')[0];
+
+        // Menolak tanpa menyebut angkanya memaksa penyetor menebak-nebak
+        // berapa yang harus ia turunkan.
+        $this->assertStringContainsString('100', $galat);
+        $this->assertStringContainsString($mitra->name, $galat);
+    }
+
+    public function test_a_deposit_that_exactly_fills_the_remaining_capacity_is_accepted(): void
+    {
+        // Batasnya harus inklusif: setoran yang pas memenuhi sisa ruang masih muat.
+        $mitra = $this->mitraBerisi(900, 0);
+
+        $this->ajukanSetoran($mitra, 100)->assertSessionHasNoErrors();
+
+        $this->assertSame(2, Transaction::count(), 'Setoran yang pas muat harus diterima.');
+    }
+
+    public function test_a_partner_already_full_is_refused_on_the_partner_field(): void
+    {
+        // Mitra penuh bukan soal besarnya setoran, jadi galatnya menempel pada
+        // pilihan mitra supaya penyetor mengganti mitranya, bukan angkanya.
+        $mitra = $this->mitraBerisi(1000, 0);
+
+        $this->ajukanSetoran($mitra, 5)->assertSessionHasErrors('partner_id');
     }
 
     public function test_batched_stock_matches_the_per_partner_calculation(): void

@@ -121,7 +121,7 @@ class SmokeTest extends TestCase
         $this->get(route('deposits.create'))->assertOk();
         $this->get(route('transactions.index'))->assertOk();
         $this->get(route('transactions.show', $dunia['transaction']))->assertOk();
-        $this->get(route('transactions.barcode', $dunia['dropOff']))->assertOk();
+        $this->get(route('transactions.qr', $dunia['dropOff']))->assertOk();
         $this->get(route('profile.edit'))->assertOk();
     }
 
@@ -133,7 +133,6 @@ class SmokeTest extends TestCase
 
         $this->get(route('employee.dashboard'))->assertOk();
         $this->get(route('employee.scan'))->assertOk();
-        $this->get(route('employee.pickups.available'))->assertOk();
         $this->get(route('employee.transactions.index'))->assertOk();
         $this->get(route('employee.transactions.show', $dunia['transaction']))->assertOk();
     }

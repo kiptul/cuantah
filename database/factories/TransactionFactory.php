@@ -41,6 +41,17 @@ class TransactionFactory extends Factory
 
     /**
      * Transaksi yang sudah selesai diverifikasi beserta volume aktualnya.
+     *
+     * completed_at ikut diisi. Transaksi berstatus selesai tanpa kolom itu
+     * tidak pernah terjadi lewat alur verifikasi, sehingga membiarkannya kosong
+     * membuat factory ini menghasilkan keadaan yang mustahil: tenggat sanggahan
+     * dihitung dari completed_at, dan yang kosong berarti jendela sanggahannya
+     * tertutup sejak awal. Hitungan harian dan bulanan di ketiga dasbor juga
+     * berpatokan padanya, jadi tanpa kolom ini transaksi yang sudah selesai
+     * tidak terhitung di periode mana pun.
+     *
+     * Waktunya bisa ditimpa seperti atribut lain bila testnya memang menguji
+     * transaksi lama.
      */
     public function completed(?float $actualLiter = null): static
     {
@@ -54,6 +65,7 @@ class TransactionFactory extends Factory
                 'payment_method' => 'cash',
                 'payment_status' => 'paid',
                 'paid_at' => now(),
+                'completed_at' => now(),
             ];
         });
     }

@@ -5,7 +5,7 @@
     <div class="mb-5"><a href="{{ route('transactions.index') }}" class="text-sm font-bold text-emerald-700">Kembali</a><h1 class="mt-2 text-3xl font-black">{{ $transaction->code }}</h1></div>
     <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
         <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <div id="map" class="h-[360px] rounded-lg border border-slate-200"></div>
+            <div id="map" class="isolate h-[360px] rounded-lg border border-slate-200"></div>
             <div class="mt-5">
                 <p class="font-bold">Lokasi {{ $transaction->method === 'pickup' ? 'Rumah Tangga/UMKM' : 'Pengumpulan CUANTAH' }}</p>
                 <p class="mt-1 text-slate-600">{{ $transaction->pickup?->address }}</p>
@@ -22,11 +22,34 @@
                 <div class="flex justify-between"><dt>Actual liter</dt><dd class="font-bold">{{ $transaction->actual_liter ? number_format($transaction->actual_liter, 2, ',', '.').' L' : '-' }}</dd></div>
                 <div class="flex justify-between"><dt>Harga/L</dt><dd class="font-bold">Rp{{ number_format($transaction->price_per_liter, 0, ',', '.') }}</dd></div>
                 <div class="flex justify-between"><dt>Ongkir jemput</dt><dd class="font-bold">Rp{{ number_format($transaction->pickup_fee, 0, ',', '.') }}</dd></div>
-                <div class="flex justify-between"><dt>Total</dt><dd class="font-black">Rp{{ number_format($transaction->total_value ?? $transaction->estimated_total, 0, ',', '.') }}</dd></div>
+                <div class="flex justify-between"><dt>Total</dt><dd class="font-black"><x-transaction-amount :transaction="$transaction" /></dd></div>
                 <div class="flex justify-between"><dt>Pembayaran</dt><dd class="font-bold">{{ $transaction->payment_method ? str($transaction->payment_method)->title() : '-' }}</dd></div>
                 <div class="flex justify-between"><dt>Status bayar</dt><dd>{{ $transaction->payment_status ? '' : '-' }}@if($transaction->payment_status)<x-status-badge :status="$transaction->payment_status" />@endif</dd></div>
                 <div class="flex justify-between"><dt>Karyawan</dt><dd class="font-bold">{{ $transaction->pickup?->assignedUser?->name ?? '-' }}</dd></div>
             </dl>
+
+            {{-- Bukti bayar diletakkan tepat di atas tombol sanggah. Selama
+                 ini penyetor menyanggah dengan mengandalkan ingatan; dengan
+                 fotonya di sini ia punya pembanding sebelum memutuskan. --}}
+            @if($transaction->payment_status === 'paid')
+                <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p class="text-xs font-black uppercase tracking-[0.12em] text-slate-500">Bukti pembayaran</p>
+                    @if($transaction->hasPaymentProof())
+                        <a href="{{ route('transactions.payment-proof', $transaction) }}" target="_blank" rel="noopener">
+                            <img src="{{ route('transactions.payment-proof', $transaction) }}"
+                                 alt="Bukti pembayaran transaksi {{ $transaction->code }}"
+                                 class="mt-2 w-full rounded-lg border border-slate-200 bg-white object-contain">
+                        </a>
+                        <p class="mt-2 text-xs text-slate-500">Ketuk gambar untuk membukanya lebih besar.</p>
+                    @else
+                        {{-- Transaksi yang selesai sebelum fitur ini ada. Dinyatakan
+                             terus terang supaya tidak terbaca sebagai bukti yang
+                             sengaja tidak dilampirkan. --}}
+                        <p class="mt-1.5 text-sm leading-6 text-slate-600">Tidak tersedia. Transaksi ini selesai sebelum bukti pembayaran mulai dilampirkan.</p>
+                    @endif
+                </div>
+            @endif
+
             {{-- Sanggahan takaran. Verifikasi sebelumnya satu arah sepenuhnya:
                  angka karyawan langsung jadi dasar bayaran tanpa bisa dibantah. --}}
             @if($transaction->disputed_at)
@@ -81,7 +104,7 @@
             @endif
 
             @if($transaction->method === 'drop_off')
-                <a href="{{ route('transactions.barcode', $transaction) }}" class="mt-5 block rounded-md bg-emerald-700 px-4 py-3 text-center font-bold text-white">Lihat Barcode</a>
+                <a href="{{ route('transactions.qr', $transaction) }}" class="mt-5 block rounded-md bg-emerald-700 px-4 py-3 text-center font-bold text-white">Lihat QR</a>
             @endif
         </aside>
     </div>

@@ -6,12 +6,15 @@ use App\Models\Transaction;
 use App\Services\TransactionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TransactionController extends Controller
 {
     public function index()
     {
-        $transactions = auth()->user()
+        $transactions = Auth::user()
             ->transactions()
             ->with('partner', 'pickup.assignedUser')
             ->latest()
@@ -27,6 +30,22 @@ class TransactionController extends Controller
         return view('user.transactions.show', [
             'transaction' => $transaction->load('partner', 'pickup.assignedUser'),
         ]);
+    }
+
+    /**
+     * Menyajikan bukti pembayaran dari disk privat.
+     *
+     * Berkasnya tidak pernah berada di bawah public/, jadi satu-satunya jalan
+     * membukanya adalah lewat sini, dan di sini otorisasinya diperiksa.
+     */
+    public function paymentProof(Transaction $transaction): StreamedResponse
+    {
+        $this->authorize('view', $transaction);
+
+        abort_if($transaction->payment_proof_path === null, 404);
+        abort_unless(Storage::disk('local')->exists($transaction->payment_proof_path), 404);
+
+        return Storage::disk('local')->response($transaction->payment_proof_path);
     }
 
     public function cancel(Transaction $transaction, TransactionService $service): RedirectResponse

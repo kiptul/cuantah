@@ -25,9 +25,9 @@
             <div class="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-emerald-950/30 blur-2xl" aria-hidden="true"></div>
             <div class="relative flex h-full flex-col">
                 <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-200">CUAN diterima</p>
-                <p class="mt-3 text-4xl font-black tracking-tight tabular-nums sm:text-5xl">Rp{{ number_format($total_value, 0, ',', '.') }}</p>
+                <p class="mt-3 text-4xl font-black tracking-tight tabular-nums sm:text-5xl">Rp{{ number_format($paid_value, 0, ',', '.') }}</p>
                 <p class="mt-3 max-w-sm text-sm leading-6 text-emerald-100/90">
-                    Dari {{ number_format($total_liter, 2, ',', '.') }} liter jelantah yang sudah ditimbang mitra.
+                    Dari {{ number_format($paid_liter, 2, ',', '.') }} liter jelantah yang sudah dibayar mitra.
                 </p>
                 @if($unpaid_value > 0)
                     <p class="mt-4 w-fit rounded-lg bg-amber-400/20 px-3 py-1.5 text-xs font-bold text-amber-100 ring-1 ring-amber-300/30">
@@ -55,8 +55,8 @@
                 </x-slot:icon>
             </x-stat-card>
 
-            <x-stat-card label="Transaksi" :value="$total_transactions"
-                         :hint="$active_transactions->isNotEmpty() ? $active_transactions->count().' sedang berjalan.' : 'Tidak ada yang sedang berjalan.'">
+            <x-stat-card label="Setoran selesai" :value="$completed_transactions"
+                         :hint="$active_count > 0 ? $active_count.' sedang berjalan.' : 'Tidak ada yang sedang berjalan.'">
                 <x-slot:icon>
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M5 4h14v16l-3.5-2-3.5 2-3.5-2L5 20V4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
@@ -70,15 +70,18 @@
     {{-- Setoran yang masih berjalan dengan tiga langkah saja: diajukan,
          ditangani karyawan, selesai. Begitu karyawan mengirim form
          penjemputan, transaksi langsung selesai tanpa konfirmasi ulang. --}}
-    @if($active_transactions->isNotEmpty())
+    @if($active_count > 0)
         <section class="mt-6">
-            <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Setoran berjalan</h2>
+            <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Setoran berjalan</h2>
+                <p class="text-sm font-bold text-slate-500">{{ $active_count }} setoran</p>
+            </div>
             <div class="mt-3 grid gap-4 md:grid-cols-2">
                 @foreach($active_transactions as $transaction)
                     @php
                         $isPickup = $transaction->method === \App\Models\Transaction::METHOD_PICKUP;
                         $employee = $transaction->pickup?->assignedUser;
-                        $step = $employee ? 2 : 1;
+                        $step = $transaction->progressStep();
                         $steps = ['Diajukan', $isPickup ? 'Dijemput karyawan' : 'Dipindai di mitra', 'Selesai'];
                     @endphp
                     <a href="{{ route('transactions.show', $transaction) }}" class="group rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5 transition hover:ring-emerald-300">
@@ -97,7 +100,7 @@
 
                         <ol class="mt-5 grid grid-cols-3 gap-2" aria-label="Kemajuan setoran">
                             @foreach($steps as $index => $label)
-                                <li>
+                                <li @if($index === $step) aria-current="step" @endif>
                                     <span @class([
                                         'block h-1.5 rounded-full',
                                         'bg-emerald-600' => $index < $step,
@@ -122,32 +125,61 @@
                                     {{ $transaction->pickup->pickup_date->translatedFormat('d M') }}@if($transaction->pickup->pickup_time), {{ \Illuminate\Support\Str::of($transaction->pickup->pickup_time)->substr(0, 5) }}@endif.
                                 @endif
                             @else
-                                Bawa jelantah ke mitra dan tunjukkan barcode-nya.
+                                Bawa jelantah ke mitra dan tunjukkan QR-nya.
                             @endif
                         </p>
                     </a>
                 @endforeach
             </div>
+            @if($active_count > $active_transactions->count())
+                {{-- Sisanya disebut jumlahnya, bukan dibiarkan memanjangkan
+                     halaman sampai riwayat terdorong jauh ke bawah. --}}
+                <a href="{{ route('transactions.index') }}"
+                   class="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-slate-900/5 transition hover:text-slate-900 hover:ring-slate-900/15">
+                    {{ $active_count - $active_transactions->count() }} setoran lain juga sedang berjalan
+                    <span aria-hidden="true">&rarr;</span>
+                </a>
+            @endif
         </section>
     @endif
 
     @if($disputable->isNotEmpty())
         <section class="mt-6 overflow-hidden rounded-2xl bg-amber-50 shadow-sm ring-1 ring-amber-900/10">
-            <div class="border-b border-amber-900/10 px-5 py-3.5">
-                <h2 class="text-sm font-black uppercase tracking-[0.12em] text-amber-900">Baru selesai</h2>
-                <p class="mt-0.5 text-xs text-amber-800">Takaran tidak sesuai? Keberatan bisa diajukan dalam 3 hari.</p>
+            <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-amber-900/10 px-5 py-3.5">
+                <div>
+                    <h2 class="text-sm font-black uppercase tracking-[0.12em] text-amber-900">Baru selesai</h2>
+                    <p class="mt-0.5 text-xs text-amber-800">Takaran tidak sesuai? Keberatan bisa diajukan dalam {{ \App\Models\Transaction::DISPUTE_WINDOW_DAYS }} hari.</p>
+                </div>
+                <p class="text-xs font-bold text-amber-900">{{ $disputable_count }} setoran</p>
             </div>
             <div class="divide-y divide-amber-900/10">
                 @foreach($disputable as $transaction)
                     <a href="{{ route('transactions.show', $transaction) }}" class="flex items-center gap-4 px-5 py-3.5 transition hover:bg-amber-100/60">
-                        <span class="font-mono text-sm font-bold text-amber-950">{{ $transaction->code }}</span>
-                        <span class="ml-auto text-sm font-bold tabular-nums text-amber-900">{{ number_format($transaction->actual_liter, 2, ',', '.') }} L &middot; Rp{{ number_format($transaction->total_value, 0, ',', '.') }}</span>
+                        <span class="min-w-0">
+                            <span class="block font-mono text-sm font-bold text-amber-950">{{ $transaction->code }}</span>
+                            {{-- Tanpa sisa waktu, panel menjanjikan tenggat tetapi
+                                 menyembunyikan posisi tiap setoran di dalamnya. --}}
+                            <span class="mt-0.5 block text-xs text-amber-800">
+                                Sisa {{ $transaction->disputeDeadline()->diffForHumans(['syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE, 'parts' => 1]) }}
+                            </span>
+                        </span>
+                        <span class="ml-auto shrink-0 text-sm font-bold tabular-nums text-amber-900">{{ number_format($transaction->actual_liter, 2, ',', '.') }} L &middot; Rp{{ number_format($transaction->total_value, 0, ',', '.') }}</span>
                         <svg class="h-4 w-4 shrink-0 text-amber-700" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                             <path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                     </a>
                 @endforeach
             </div>
+            @if($disputable_count > $disputable->count())
+                {{-- Sisanya disebut jumlahnya, tidak dipotong diam-diam. Hak
+                     menyanggah hangus dalam tiga hari, dan tanpa baris ini
+                     penyetor tidak punya cara tahu masih ada yang menunggu. --}}
+                <a href="{{ route('transactions.index') }}"
+                   class="flex items-center justify-between gap-3 border-t border-amber-900/10 px-5 py-3 text-sm font-bold text-amber-900 transition hover:bg-amber-100/60">
+                    {{ $disputable_count - $disputable->count() }} setoran lain juga masih bisa disanggah
+                    <span aria-hidden="true">&rarr;</span>
+                </a>
+            @endif
         </section>
     @endif
 
@@ -173,13 +205,17 @@
                         </p>
                     </div>
                     <div class="shrink-0 text-right">
-                        <p class="font-black tabular-nums text-slate-900">Rp{{ number_format($transaction->total_value ?? $transaction->estimated_total, 0, ',', '.') }}</p>
-                        <p class="mt-1.5 text-sm tabular-nums text-slate-500">{{ number_format($transaction->actual_liter ?? $transaction->estimated_liter, 2, ',', '.') }} L</p>
+                        <p class="font-black tabular-nums text-slate-900"><x-transaction-amount :transaction="$transaction" /></p>
+                        @if($transaction->settledLiter() !== null)
+                            <p class="mt-1.5 text-sm tabular-nums text-slate-500">{{ number_format($transaction->settledLiter(), 2, ',', '.') }} L</p>
+                        @else
+                            <p class="mt-1.5 text-sm font-semibold text-slate-500">Tidak dibayar</p>
+                        @endif
                     </div>
                 </a>
             @empty
                 <div class="px-5 py-12 text-center">
-                    @if($active_transactions->isEmpty())
+                    @if($active_count === 0)
                         <p class="font-bold text-slate-900">Belum ada transaksi</p>
                         <p class="mx-auto mt-1.5 max-w-xs text-sm leading-6 text-slate-500">Setoran pertamamu akan muncul di sini beserta nilai CUAN yang kamu terima.</p>
                         <a href="{{ route('deposits.create') }}" class="mt-5 inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-emerald-900/20 transition hover:bg-emerald-800">

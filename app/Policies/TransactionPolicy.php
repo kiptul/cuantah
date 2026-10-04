@@ -35,7 +35,7 @@ class TransactionPolicy
         return $transaction->user_id === $user->id
             && $transaction->status === Transaction::STATUS_COMPLETED
             && $transaction->disputed_at === null
-            && $transaction->updated_at?->gt(now()->subDays(3));
+            && $transaction->withinDisputeWindow();
     }
 
     /**

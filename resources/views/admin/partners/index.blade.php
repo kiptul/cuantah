@@ -13,24 +13,49 @@
         @csrf
         <p class="font-black">Tambah Mitra</p>
         <div class="mt-4 grid gap-4 md:grid-cols-3">
-            <input name="name" placeholder="Nama mitra" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-            <input name="type" placeholder="Tipe" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-            <input name="phone" placeholder="Telepon" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-            <input name="capacity_liter" type="number" min="1" placeholder="Kapasitas liter" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-            <select name="status" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"><option value="active">Aktif</option><option value="inactive">Nonaktif</option></select>
-            <button type="button" data-target="new" class="gps-btn rounded-md border border-slate-300 px-4 py-2 font-bold text-slate-700">Gunakan GPS</button>
-            <textarea name="address" placeholder="Alamat" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 md:col-span-3" required></textarea>
+            {{-- Label, bukan placeholder. Placeholder lenyap begitu kotaknya
+                 diisi, dan formulir ini dibaca ulang setiap kali ada kesalahan
+                 validasi, ketika seluruh kotak sudah terisi. --}}
+            <label class="block">
+                <span class="text-sm font-bold text-slate-700">Nama mitra</span>
+                <input name="name" value="{{ old('name') }}" placeholder="Mitra Angkut Karawang" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            </label>
+            <label class="block">
+                <span class="text-sm font-bold text-slate-700">Tipe mitra</span>
+                <input name="type" value="{{ old('type') }}" placeholder="Pengepul" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            </label>
+            <label class="block">
+                <span class="text-sm font-bold text-slate-700">Telepon</span>
+                <input name="phone" value="{{ old('phone') }}" placeholder="08xxxxxxxxxx" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            </label>
+            <label class="block">
+                <span class="text-sm font-bold text-slate-700">Kapasitas (liter)</span>
+                <input name="capacity_liter" type="number" min="1" value="{{ old('capacity_liter') }}" placeholder="500" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+            </label>
+            <label class="block">
+                <span class="text-sm font-bold text-slate-700">Status</span>
+                <select name="status" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"><option value="active">Aktif</option><option value="inactive">Nonaktif</option></select>
+            </label>
+            <div class="flex items-end">
+                <button type="button" data-target="new" class="gps-btn w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50">Gunakan GPS</button>
+            </div>
+            <label class="block md:col-span-3">
+                <span class="text-sm font-bold text-slate-700">Alamat</span>
+                <textarea name="address" placeholder="Jl. Tuparev, Karawang" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>{{ old('address') }}</textarea>
+            </label>
             <input name="latitude" id="lat-new" type="hidden" value="-6.3055">
             <input name="longitude" id="lng-new" type="hidden" value="107.3053">
         </div>
-        <div id="partner-map-new" class="mt-4 h-56 rounded-lg border border-slate-200"></div>
+        <div id="partner-map-new" class="isolate mt-4 h-56 rounded-lg border border-slate-200"></div>
         <div class="mt-4">
             <div class="flex items-center justify-between gap-3">
                 <p class="text-sm font-bold">Aturan ongkir jemput</p>
-                <button type="button" data-fee-add="new" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 text-sm font-bold text-slate-700">Tambah Range</button>
+                <button type="button" data-fee-add="new" class="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-emerald-700 px-3.5 py-2 text-sm font-bold text-emerald-800 transition hover:bg-emerald-50">
+                    <span aria-hidden="true">+</span> Tambah Range
+                </button>
             </div>
             <div data-fee-list="new" class="mt-3 grid gap-2"></div>
-            <p class="mt-2 text-xs text-slate-500">Kosongkan jarak maksimal untuk range terakhir seperti di atas 10 km. Radius di bawah range pertama otomatis gratis.</p>
+            <p class="mt-2 text-xs text-slate-500">Kosongkan jarak maksimal untuk range terakhir, artinya berlaku untuk jarak berapa pun di atas jarak minimumnya. Jarak di bawah range pertama otomatis gratis.</p>
         </div>
         <button class="mt-4 rounded-md bg-emerald-700 px-4 py-2 font-bold text-white">Tambah Mitra</button>
     </form>
@@ -49,33 +74,78 @@
                 </div>
 
                 <div class="mt-4 grid gap-4 md:grid-cols-3">
-                    <input name="name" value="{{ $partner->name }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                    <input name="type" value="{{ $partner->type }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                    <input name="phone" value="{{ $partner->phone }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                    <input name="capacity_liter" type="number" value="{{ $partner->capacity_liter }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                    <select name="status" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"><option value="active" @selected($partner->status === 'active')>Aktif</option><option value="inactive" @selected($partner->status === 'inactive')>Nonaktif</option></select>
-                    <button type="button" data-target="{{ $partner->id }}" class="gps-btn rounded-md border border-slate-300 px-4 py-2 font-bold text-slate-700">Gunakan GPS</button>
-                    <textarea name="address" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 md:col-span-3" required>{{ $partner->address }}</textarea>
+                    {{-- Formulir ini bahkan tidak punya placeholder, sebab
+                         kotaknya selalu terisi. Enam kotak berjajar berisi
+                         "Mitra Angkut Karawang", "Collector", "081200000003",
+                         "500" tanpa satu pun keterangan: angka 500 itu bisa
+                         apa saja. --}}
+                    <label class="block">
+                        <span class="text-sm font-bold text-slate-700">Nama mitra</span>
+                        <input name="name" value="{{ $partner->name }}" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-bold text-slate-700">Tipe mitra</span>
+                        <input name="type" value="{{ $partner->type }}" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-bold text-slate-700">Telepon</span>
+                        <input name="phone" value="{{ $partner->phone }}" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-bold text-slate-700">Kapasitas (liter)</span>
+                        <input name="capacity_liter" type="number" value="{{ $partner->capacity_liter }}" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-bold text-slate-700">Status</span>
+                        <select name="status" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"><option value="active" @selected($partner->status === 'active')>Aktif</option><option value="inactive" @selected($partner->status === 'inactive')>Nonaktif</option></select>
+                    </label>
+                    <div class="flex items-end">
+                        <button type="button" data-target="{{ $partner->id }}" class="gps-btn w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50">Gunakan GPS</button>
+                    </div>
+                    <label class="block md:col-span-3">
+                        <span class="text-sm font-bold text-slate-700">Alamat</span>
+                        <textarea name="address" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>{{ $partner->address }}</textarea>
+                    </label>
                     <input name="latitude" id="lat-{{ $partner->id }}" type="hidden" value="{{ $partner->latitude }}">
                     <input name="longitude" id="lng-{{ $partner->id }}" type="hidden" value="{{ $partner->longitude }}">
                 </div>
-                <div id="partner-map-{{ $partner->id }}" class="mt-4 h-56 rounded-lg border border-slate-200"></div>
+                <div id="partner-map-{{ $partner->id }}" class="isolate mt-4 h-56 rounded-lg border border-slate-200"></div>
 
                 <div class="mt-4">
                     <div class="flex items-center justify-between gap-3">
                         <p class="text-sm font-bold">Aturan ongkir jemput</p>
-                        <button type="button" data-fee-add="{{ $partner->id }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 text-sm font-bold text-slate-700">Tambah Range</button>
+                        <button type="button" data-fee-add="{{ $partner->id }}" class="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-emerald-700 px-3.5 py-2 text-sm font-bold text-emerald-800 transition hover:bg-emerald-50">
+                    <span aria-hidden="true">+</span> Tambah Range
+                </button>
                     </div>
                     <div data-fee-list="{{ $partner->id }}" class="mt-3 grid gap-2">
                         @foreach($partner->deliveryFees as $index => $fee)
-                            <div data-fee-row class="grid gap-2 rounded-md bg-slate-50 p-3 md:grid-cols-[1fr_1fr_1fr_auto]">
-                                <input name="delivery_fees[{{ $index }}][min_distance_km]" type="number" step="0.01" min="0" value="{{ $fee->min_distance_km }}" placeholder="Min km" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                                <input name="delivery_fees[{{ $index }}][max_distance_km]" type="number" step="0.01" min="0" value="{{ $fee->max_distance_km }}" placeholder="Max km kosong = lebih dari" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
-                                <input name="delivery_fees[{{ $index }}][fee]" type="number" min="0" value="{{ $fee->fee }}" placeholder="Ongkir" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                                <button type="button" data-fee-remove class="rounded-md border border-rose-300 px-3 py-2 text-sm font-bold text-rose-700">Hapus</button>
+                            {{-- Label, bukan placeholder. Placeholder lenyap begitu
+                                 kotaknya diisi, sehingga baris yang sudah tersimpan
+                                 berubah menjadi tiga angka telanjang: 3, 5, 10000.
+                                 Keterangannya justru paling dibutuhkan setelah terisi,
+                                 yaitu ketika admin membacanya kembali. --}}
+                            <div data-fee-row class="grid gap-3 rounded-xl bg-slate-50 p-3 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
+                                <label class="block">
+                                    <span class="mb-1 block text-xs font-bold text-slate-600">Jarak minimum (km)</span>
+                                    <input name="delivery_fees[{{ $index }}][min_distance_km]" type="number" step="0.01" min="0" value="{{ $fee->min_distance_km }}" placeholder="0" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                                </label>
+                                <label class="block">
+                                    <span class="mb-1 block text-xs font-bold text-slate-600">Jarak maksimum (km)</span>
+                                    <input name="delivery_fees[{{ $index }}][max_distance_km]" type="number" step="0.01" min="0" value="{{ $fee->max_distance_km }}" placeholder="Kosongkan = tanpa batas" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+                                </label>
+                                <label class="block">
+                                    <span class="mb-1 block text-xs font-bold text-slate-600">Ongkir (Rp)</span>
+                                    <input name="delivery_fees[{{ $index }}][fee]" type="number" min="0" value="{{ $fee->fee }}" placeholder="0" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                                </label>
+                                <button type="button" data-fee-remove class="rounded-xl border border-rose-300 px-3 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50">Hapus</button>
                             </div>
                         @endforeach
                     </div>
+                    {{-- Keterangan yang sama sudah ada di form tambah mitra tetapi
+                         tidak pernah ada di sini, padahal justru di sinilah admin
+                         membaca ulang aturan yang dibuat orang lain. --}}
+                    <p class="mt-2 text-xs text-slate-500">Kosongkan jarak maksimal untuk range terakhir, artinya berlaku untuk jarak berapa pun di atas jarak minimumnya. Jarak di bawah range pertama otomatis gratis.</p>
                 </div>
 
                 <button class="mt-4 rounded-md bg-emerald-700 px-4 py-2 font-bold text-white">Simpan Perubahan</button>
@@ -110,10 +180,19 @@
                 row.dataset.feeRow = '';
                 row.className = 'grid gap-2 rounded-md bg-slate-50 p-3 md:grid-cols-[1fr_1fr_1fr_auto]';
                 row.innerHTML = `
-                    <input name="delivery_fees[${index}][min_distance_km]" type="number" step="0.01" min="0" value="${values.min ?? ''}" placeholder="Min km" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                    <input name="delivery_fees[${index}][max_distance_km]" type="number" step="0.01" min="0" value="${values.max ?? ''}" placeholder="Max km kosong = lebih dari" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
-                    <input name="delivery_fees[${index}][fee]" type="number" min="0" value="${values.fee ?? ''}" placeholder="Ongkir" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
-                    <button type="button" data-fee-remove class="rounded-md border border-rose-300 px-3 py-2 text-sm font-bold text-rose-700">Hapus</button>
+                    <label class="block">
+                        <span class="mb-1 block text-xs font-bold text-slate-600">Jarak minimum (km)</span>
+                        <input name="delivery_fees[${index}][min_distance_km]" type="number" step="0.01" min="0" value="${values.min ?? ''}" placeholder="0" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    </label>
+                    <label class="block">
+                        <span class="mb-1 block text-xs font-bold text-slate-600">Jarak maksimum (km)</span>
+                        <input name="delivery_fees[${index}][max_distance_km]" type="number" step="0.01" min="0" value="${values.max ?? ''}" placeholder="Kosongkan = tanpa batas" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+                    </label>
+                    <label class="block">
+                        <span class="mb-1 block text-xs font-bold text-slate-600">Ongkir (Rp)</span>
+                        <input name="delivery_fees[${index}][fee]" type="number" min="0" value="${values.fee ?? ''}" placeholder="0" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
+                    </label>
+                    <button type="button" data-fee-remove class="rounded-xl border border-rose-300 px-3 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50">Hapus</button>
                 `;
                 list.appendChild(row);
             }

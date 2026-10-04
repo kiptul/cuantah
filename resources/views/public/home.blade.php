@@ -134,7 +134,7 @@
 
                     <div class="mt-3 flex flex-wrap gap-2">
                         @foreach ([1, 5, 10, 20] as $liter)
-                            <button type="button" data-liters="{{ $liter }}" class="rounded-full border border-emerald-100 bg-white px-3 py-1.5 text-sm font-black text-emerald-800 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50">{{ $liter }} L</button>
+                            <button type="button" data-liters="{{ $liter }}" class="inline-flex min-h-11 items-center rounded-full border border-emerald-100 bg-white px-4 text-sm font-black text-emerald-800 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50">{{ $liter }} L</button>
                         @endforeach
                     </div>
 

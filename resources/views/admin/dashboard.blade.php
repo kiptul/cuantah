@@ -12,7 +12,7 @@
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
             <p class="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Ringkasan operasional &middot; {{ now()->translatedFormat('F Y') }}</p>
-            <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Dashboard</h1>
+            <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Dasbor</h1>
         </div>
         <div class="flex gap-2">
             <a href="{{ route('admin.transactions.index') }}" class="inline-flex flex-1 items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-slate-900/10 transition hover:ring-slate-900/20 sm:flex-none">Transaksi</a>
@@ -36,6 +36,27 @@
                 $delta = $compare['previous'] > 0
                     ? ($compare['current'] - $compare['previous']) / $compare['previous'] * 100
                     : null;
+
+                /**
+                 * Pertumbuhan seribu persen ke atas dinyatakan sebagai
+                 * kelipatan, bukan persen.
+                 *
+                 * Dalam format Indonesia titik adalah pemisah ribuan, sehingga
+                 * 1295 persen tercetak "1.295%" dan terbaca dua cara: seribu
+                 * dua ratus sembilan puluh lima persen, atau satu koma dua
+                 * sembilan lima persen. Di bawah seribu angkanya tidak pernah
+                 * memuat titik, jadi keraguannya hilang dengan sendirinya.
+                 *
+                 * Penurunan tidak pernah melewati seratus persen, sebab
+                 * nilainya tidak bisa kurang dari nol.
+                 */
+                $kelipatan = $delta !== null && $delta >= 1000
+                    ? $compare['current'] / $compare['previous']
+                    : null;
+
+                $perubahan = $kelipatan !== null
+                    ? number_format($kelipatan, 0, ',', '.').'×'
+                    : ($delta === null ? null : number_format(abs($delta), 0, ',', '.').'%');
             @endphp
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/5">
                 <div class="flex items-start justify-between gap-2">
@@ -45,7 +66,7 @@
                             'shrink-0 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums',
                             'bg-emerald-50 text-emerald-700' => $delta >= 0,
                             'bg-rose-50 text-rose-700' => $delta < 0,
-                        ]) title="Dibanding tanggal yang sama bulan lalu">{{ $delta >= 0 ? '▲' : '▼' }} {{ number_format(abs($delta), 0, ',', '.') }}%</span>
+                        ]) title="Dibanding tanggal yang sama bulan lalu" aria-label="{{ $delta >= 0 ? 'Naik' : 'Turun' }} {{ $perubahan }} dibanding tanggal yang sama bulan lalu">{{ $delta >= 0 ? '▲' : '▼' }} {{ $perubahan }}</span>
                     @endif
                 </div>
                 <p class="mt-3 text-2xl font-black tracking-tight tabular-nums text-slate-950">{{ $value }}</p>
@@ -53,6 +74,12 @@
             </div>
         @endforeach
     </section>
+
+    {{-- Artinya dulu hanya tersimpan di atribut title. Tooltip tidak pernah
+         muncul di layar sentuh, sehingga di ponsel lencana itu berupa angka
+         tanpa keterangan apa pun. Satu kalimat di sini menerangkan keempat
+         kartu sekaligus tanpa membuat tiap lencana menjadi panjang. --}}
+    <p class="mt-2 text-xs text-slate-500">Lencana di tiap kartu membandingkan bulan ini dengan bulan lalu.</p>
 
     {{-- Antrean tindakan: semua hal yang dilaporkan ke admin dan menunggu
          keputusan, dikumpulkan di satu tempat. --}}
@@ -139,9 +166,15 @@
     </section>
 
     <section class="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/5 sm:p-6">
+        {{-- min-w-0 wajib di sini. Sebagai grid item, kartunya mewarisi
+             min-width:auto, sehingga lebar minimum intrinsik canvas yang 300px
+             memaksa kolomnya melebar melewati layar. Di bawah 340px seluruh
+             halaman ikut tergeser dan teksnya terpotong di tepi kiri. Pada
+             xl ke atas gejalanya tertutup oleh minmax(0,1fr), jadi hanya
+             tampak di layar sempit. --}}
+        <div class="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/5 sm:p-6">
             <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
+                <div class="min-w-0">
                     <h2 class="text-lg font-black text-slate-950">Tren bulanan</h2>
                     <p class="mt-1 text-sm text-slate-500">Volume dan nilai transaksi selesai, 12 bulan terakhir.</p>
                 </div>

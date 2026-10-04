@@ -9,7 +9,6 @@ use App\Http\Controllers\Admin\TransactionController as AdminTransactionControll
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\PasswordResetController;
-use App\Http\Controllers\BarcodeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepositController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
@@ -17,6 +16,7 @@ use App\Http\Controllers\Employee\PickupController as EmployeePickupController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicController;
+use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,7 +51,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/setor', [DepositController::class, 'store'])->name('deposits.store');
     Route::get('/transaksi', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transaksi/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
-    Route::get('/transaksi/{transaction}/barcode', [BarcodeController::class, 'show'])->name('transactions.barcode');
+    Route::get('/transaksi/{transaction}/qr', [QrCodeController::class, 'show'])->name('transactions.qr');
+    /**
+     * Bukti bayar disajikan lewat rute, bukan lewat public/storage, supaya
+     * TransactionPolicy yang menentukan siapa boleh melihat. Penyetor pemilik
+     * transaksi dan staf mitra terkait lolos; yang lain tidak, termasuk
+     * karyawan mitra lain.
+     */
+    Route::get('/transaksi/{transaction}/bukti-bayar', [TransactionController::class, 'paymentProof'])->name('transactions.payment-proof');
     Route::post('/transaksi/{transaction}/batal', [TransactionController::class, 'cancel'])->name('transactions.cancel');
     Route::post('/transaksi/{transaction}/sanggah', [TransactionController::class, 'dispute'])->name('transactions.dispute');
 });
@@ -60,11 +67,10 @@ Route::middleware(['auth', 'employee'])->prefix('employee')->name('employee.')->
     Route::get('/dashboard', EmployeeDashboardController::class)->name('dashboard');
     Route::get('/scan-dropoff', [EmployeePickupController::class, 'scanForm'])->name('scan');
     Route::post('/scan-dropoff', [EmployeePickupController::class, 'scan'])->name('scan.store');
-    Route::get('/pickups/available', [EmployeePickupController::class, 'available'])->name('pickups.available');
-    Route::post('/pickups/{pickup}/claim', [EmployeePickupController::class, 'claim'])->name('pickups.claim');
     Route::get('/transactions', [EmployeePickupController::class, 'transactions'])->name('transactions.index');
     Route::get('/transactions/{transaction}', [EmployeePickupController::class, 'show'])->name('transactions.show');
     Route::post('/transactions/{transaction}/verify', [EmployeePickupController::class, 'verify'])->name('transactions.verify');
+    Route::post('/transactions/{transaction}/reject', [EmployeePickupController::class, 'reject'])->name('transactions.reject');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -74,6 +80,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/transactions/{transaction}/verify', [AdminTransactionController::class, 'verify'])->name('transactions.verify');
     Route::post('/transactions/{transaction}/reject', [AdminTransactionController::class, 'reject'])->name('transactions.reject');
     Route::post('/transactions/{transaction}/mark-paid', [AdminTransactionController::class, 'markPaid'])->name('transactions.mark-paid');
+    Route::post('/transactions/{transaction}/correct', [AdminTransactionController::class, 'correct'])->name('transactions.correct');
     Route::post('/transactions/{transaction}/resolve-dispute', [AdminTransactionController::class, 'resolveDispute'])->name('transactions.resolve-dispute');
 
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
