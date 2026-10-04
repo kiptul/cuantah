@@ -37,15 +37,15 @@ class TransactionController extends Controller
          * sebenarnya sudah terbaca benar, lalu menyimpulkan pemindainya rusak.
          */
         if (! $transaction) {
-            return back()->withErrors(['code' => 'Kode tidak ditemukan, atau transaksinya bukan milik mitra yang kamu kelola.']);
+            return back()->withInput()->withErrors(['code' => 'Kode tidak ditemukan, atau transaksinya bukan milik mitra yang kamu kelola.']);
         }
 
         if ($transaction->isFinal()) {
-            return back()->withErrors(['code' => 'Transaksi '.$transaction->code.' sudah '.$transaction->statusLabel().', jadi tidak ada lagi yang perlu diterima.']);
+            return back()->withInput()->withErrors(['code' => 'Transaksi '.$transaction->code.' sudah '.$transaction->statusLabel().', jadi tidak ada lagi yang perlu diterima.']);
         }
 
         if (! $transaction->adminCanComplete()) {
-            return back()->withErrors(['code' => 'Transaksi '.$transaction->code.' memakai metode jemput, dan diselesaikan karyawan di lapangan. Tugaskan karyawan lewat halaman Pickup.']);
+            return back()->withInput()->withErrors(['code' => 'Transaksi '.$transaction->code.' memakai metode jemput, dan diselesaikan karyawan di lapangan. Tugaskan karyawan lewat halaman Pickup.']);
         }
 
         return redirect()
