@@ -27,8 +27,28 @@ class VerifyTransactionRequest extends FormRequest
             return false;
         }
 
-        return $transaksi instanceof Transaction
-            && $pengguna->canAccessPartnerId($transaksi->partner_id);
+        if (! $transaksi instanceof Transaction) {
+            return false;
+        }
+
+        /**
+         * Transaksi jemput ditutup karyawan di lapangan, bukan admin.
+         *
+         * Karyawanlah yang berdiri di depan jelantahnya, menimbang, dan
+         * menyerahkan uangnya. Admin yang menyelesaikannya dari kantor
+         * mengetik volume yang tidak pernah ia timbang dan menandai lunas
+         * uang yang tidak pernah ia serahkan.
+         *
+         * Pemeriksaannya di sini, bukan hanya di tampilan. Menyembunyikan
+         * panelnya saja menutup pintunya tetapi meninggalkan jendelanya:
+         * rutenya tetap menerima kiriman dari tab lama yang masih terbuka
+         * atau dari siapa pun yang tahu alamatnya.
+         */
+        if ($transaksi->method === Transaction::METHOD_PICKUP) {
+            return false;
+        }
+
+        return $pengguna->canAccessPartnerId($transaksi->partner_id);
     }
 
     public function rules(): array
