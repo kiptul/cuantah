@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\DB;
  * Drop-off seperti itu hanya terlihat di tab Semua, padahal ia menunggu
  * dipegang karyawan baru.
  *
- * down() sengaja kosong: 'scanned' adalah keadaan keliru, dan barisnya tidak
- * bisa dibedakan lagi dari drop-off yang memang menunggu sejak awal.
+ * Tidak ada rollback aman: 'scanned' adalah keadaan keliru, dan barisnya
+ * tidak bisa dibedakan lagi dari drop-off yang memang menunggu sejak awal.
  */
 return new class extends Migration
 {
@@ -24,8 +24,5 @@ return new class extends Migration
             ->update(['status' => 'awaiting_dropoff', 'updated_at' => now()]);
     }
 
-    public function down(): void
-    {
-        //
-    }
+    public function down(): void {}
 };
