@@ -51,22 +51,40 @@
                     ],
                     default => [],
                 };
+
+                /**
+                 * Laci mana yang dibuka pemicu di bilah atas.
+                 *
+                 * Dulu tiap peran menggambar pemicunya sendiri: milik admin di
+                 * kiri logo, milik penyetor dan karyawan di kanan berdempetan
+                 * dengan lonceng. Tombol yang sama berpindah sisi menurut siapa
+                 * yang masuk, padahal lacinya sama-sama muncul dari kiri.
+                 *
+                 * Sekarang pemicunya satu dan tempatnya satu; yang berbeda
+                 * hanya saklar yang ditunjuknya, sebab laci admin tinggal di
+                 * layouts/admin agar tetap bersaudara dengan saklarnya.
+                 */
+                $lacinya = match (true) {
+                    $punyaLaciAdmin => 'adminDrawer',
+                    $menuUtama !== [] => 'appDrawer',
+                    default => null,
+                };
             @endphp
 
             <div class="flex min-w-0 items-center gap-1.5">
-            @if($punyaLaciAdmin)
-                {{-- Pemicu laci admin duduk di kiri logo, di sisi yang sama
-                     dengan arah laci itu muncul, sehingga tombol dan menunya
-                     terbaca sebagai satu kesatuan.
+            @if($lacinya)
+                {{-- Pemicu duduk di kiri logo, di sisi yang sama dengan arah
+                     laci itu muncul, sehingga tombol dan menunya terbaca
+                     sebagai satu kesatuan.
 
-                     Saklarnya tetap tinggal di layout admin karena
-                     peer-checked menuntut hubungan saudara dengan lacinya;
-                     yang berpindah hanya labelnya, dan label bekerja dari mana
-                     pun lewat atribut for. --}}
+                     Labelnya bekerja dari mana pun lewat atribut for, jadi ia
+                     boleh berada jauh dari saklarnya. Itu yang memungkinkan
+                     saklar laci admin tetap tinggal di layouts/admin, tempat
+                     peer-checked menuntutnya bersaudara dengan lacinya. --}}
                 <label
-                    for="adminDrawer"
+                    for="{{ $lacinya }}"
                     class="-ml-1 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-slate-700 transition hover:bg-slate-100 lg:hidden"
-                    aria-label="Buka menu operasional"
+                    aria-label="{{ $punyaLaciAdmin ? 'Buka menu operasional' : 'Buka menu' }}"
                 >
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M4 7H20M4 12H20M4 17H20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
@@ -87,11 +105,16 @@
                 @if($adalahAdmin)
                     <span class="hidden rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 sm:inline-flex">Admin CUANTAH</span>
                 @elseif($menuUtama !== [])
-                    {{-- Di sm ke atas menu tetap di header seperti semula. Di
-                         bawah itu header membungkus menjadi dua baris setinggi
-                         113px, yaitu 14 persen layar ponsel sebelum satu pun
-                         isi terlihat, jadi menunya pindah ke laci. --}}
-                    <div class="hidden items-center gap-2 sm:flex">
+                    {{-- Menu sebaris muncul mulai lg, ambang yang sama dengan
+                         sidebar admin. Sebelumnya ia muncul sejak sm sementara
+                         laci admin bertahan sampai lg, sehingga di antara 640
+                         dan 1024 piksel dua peran memakai dua pola navigasi
+                         yang berbeda di aplikasi yang sama.
+
+                         Di bawah ambang itu header membungkus menjadi dua baris
+                         setinggi 113px, yaitu 14 persen layar ponsel sebelum
+                         satu pun isi terlihat, jadi menunya pindah ke laci. --}}
+                    <div class="hidden items-center gap-2 lg:flex">
                         @foreach($menuUtama as $item)
                             <a
                                 href="{{ $item['url'] }}"
@@ -104,16 +127,6 @@
                             >{{ $item['label'] }}</a>
                         @endforeach
                     </div>
-
-                    <label
-                        for="appDrawer"
-                        class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-slate-700 transition hover:bg-slate-100 sm:hidden"
-                        aria-label="Buka menu"
-                    >
-                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M4 7H20M4 12H20M4 17H20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
-                        </svg>
-                    </label>
                 @endif
                 @auth
                     <x-notification-bell />
@@ -152,11 +165,11 @@
                  sana, dan beberapa halaman memuat peta. --}}
             <label
                 for="appDrawer"
-                class="fixed inset-0 z-[1050] hidden bg-slate-950/50 peer-checked:block sm:hidden"
+                class="fixed inset-0 z-[1050] hidden bg-slate-950/50 peer-checked:block lg:hidden"
                 aria-hidden="true"
             ></label>
 
-            <aside class="fixed inset-y-0 left-0 z-[1100] w-72 max-w-[85vw] -translate-x-full overflow-y-auto border-r border-slate-200 bg-white p-3 shadow-xl shadow-slate-950/10 transition-transform duration-200 ease-out peer-checked:translate-x-0 sm:hidden">
+            <aside class="fixed inset-y-0 left-0 z-[1100] w-72 max-w-[85vw] -translate-x-full overflow-y-auto border-r border-slate-200 bg-white p-3 shadow-xl shadow-slate-950/10 transition-transform duration-200 ease-out peer-checked:translate-x-0 lg:hidden">
                 <label
                     for="appDrawer"
                     class="mb-2 flex min-h-11 cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50"

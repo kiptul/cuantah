@@ -201,10 +201,95 @@ class AppDrawerTest extends TestCase
         $isi = $this->actingAs($this->penyetor())->get(route('dashboard'))->assertOk()->getContent();
 
         $this->assertStringContainsString(
-            'sm:hidden',
+            'lg:hidden',
             $this->tagAside($isi),
-            'Di sm ke atas menu kembali ke header, jadi lacinya tidak boleh ikut tampil.'
+            'Di lg ke atas menu kembali ke header, jadi lacinya tidak boleh ikut tampil.'
         );
+    }
+
+    private function adminBerlaci(): User
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $admin->partners()->sync([Partner::factory()->create()->id]);
+
+        return $admin;
+    }
+
+    /**
+     * @return array<string, array{0: User, 1: string}>
+     */
+    private function ketigaPeran(): array
+    {
+        return [
+            'penyetor' => [$this->penyetor(), route('dashboard')],
+            'karyawan' => [$this->karyawan(), route('employee.dashboard')],
+            'admin' => [$this->adminBerlaci(), route('admin.dashboard')],
+        ];
+    }
+
+    /**
+     * Ketiga peran memakai ambang yang sama.
+     *
+     * Laci admin dulu bertahan sampai lg sementara laci penyetor dan karyawan
+     * sudah menyerah di sm. Di antara 640 dan 1024 piksel aplikasi yang sama
+     * karena itu memakai dua pola navigasi sekaligus, tergantung siapa yang
+     * sedang masuk.
+     */
+    public function test_ambang_pemicu_laci_sama_untuk_ketiga_peran(): void
+    {
+        foreach ($this->ketigaPeran() as $sebutan => [$pengguna, $rute]) {
+            $isi = $this->actingAs($pengguna)->get($rute)->assertOk()->getContent();
+
+            $this->assertSame(
+                1,
+                preg_match('/<label\s+for="(?:app|admin)Drawer"\s+class="([^"]*)"/', $isi, $cocok),
+                "Pemicu laci {$sebutan} tidak ditemukan."
+            );
+
+            $kelas = preg_split('/\s+/', trim($cocok[1]));
+
+            $this->assertContains('lg:hidden', $kelas, "Pemicu laci {$sebutan} harus bertahan sampai ambang lg.");
+            $this->assertNotContains('sm:hidden', $kelas, "Pemicu laci {$sebutan} tidak boleh menyerah lebih awal di sm.");
+        }
+    }
+
+    /**
+     * Laci penyetor dan karyawan juga tidak boleh menyerah di sm.
+     *
+     * Pemicunya saja yang seragam belum cukup: bila lacinya sendiri masih
+     * sm:hidden, tombol yang tampil di 800 piksel membuka laci yang sudah
+     * disembunyikan CSS. Laci admin dikecualikan sebab di lg ia tidak hilang
+     * melainkan berubah menjadi sidebar yang menetap.
+     */
+    public function test_laci_aplikasi_bertahan_sampai_ambang_yang_sama(): void
+    {
+        foreach (['penyetor' => [$this->penyetor(), route('dashboard')], 'karyawan' => [$this->karyawan(), route('employee.dashboard')]] as $sebutan => [$pengguna, $rute]) {
+            $aside = $this->tagAside($this->actingAs($pengguna)->get($rute)->assertOk()->getContent());
+
+            $this->assertStringContainsString('lg:hidden', $aside, "Laci {$sebutan} harus bertahan sampai ambang lg.");
+            $this->assertStringNotContainsString('sm:hidden', $aside, "Laci {$sebutan} tidak boleh menyerah lebih awal di sm.");
+        }
+    }
+
+    /**
+     * Pemicunya duduk di sisi yang sama, yaitu sebelum logo.
+     *
+     * Milik admin dulu di kiri logo sedangkan milik penyetor dan karyawan di
+     * kanan berdempetan dengan lonceng, padahal lacinya sama-sama muncul dari
+     * kiri layar.
+     */
+    public function test_pemicu_laci_selalu_sebelum_logo(): void
+    {
+        foreach ($this->ketigaPeran() as $sebutan => [$pengguna, $rute]) {
+            $isi = $this->actingAs($pengguna)->get($rute)->assertOk()->getContent();
+
+            $pemicu = strpos($isi, '<label');
+            $logo = strpos($isi, '<svg viewBox="0 0 40 40"');
+
+            $this->assertNotFalse($pemicu, "Pemicu laci {$sebutan} tidak ditemukan.");
+            $this->assertNotFalse($logo, "Logo di header {$sebutan} tidak ditemukan.");
+            $this->assertLessThan($logo, $pemicu, "Pemicu laci {$sebutan} harus sebelum logo, bukan sesudahnya.");
+        }
     }
 
     public function test_seluruh_menu_penyetor_ada_di_dalam_laci(): void
