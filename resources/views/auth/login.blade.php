@@ -65,14 +65,27 @@
                     >
 
                     <label class="mt-5 flex items-center gap-3 text-sm font-bold text-slate-700">
+                        {{-- Checkbox bawaan peramban, bukan komponen DaisyUI.
+
+                             Kelas .checkbox menyetel appearance:none lalu menggambar
+                             centangnya sendiri lewat ::before yang mewarnai diri dari
+                             color elemen, sedangkan isinya diambil dari --input-color.
+                             Pada tema DaisyUI yang berlaku di sini color-base-content
+                             bernilai nyaris putih dan --input-color tidak diatur, jadi
+                             hasilnya centang putih di atas kotak putih: tampak tidak
+                             pernah tercentang padahal nilainya terkirim.
+
+                             Variabel --chkbg dan --chkfg yang dipakai sebelumnya milik
+                             DaisyUI 4; versi yang terpasang 5, dan keduanya diabaikan.
+
+                             accent-color mewarnai centang bawaan peramban tanpa
+                             bergantung pada tema sama sekali. --}}
                         <input
                             type="checkbox"
                             name="remember"
                             value="1"
                             class="
-                                checkbox checkbox-md rounded-md border-2 border-emerald-600 bg-white
-                                shadow-sm shadow-emerald-950/10 ring-2 ring-emerald-100
-                                [--chkbg:#047857] [--chkfg:white] checked:border-emerald-700
+                                h-5 w-5 shrink-0 cursor-pointer accent-emerald-700
                                 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200
                             "
                         >
