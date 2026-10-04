@@ -277,7 +277,7 @@
                      Transaksi jemput yang tersangkut tetap punya jalan keluar:
                      dipindahkan ke karyawan lain lewat halaman Pickup, atau
                      ditolak lewat panel di bawah. --}}
-                @if($transaction->method !== \App\Models\Transaction::METHOD_PICKUP)
+                @if($transaction->adminCanComplete())
                 <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
                     <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Selesaikan transaksi</h2>
                     @if($transaction->partner && (float) $transaction->partner->capacity_liter > 0)

@@ -75,6 +75,8 @@ Route::middleware(['auth', 'employee'])->prefix('employee')->name('employee.')->
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', App\Http\Controllers\Admin\DashboardController::class)->name('dashboard');
+    Route::get('/transactions/scan', [AdminTransactionController::class, 'scanForm'])->name('transactions.scan');
+    Route::post('/transactions/scan', [AdminTransactionController::class, 'scan'])->name('transactions.scan.store');
     Route::get('/transactions', [AdminTransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transactions/{transaction}', [AdminTransactionController::class, 'show'])->name('transactions.show');
     Route::post('/transactions/{transaction}/verify', [AdminTransactionController::class, 'verify'])->name('transactions.verify');

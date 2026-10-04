@@ -1,5 +1,19 @@
 <x-layouts.admin title="Kelola Transaksi">
-    <x-page-header eyebrow="Operasional" title="Kelola Transaksi" />
+    <x-page-header eyebrow="Operasional" title="Kelola Transaksi">
+        <x-slot:action>
+            {{-- Cadangan untuk saat seluruh karyawan sedang menjemput dan
+                 penyetor terlanjur datang ke lokasi mitra: admin memindai
+                 QR-nya sendiri, lalu menyelesaikannya dari halaman
+                 rinciannya. --}}
+            <a href="{{ route('admin.transactions.scan') }}"
+               class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-black text-white shadow-sm shadow-emerald-900/20 transition hover:bg-emerald-800">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M7 4H5a1 1 0 0 0-1 1v2M17 4h2a1 1 0 0 1 1 1v2M7 20H5a1 1 0 0 1-1-1v-2M17 20h2a1 1 0 0 0 1-1v-2M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Pindai QR
+            </a>
+        </x-slot:action>
+    </x-page-header>
 
     @php
         $isFiltered = $filters['q'] !== '' || $filters['status'] !== null || $filters['method'] !== null;

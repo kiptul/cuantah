@@ -144,6 +144,27 @@ class Transaction extends Model
     }
 
     /**
+     * Apakah transaksi ini boleh ditutup admin dari halaman rinciannya.
+     *
+     * Setoran antar sendiri boleh: penyetornya datang ke lokasi mitra, jadi
+     * admin di sana memang menerimanya langsung, dan itu pula cadangannya
+     * ketika seluruh karyawan sedang menjemput.
+     *
+     * Setoran jemput tidak. Yang berdiri di depan jelantah dan penyetornya
+     * adalah karyawan, sehingga admin yang menutupnya dari kantor mengetik
+     * volume yang tidak pernah ia timbang dan menandai lunas uang yang tidak
+     * pernah ia serahkan.
+     *
+     * Jawabannya tinggal di sini, bukan diulang di tampilan, di FormRequest,
+     * dan di pemindai. Aturan yang ditulis tiga kali akan menyimpang di salah
+     * satunya begitu salah satu tempat diubah dan dua lainnya terlupa.
+     */
+    public function adminCanComplete(): bool
+    {
+        return $this->method !== self::METHOD_PICKUP && ! $this->isFinal();
+    }
+
+    /**
      * Batas akhir penyetor boleh menyanggah takaran.
      *
      * Dihitung dari completed_at, bukan updated_at. Dengan updated_at, satu
