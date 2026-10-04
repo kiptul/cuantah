@@ -178,6 +178,27 @@ class AdminScanTest extends TestCase
     }
 
     /**
+     * Kode yang ditolak tetap tertinggal di kolomnya.
+     *
+     * Tanpa withInput() pada kembaliannya, old('code') selalu kosong dan admin
+     * harus mengetik ulang kode yang sebenarnya sudah terbaca benar. Kekeliruan
+     * itu tidak terlihat dari kode tampilannya, yang memang sudah memanggil
+     * old('code'), melainkan dari apa yang dikirim pengendalinya.
+     */
+    public function test_kode_yang_ditolak_tidak_hilang_dari_kolomnya(): void
+    {
+        $this->siapkan();
+        $transaksi = $this->transaksi(['method' => Transaction::METHOD_PICKUP]);
+
+        $this->pindai($transaksi->code)->assertSessionHasInput('code', $transaksi->code);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.transactions.scan'))
+            ->assertOk()
+            ->assertSee('value="'.$transaksi->code.'"', false);
+    }
+
+    /**
      * Transaksi mitra lain tidak boleh bocor lewat pemindai.
      *
      * Halaman rinciannya sudah dijaga, tetapi pemindai menerima kode mentah
