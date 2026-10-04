@@ -297,6 +297,46 @@ class TransactionCorrectionTest extends TestCase
             ->assertSee('Alasan koreksi');
     }
 
+    public function test_kotak_transaksi_sudah_selesai_tidak_lagi_ditampilkan(): void
+    {
+        $this->siapkan();
+        $transaksi = $this->selesai(1.5);
+
+        /**
+         * Kotak itu menyebut statusnya tidak bisa diubah lagi dan menyuruh
+         * membuat transaksi baru bila ada kekeliruan. Keterangannya menjadi
+         * keliru sejak koreksi volume tersedia, dan kotaknya sendiri tidak
+         * menawarkan tindakan apa pun.
+         */
+        $this->actingAs($this->admin)
+            ->get(route('admin.transactions.show', $transaksi))
+            ->assertOk()
+            ->assertDontSee('Transaksi sudah')
+            ->assertDontSee('buat transaksi baru');
+    }
+
+    public function test_panel_aksi_tetap_muncul_pada_transaksi_belum_final(): void
+    {
+        $this->siapkan();
+
+        $transaksi = Transaction::factory()->create([
+            'user_id' => $this->penyetor->id,
+            'partner_id' => $this->mitra->id,
+            'oil_price_id' => OilPrice::factory(),
+            'status' => Transaction::STATUS_PENDING,
+        ]);
+
+        /**
+         * Kotak itu dibuang dengan membalik cabang kondisinya, jadi cabang
+         * satunya ikut tersentuh dan harus diperiksa.
+         */
+        $this->actingAs($this->admin)
+            ->get(route('admin.transactions.show', $transaksi))
+            ->assertOk()
+            ->assertSee('Selesaikan transaksi')
+            ->assertSee('Tolak transaksi');
+    }
+
     public function test_strip_tandai_lunas_muncul_sendiri_sesudah_koreksi_naik(): void
     {
         $this->siapkan();

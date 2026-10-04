@@ -238,16 +238,17 @@
                 </div>
             @endif
 
-            {{-- Transaksi yang sudah berstatus akhir tidak lagi menampilkan
-                 tombol aksi. Sebelumnya semuanya tetap terlihat, sehingga
-                 tombol Tolak menggoda ditekan pada transaksi yang sudah
-                 selesai dan baru ditahan setelah dikirim. --}}
-            @if($final)
-                <div class="rounded-2xl bg-white p-5 text-center shadow-sm ring-1 ring-slate-900/5">
-                    <p class="text-sm font-bold text-slate-900">Transaksi sudah {{ $transaction->statusLabel() }}</p>
-                    <p class="mt-1.5 text-sm leading-6 text-slate-500">Statusnya tidak bisa diubah lagi. Bila ada kekeliruan, catat penyesuaiannya lewat penyaluran atau buat transaksi baru.</p>
-                </div>
-            @else
+            {{-- Panel aksi hanya untuk transaksi yang belum berstatus akhir.
+                 Sebelumnya semuanya tetap terlihat, sehingga tombol Tolak
+                 menggoda ditekan pada transaksi yang sudah selesai dan baru
+                 ditahan setelah dikirim.
+
+                 Dulu di sini ada kotak "Transaksi sudah selesai" yang menyebut
+                 statusnya tidak bisa diubah lagi dan menyuruh membuat transaksi
+                 baru bila ada kekeliruan. Keterangan itu menjadi keliru sejak
+                 koreksi volume tersedia, dan kotaknya sendiri tidak menawarkan
+                 tindakan apa pun. --}}
+            @if(! $final)
                 <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
                     <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Selesaikan transaksi</h2>
                     <form method="post" action="{{ route('admin.transactions.verify', $transaction) }}" enctype="multipart/form-data" class="mt-4 space-y-4">
