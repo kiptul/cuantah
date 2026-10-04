@@ -1,4 +1,6 @@
-<x-layouts.app :title="$title ?? 'Admin CUANTAH'">
+{{-- drawer="admin" memberi tahu layout dasar bahwa halaman ini membawa laci
+     admin, sehingga tombol pembukanya hanya tampil bila lacinya memang ada. --}}
+<x-layouts.app :title="$title ?? 'Admin CUANTAH'" drawer="admin">
     <x-slot:head>
         {{ $head ?? '' }}
     </x-slot:head>
@@ -101,4 +103,5 @@
              terpisah di atas isi halaman. --}}
         <section class="min-w-0">{{ $slot }}</section>
     </div>
+
 </x-layouts.app>

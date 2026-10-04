@@ -63,6 +63,16 @@ class DatabaseSeeder extends Seeder
 
         $admin->partners()->syncWithoutDetaching([$partner->id]);
         $employee->partners()->syncWithoutDetaching([$partner->id]);
+
+        $this->call([
+            PartnerSeeder::class,
+            OilPriceHistorySeeder::class,
+        ]);
+        $this->callWith([StaffSeeder::class, DepositorSeeder::class], ['password' => $password]);
+        $this->call([
+            TransactionSeeder::class,
+            DistributionSeeder::class,
+        ]);
     }
 
     /**

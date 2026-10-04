@@ -18,10 +18,8 @@ use Tests\TestCase;
  * belum dipegang siapa pun, hanya bisa dijawab dengan membaca satu per satu
  * sampai halaman terakhir.
  *
- * Ditolak dan dibatalkan sengaja tidak punya kategori: keduanya sudah
- * berakhir dan tidak menuntut tindakan, jadi tempatnya di daftar lengkap.
- * Karena itu jumlah ketiga kategori boleh lebih kecil daripada jumlah
- * seluruhnya, dan itu bukan selisih yang hilang.
+ * Ditolak dan dibatalkan digabung dalam kategori Dibatalkan, sehingga
+ * jumlah seluruh kategori sama dengan jumlah "Semua".
  */
 class AdminPickupCategoryTest extends TestCase
 {
@@ -185,6 +183,71 @@ class AdminPickupCategoryTest extends TestCase
             ->get(route('admin.pickups.index', ['kategori' => 'menunggu']))
             ->assertOk()
             ->assertSee('Tidak ada pickup berkategori Menunggu');
+    }
+
+    public function test_dibatalkan_mencakup_yang_ditolak_dan_dibatalkan(): void
+    {
+        $this->siapkan();
+        $this->pickupBerstatus('cancelled');
+        $this->pickupBerstatus('rejected');
+        $this->pickupBerstatus('completed');
+
+        $halaman = $this->actingAs($this->admin)
+            ->get(route('admin.pickups.index', ['kategori' => 'dibatalkan']))
+            ->assertOk();
+
+        $this->assertSame(2, $halaman->viewData('pickups')->total());
+        $this->assertSame(2, $halaman->viewData('categoryCounts')['dibatalkan']);
+        $this->assertSame(3, $halaman->viewData('categoryCounts')['semua']);
+    }
+
+    public function test_menunggu_diurutkan_menurut_jadwal_terdekat(): void
+    {
+        $this->siapkan();
+        $lusa = $this->pickupBerstatus('pending');
+        $lusa->update(['pickup_date' => now()->addDays(2)->toDateString()]);
+        $besok = $this->pickupBerstatus('pending');
+        $besok->update(['pickup_date' => now()->addDay()->toDateString()]);
+
+        $urutan = $this->actingAs($this->admin)
+            ->get(route('admin.pickups.index', ['kategori' => 'menunggu']))
+            ->assertOk()
+            ->viewData('pickups')
+            ->pluck('id')
+            ->all();
+
+        $this->assertSame([$besok->id, $lusa->id], $urutan, 'Yang dijadwalkan lebih dulu harus ditugaskan lebih dulu.');
+    }
+
+    public function test_drop_off_yang_dilepas_kembali_ke_kategori_menunggu(): void
+    {
+        $this->siapkan();
+        $karyawan = User::factory()->create(['role' => 'employee']);
+        $karyawan->partners()->sync([$this->mitra->id]);
+        $transaksi = Transaction::factory()->create([
+            'partner_id' => $this->mitra->id,
+            'oil_price_id' => OilPrice::factory(),
+            'status' => Transaction::STATUS_SCHEDULED,
+        ]);
+        $pickup = $transaksi->pickup()->create([
+            'partner_id' => $this->mitra->id,
+            'address' => 'Jl. Mitra',
+            'latitude' => -6.3,
+            'longitude' => 107.3,
+            'status' => 'assigned',
+            'assigned_user_id' => $karyawan->id,
+            'scanned_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)->post(route('admin.pickups.unassign', $pickup))->assertSessionHasNoErrors();
+
+        $this->assertSame('awaiting_dropoff', $pickup->fresh()->status);
+
+        $halaman = $this->actingAs($this->admin)
+            ->get(route('admin.pickups.index', ['kategori' => 'menunggu']))
+            ->assertOk();
+
+        $this->assertSame(1, $halaman->viewData('pickups')->total(), 'Drop-off yang dilepas harus menunggu karyawan baru, bukan hilang dari kategori.');
     }
 
     public function test_hitungan_tidak_menembus_batas_mitra(): void

@@ -118,4 +118,15 @@ class PickupAssignmentTest extends TestCase
             'Daftar pickup harus memakai satu peta bersama, bukan satu peta per baris.'
         );
     }
+
+    public function test_pickup_dibatalkan_tidak_menawarkan_assignment(): void
+    {
+        $pickup = $this->pickupWithStatus('cancelled');
+        $admin = $this->staffFor($pickup, 'admin');
+        $employee = $this->staffFor($pickup, 'employee');
+
+        $this->actingAs($admin)
+            ->post(route('admin.pickups.assign', $pickup), ['assigned_user_id' => $employee->id])
+            ->assertStatus(422);
+    }
 }

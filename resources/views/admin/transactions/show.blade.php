@@ -269,6 +269,18 @@
             @if(! $final)
                 <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
                     <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Selesaikan transaksi</h2>
+                    @if($transaction->partner && (float) $transaction->partner->capacity_liter > 0)
+                        @php
+                            $sisaTampung = (float) $transaction->partner->capacity_liter - $transaction->partner->availableLiter();
+                        @endphp
+                        {{-- Penyelesaian tidak ditahan oleh kapasitas; admin cukup
+                             tahu sebelum menekan tombol bahwa stoknya akan meluap. --}}
+                        @if($sisaTampung < $estimasi)
+                            <p class="mt-3 rounded-xl bg-rose-50 px-3 py-2.5 text-xs font-semibold leading-5 text-rose-800 ring-1 ring-rose-900/10">
+                                Sisa daya tampung {{ $transaction->partner->name }} tinggal {{ number_format(max($sisaTampung, 0), 1, ',', '.') }} L. Transaksi tetap bisa diselesaikan, tetapi stok mitra akan melebihi kapasitas.
+                            </p>
+                        @endif
+                    @endif
                     <form method="post" action="{{ route('admin.transactions.verify', $transaction) }}" enctype="multipart/form-data" class="mt-4 space-y-4">
                         @csrf
                         <x-form-field label="Volume aktual (L)" name="actual_liter" type="number"
