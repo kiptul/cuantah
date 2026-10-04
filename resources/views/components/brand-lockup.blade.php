@@ -22,6 +22,20 @@
             'ikon' => 'h-6 w-6',
             'kata' => 'text-xl text-emerald-800',
             'tagline' => 'hidden text-[10px] tracking-[0.24em] text-emerald-700/70 sm:block',
+            'teks' => 'Cuan dari minyak jelantah',
+        ],
+        // Panel admin memakai lambang yang sama dengan sisi aplikasi; yang
+        // membedakannya hanya tagline, sebab yang perlu disebut adalah sisi
+        // mana yang sedang terbuka, bukan merek yang berbeda. Taglinenya
+        // tidak disembunyikan di layar sempit karena di sanalah pil "Admin
+        // CUANTAH" ikut hilang.
+        'admin' => [
+            'jarak' => 'gap-2.5',
+            'keping' => 'h-10 w-10 rounded-2xl bg-emerald-700 text-white shadow-lg shadow-emerald-900/20',
+            'ikon' => 'h-6 w-6',
+            'kata' => 'text-xl text-emerald-800',
+            'tagline' => 'block text-[10px] tracking-[0.16em] text-emerald-700/70',
+            'teks' => 'Admin panel',
         ],
         'header' => [
             'jarak' => 'gap-3',
@@ -29,6 +43,7 @@
             'ikon' => 'h-7 w-7 sm:h-8 sm:w-8',
             'kata' => 'text-xl text-emerald-800 sm:text-2xl',
             'tagline' => 'hidden text-[10px] tracking-[0.24em] text-emerald-700/70 sm:block',
+            'teks' => 'Cuan dari minyak jelantah',
         ],
         // Kaki halaman berlatar gelap, jadi warnanya dibalik: keping putih
         // dengan lambang hijau.
@@ -38,6 +53,7 @@
             'ikon' => 'h-6 w-6 sm:h-7 sm:w-7',
             'kata' => 'text-xl text-white sm:text-2xl',
             'tagline' => 'block text-[10px] tracking-[0.2em] text-emerald-200',
+            'teks' => 'Cuan dari minyak jelantah',
         ],
         // Halaman masuk dan daftar: lambangnya yang menyambut, jadi paling besar.
         'auth' => [
@@ -46,6 +62,7 @@
             'ikon' => 'h-11 w-11',
             'kata' => 'text-4xl text-emerald-800',
             'tagline' => 'block text-sm tracking-[0.28em] text-emerald-700/70',
+            'teks' => 'Cuan dari minyak jelantah',
         ],
     ][$variant] ?? null;
 
@@ -66,7 +83,7 @@
     <span class="min-w-0 text-left">
         <span class="block font-black leading-none tracking-tight {{ $bentuk['kata'] }}">CUANTAH</span>
         @if($tagline)
-            <span class="mt-1 font-black uppercase leading-none {{ $bentuk['tagline'] }}">Cuan dari minyak jelantah</span>
+            <span class="mt-1 font-black uppercase leading-none {{ $bentuk['tagline'] }}">{{ $bentuk['teks'] }}</span>
         @endif
     </span>
 </span>
