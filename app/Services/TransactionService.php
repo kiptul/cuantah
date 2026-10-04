@@ -108,7 +108,7 @@ class TransactionService
                 'longitude' => $longitude,
                 'pickup_date' => $isPickup ? $data['pickup_date'] : null,
                 'pickup_time' => $isPickup ? $data['pickup_time'] : null,
-                'status' => $isPickup ? 'pending' : 'awaiting_dropoff',
+                'status' => $isPickup ? Transaction::STATUS_PENDING : Transaction::STATUS_AWAITING_DROPOFF,
             ]);
 
             Notification::create([
@@ -205,7 +205,9 @@ class TransactionService
              */
             $pickup->update([
                 'assigned_user_id' => null,
-                'status' => $pickup->transaction->method === Transaction::METHOD_DROP_OFF ? 'awaiting_dropoff' : 'pending',
+                'status' => $pickup->transaction->method === Transaction::METHOD_DROP_OFF
+                    ? Transaction::STATUS_AWAITING_DROPOFF
+                    : Transaction::STATUS_PENDING,
                 'assigned_at' => null,
             ]);
 

@@ -20,6 +20,15 @@ class Transaction extends Model
 
     public const STATUS_PENDING = 'pending';
 
+    /**
+     * Setoran antar sendiri yang menunggu dibawa penyetor ke mitra.
+     *
+     * Status ini sudah lama ditulis layanan, tetapi tidak pernah terdaftar
+     * bersama yang lain, sehingga setiap bagian yang membaca daftar status
+     * memperlakukannya seolah tidak ada.
+     */
+    public const STATUS_AWAITING_DROPOFF = 'awaiting_dropoff';
+
     public const STATUS_SCHEDULED = 'scheduled';
 
     public const STATUS_PICKED_UP = 'picked_up';
@@ -60,6 +69,7 @@ class Transaction extends Model
      */
     public const STATUS_LABELS = [
         self::STATUS_PENDING => 'menunggu',
+        self::STATUS_AWAITING_DROPOFF => 'menunggu diantar',
         self::STATUS_SCHEDULED => 'dijadwalkan',
         self::STATUS_PICKED_UP => 'dijemput',
         self::STATUS_VERIFICATION => 'dalam verifikasi',
