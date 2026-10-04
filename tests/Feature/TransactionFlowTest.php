@@ -129,7 +129,9 @@ class TransactionFlowTest extends TestCase
             'actual_liter' => 4.8,
             'payment_method' => 'transfer',
             'payment_status' => 'paid',
-            'payment_proof' => UploadedFile::fake()->image('transfer.jpg'),
+            // create() dengan tipe MIME, bukan image(): image() menuntut
+            // ekstensi GD, sedangkan aplikasinya tidak pernah mendekode gambar.
+            'payment_proof' => UploadedFile::fake()->create('transfer.jpg', 120, 'image/jpeg'),
         ])->assertRedirect();
 
         $this->assertDatabaseHas('transactions', [
@@ -305,7 +307,7 @@ class TransactionFlowTest extends TestCase
                 'actual_liter' => 7.5,
                 'payment_method' => 'cash',
                 'payment_status' => 'paid',
-                'payment_proof' => UploadedFile::fake()->image('serah-terima.jpg'),
+                'payment_proof' => UploadedFile::fake()->create('serah-terima.jpg', 120, 'image/jpeg'),
             ])
             ->assertRedirect(route('employee.dashboard'))
             ->assertSessionHas('success');
@@ -345,7 +347,7 @@ class TransactionFlowTest extends TestCase
 
         $this->actingAs($admin)
             ->post(route('admin.transactions.mark-paid', $transaction), [
-                'payment_proof' => UploadedFile::fake()->image('transfer.jpg'),
+                'payment_proof' => UploadedFile::fake()->create('transfer.jpg', 120, 'image/jpeg'),
             ])
             ->assertSessionHas('success');
 
@@ -367,7 +369,7 @@ class TransactionFlowTest extends TestCase
 
         $this->actingAs($admin)
             ->post(route('admin.transactions.mark-paid', $transaction), [
-                'payment_proof' => UploadedFile::fake()->image('transfer.jpg'),
+                'payment_proof' => UploadedFile::fake()->create('transfer.jpg', 120, 'image/jpeg'),
             ])
             ->assertSessionHasErrors('payment_status');
 

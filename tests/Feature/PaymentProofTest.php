@@ -146,7 +146,15 @@ class PaymentProofTest extends TestCase
 
         $this->actingAs($this->karyawan)
             ->post(route('employee.transactions.verify', $transaksi), $this->isianVerifikasi([
-                'payment_proof' => UploadedFile::fake()->image('serah-terima.jpg'),
+                /**
+                 * Dibuat lewat create() dengan tipe MIME, bukan image(), sebab
+                 * image() menggambar raster sungguhan dan menuntut ekstensi GD.
+                 * Aplikasi ini tidak pernah mendekode gambar: berkasnya disimpan
+                 * apa adanya, dan ketiga aturannya, image, mimes, dan max, bekerja
+                 * pada tipe MIME serta ukuran. Menuntut GD hanya membuat seluruh
+                 * test bukti bayar galat di mesin yang tidak memasangnya.
+                 */
+                'payment_proof' => UploadedFile::fake()->create('serah-terima.jpg', 120, 'image/jpeg'),
             ]))
             ->assertSessionHasNoErrors();
 
@@ -213,7 +221,7 @@ class PaymentProofTest extends TestCase
 
         $this->actingAs($this->admin)
             ->post(route('admin.transactions.mark-paid', $transaksi), [
-                'payment_proof' => UploadedFile::fake()->image('transfer.png'),
+                'payment_proof' => UploadedFile::fake()->create('transfer.png', 120, 'image/png'),
             ])
             ->assertSessionHas('success');
 
@@ -250,7 +258,7 @@ class PaymentProofTest extends TestCase
 
         $this->actingAs($this->admin)
             ->post(route('admin.transactions.mark-paid', $transaksi), [
-                'payment_proof' => UploadedFile::fake()->image('transfer.jpg')->size(5121),
+                'payment_proof' => UploadedFile::fake()->create('transfer.jpg', 5121, 'image/jpeg'),
             ])
             ->assertSessionHasErrors('payment_proof');
     }
@@ -260,7 +268,7 @@ class PaymentProofTest extends TestCase
         $transaksi = $this->selesaiBelumDibayar();
 
         $this->actingAs($this->admin)->post(route('admin.transactions.mark-paid', $transaksi), [
-            'payment_proof' => UploadedFile::fake()->image('transfer.jpg'),
+            'payment_proof' => UploadedFile::fake()->create('transfer.jpg', 120, 'image/jpeg'),
         ]);
 
         return $transaksi->refresh();
