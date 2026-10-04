@@ -222,10 +222,13 @@ class AccessBoundaryTest extends TestCase
             'oil_price_id' => $harga->id,
         ]);
 
+        // Yang dijaga adalah tindakannya disembunyikan. Kotak "Transaksi sudah
+        // selesai" yang dulu ikut diperiksa di sini sudah dibuang: isinya
+        // menyuruh mencatat penyesuaian lewat penyaluran, dan itu keliru sejak
+        // koreksi volume tersedia tepat di bawahnya.
         $this->actingAs($admin)
             ->get(route('admin.transactions.show', $selesai))
             ->assertOk()
-            ->assertSee('Transaksi sudah selesai')
             ->assertDontSee('Tolak Transaksi')
             ->assertDontSee('Selesaikan Transaksi');
     }
