@@ -8,7 +8,9 @@ use Illuminate\Contracts\View\View;
 
 class QrCodeController extends Controller
 {
-    /** Lebar zona sepi di tiap sisi, dalam satuan modul. Spesifikasi QR menuntut empat. */
+    /**
+     * Lebar zona kosong di tiap sisi QR, dihitung dalam modul.
+     */
     private const ZONA_SEPI = 4;
 
     public function show(Transaction $transaction, QrEncoder $encoder): View
