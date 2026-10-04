@@ -35,12 +35,35 @@ Aplikasi terbuka di <http://127.0.0.1:8000>.
 
 ### Akun contoh
 
-Seeder membuat tiga akun: `admin@cuantah.test`, `karyawan@cuantah.test`, dan
-`user@cuantah.test`.
+Seeder membuat tiga akun untuk mencoba ketiga peran:
 
-Kata sandinya diambil dari `SEED_PASSWORD` di `.env`. Bila dikosongkan, seeder
-membuat kata sandi acak dan menampilkannya sekali di layar — catat saat itu
-juga, sebab nilainya tidak disimpan di mana pun.
+| Peran | Email |
+|---|---|
+| Admin | `admin@cuantah.test` |
+| Karyawan | `karyawan@cuantah.test` |
+| Penyetor | `user@cuantah.test` |
+
+Kata sandi ketiganya sama, diambil dari `SEED_PASSWORD` di `.env`. Isi lebih
+dulu sebelum menjalankan seeder, misalnya:
+
+```
+SEED_PASSWORD=pwakundem0
+```
+
+Bila dibiarkan kosong, seeder membuat kata sandi acak dan menampilkannya sekali
+di layar; catat saat itu juga, sebab nilainya tidak disimpan di mana pun. Kata
+sandinya harus memuat huruf dan angka serta sedikitnya delapan karakter, sama
+seperti aturan yang berlaku di dalam aplikasi.
+
+Kata sandi ketiga akun dapat diganti belakangan tanpa menyentuh data lain:
+
+```bash
+php artisan cuantah:rotate-seed-passwords --force --password=pwakundem0
+```
+
+Selain ketiganya, seeder juga mengisi mitra, riwayat harga, serta transaksi dan
+penyaluran contoh, sehingga setiap halaman langsung berisi tanpa perlu
+memasukkan data lebih dulu.
 
 ## Pengujian
 

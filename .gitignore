@@ -31,3 +31,6 @@ graphify-out/
 /CLAUDE.md
 /.mcp.json
 /graphify-out
+/.agents
+/AGENTS.md
+/boost.json
