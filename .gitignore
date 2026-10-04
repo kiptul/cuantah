@@ -25,3 +25,9 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 graphify-out/
+
+# Konfigurasi perkakas pengembangan, bukan bagian dari aplikasi.
+/.claude
+/CLAUDE.md
+/.mcp.json
+/graphify-out
