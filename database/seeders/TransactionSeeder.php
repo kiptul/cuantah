@@ -274,6 +274,7 @@ class TransactionSeeder extends Seeder
             'payment_method' => fake()->boolean(70) ? 'cash' : 'transfer',
             'payment_status' => $paid ? 'paid' : 'unpaid',
             'paid_at' => $paid ? $at : null,
+            'completed_at' => $at,
             'status' => Transaction::STATUS_COMPLETED,
             'updated_at' => $at,
         ])->save();

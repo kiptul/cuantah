@@ -24,7 +24,13 @@ class PickupController extends Controller
                 $category,
                 fn ($query, string $kategori) => $query->whereIn('status', Pickup::statusesForCategory($kategori))
             )
-            ->latest()
+            // Yang menunggu diurutkan menurut jadwal terdekat agar yang paling
+            // mendesak ditugaskan lebih dulu; drop-off tanpa jadwal di akhir.
+            ->when(
+                $category === 'menunggu',
+                fn ($query) => $query->orderByRaw('pickup_date is null')->orderBy('pickup_date')->orderBy('pickup_time')->oldest(),
+                fn ($query) => $query->latest(),
+            )
             ->paginate(12)
             /**
              * Tanpa withQueryString, tautan halaman 2 kehilangan kategorinya

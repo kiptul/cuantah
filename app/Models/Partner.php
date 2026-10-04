@@ -67,7 +67,11 @@ class Partner extends Model
                 ['transactions as collected_liter' => fn (Builder $transaction) => $transaction->where('status', Transaction::STATUS_COMPLETED)],
                 'actual_liter',
             )
-            ->withSum('distributions as distributed_liter', 'volume_liter');
+            ->withSum('distributions as distributed_liter', 'volume_liter')
+            ->withSum(
+                ['transactions as incoming_liter' => fn (Builder $transaction) => $transaction->whereNotIn('status', Transaction::FINAL_STATUSES)],
+                'estimated_liter',
+            );
     }
 
     /**
@@ -90,6 +94,42 @@ class Partner extends Model
         $tersalur = (float) $this->distributions()->sum('volume_liter');
 
         return round($terkumpul - $tersalur, 2);
+    }
+
+    /**
+     * Perkiraan liter dari setoran yang belum selesai, menurut estimasi penyetor.
+     *
+     * Stok hanya menghitung setoran yang sudah ditakar. Tanpa angka ini,
+     * beberapa setoran yang diajukan bersamaan masing-masing lolos
+     * pemeriksaan kapasitas terhadap sisa yang sama, lalu bersama-sama
+     * melampauinya begitu selesai.
+     */
+    public function incomingLiter(): float
+    {
+        if (array_key_exists('incoming_liter', $this->attributes)) {
+            return round((float) $this->attributes['incoming_liter'], 2);
+        }
+
+        return round((float) $this->transactions()
+            ->whereNotIn('status', Transaction::FINAL_STATUSES)
+            ->sum('estimated_liter'), 2);
+    }
+
+    /**
+     * Stok yang akan ada bila seluruh setoran berjalan selesai sesuai estimasi.
+     */
+    public function projectedLiter(): float
+    {
+        return round($this->availableLiter() + $this->incomingLiter(), 2);
+    }
+
+    /**
+     * Setoran tetap diterima meski proyeksinya melewati kapasitas; yang
+     * berubah hanya admin diperingatkan untuk menjadwalkan penyaluran.
+     */
+    public function isProjectedOverCapacity(): bool
+    {
+        return (float) $this->capacity_liter > 0 && $this->projectedLiter() > (float) $this->capacity_liter;
     }
 
     public function deliveryFeeForDistance(float $distanceKm): int

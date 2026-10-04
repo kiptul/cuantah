@@ -49,8 +49,8 @@ class DistributionSeeder extends Seeder
         $collectedPerMonth = Transaction::query()
             ->where('partner_id', $partner->id)
             ->where('status', Transaction::STATUS_COMPLETED)
-            ->get(['actual_liter', 'updated_at'])
-            ->groupBy(fn (Transaction $transaction) => $transaction->updated_at->format('Y-m'))
+            ->get(['actual_liter', 'completed_at'])
+            ->groupBy(fn (Transaction $transaction) => $transaction->completed_at->format('Y-m'))
             ->map(fn ($transactions) => (float) $transactions->sum('actual_liter'));
 
         $stock = 0.0;

@@ -55,9 +55,10 @@ class Pickup extends Model
      * ditugaskan, dan drop-off yang sudah dipindai tetapi belum dipegang
      * siapa pun. Keduanya sama-sama menunggu diambil alih.
      *
-     * Ditolak dan dibatalkan sengaja tidak punya kategori sendiri. Keduanya
-     * sudah berakhir dan tidak menuntut tindakan apa pun, jadi tempatnya di
-     * daftar lengkap, bukan di tahapan yang dipantau sehari-hari.
+     * Ditolak dan dibatalkan digabung dalam satu kategori. Keduanya sudah
+     * berakhir tanpa jelantah yang masuk, dan tanpa kategori sendiri admin
+     * harus menyisir daftar lengkap untuk menelusuri mengapa sebuah setoran
+     * tidak jadi.
      *
      * @var array<string, array{label: string, statuses: array<int, string>}>
      */
@@ -65,6 +66,7 @@ class Pickup extends Model
         'menunggu' => ['label' => 'Menunggu', 'statuses' => ['pending', 'awaiting_dropoff']],
         'ditugaskan' => ['label' => 'Ditugaskan', 'statuses' => ['assigned']],
         'selesai' => ['label' => 'Selesai', 'statuses' => ['completed']],
+        'dibatalkan' => ['label' => 'Dibatalkan', 'statuses' => ['cancelled', 'rejected']],
     ];
 
     /**

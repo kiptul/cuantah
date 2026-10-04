@@ -187,29 +187,55 @@
 
         <aside class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/5 sm:p-6">
             <h2 class="text-lg font-black text-slate-950">Stok mitra</h2>
-            <p class="mt-1 text-sm text-slate-500">Terkumpul dikurangi yang sudah disalurkan.</p>
+            <p class="mt-1 text-sm text-slate-500">Terkumpul dikurangi yang sudah disalurkan. Bagian samar adalah setoran yang masih berjalan.</p>
             <div class="mt-5 space-y-4">
                 @forelse($partners as $partner)
                     @php
+                        $capacity = (float) $partner->capacity_liter;
                         $stock = max($partner->availableLiter(), 0);
-                        $percent = $partner->capacity_liter > 0 ? min($stock / $partner->capacity_liter * 100, 100) : 0;
+                        $incoming = $partner->incomingLiter();
+                        $projected = $stock + $incoming;
+                        $percent = $capacity > 0 ? min($stock / $capacity * 100, 100) : 0;
+                        $incomingPercent = $capacity > 0 ? min($incoming / $capacity * 100, 100 - $percent) : 0;
+                        $overProjected = $capacity > 0 && $projected > $capacity;
                     @endphp
                     <div>
                         <div class="flex items-baseline justify-between gap-3 text-sm">
                             <p class="truncate font-bold text-slate-900">{{ $partner->name }}</p>
-                            <p class="shrink-0 tabular-nums text-slate-500"><span class="font-bold text-slate-900">{{ number_format($stock, 0, ',', '.') }}</span>/{{ number_format($partner->capacity_liter, 0, ',', '.') }} L</p>
+                            <p class="shrink-0 tabular-nums text-slate-500"><span class="font-bold text-slate-900">{{ number_format($stock, 0, ',', '.') }}</span>/{{ number_format($capacity, 0, ',', '.') }} L</p>
                         </div>
-                        <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div class="mt-1.5 flex h-2 overflow-hidden rounded-full bg-slate-100"
+                             role="img" aria-label="Stok {{ number_format($stock, 0, ',', '.') }} liter dan setoran berjalan {{ number_format($incoming, 0, ',', '.') }} liter dari kapasitas {{ number_format($capacity, 0, ',', '.') }} liter">
                             <div @class([
-                                'h-full rounded-full',
+                                'h-full',
                                 'bg-emerald-600' => $percent < 75,
                                 'bg-amber-500' => $percent >= 75 && $percent < 100,
                                 'bg-rose-600' => $percent >= 100,
                             ]) style="width: {{ $percent }}%"></div>
+                            <div @class([
+                                'h-full',
+                                'bg-emerald-600/30' => ! $overProjected,
+                                'bg-rose-500/40' => $overProjected,
+                            ]) style="width: {{ $incomingPercent }}%"></div>
                         </div>
-                        @if($percent >= 75)
-                            <p class="mt-1 text-xs font-semibold {{ $percent >= 100 ? 'text-rose-700' : 'text-amber-700' }}">
-                                {{ $percent >= 100 ? 'Penuh, setoran baru ditolak.' : 'Hampir penuh, jadwalkan penyaluran.' }}
+                        @if($incoming > 0)
+                            <p class="mt-1 text-xs tabular-nums text-slate-500">+{{ number_format($incoming, 1, ',', '.') }} L setoran berjalan</p>
+                        @endif
+                        @if($stock >= $capacity && $capacity > 0)
+                            <p class="mt-1 text-xs font-semibold text-rose-700">
+                                Penuh, setoran baru ditolak.
+                                <a href="{{ route('admin.distributions.index') }}" class="underline">Salurkan</a>
+                            </p>
+                        @elseif($overProjected)
+                            {{-- Setoran tetap diterima; peringatan ini memberi
+                                 waktu menyalurkan sebelum semuanya selesai ditakar. --}}
+                            <p class="mt-1 text-xs font-semibold text-rose-700">
+                                Akan melebihi kapasitas sekitar {{ number_format($projected - $capacity, 0, ',', '.') }} L bila semua setoran berjalan selesai.
+                                <a href="{{ route('admin.distributions.index') }}" class="underline">Salurkan</a>
+                            </p>
+                        @elseif($percent >= 75)
+                            <p class="mt-1 text-xs font-semibold text-amber-700">
+                                Hampir penuh, jadwalkan penyaluran.
                                 <a href="{{ route('admin.distributions.index') }}" class="underline">Salurkan</a>
                             </p>
                         @endif

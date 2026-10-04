@@ -19,7 +19,7 @@ class PartnerSeeder extends Seeder
         $partners = [
             [
                 'name' => 'Bank Jelantah Cikampek',
-                'type' => 'Collector',
+                'type' => 'Pengepul',
                 'phone' => '081200000011',
                 'address' => 'Jl. Ahmad Yani No. 21, Cikampek, Karawang',
                 'latitude' => -6.4097,
@@ -33,7 +33,7 @@ class PartnerSeeder extends Seeder
             ],
             [
                 'name' => 'Olah Minyak Telukjambe',
-                'type' => 'Processor',
+                'type' => 'Pengolah',
                 'phone' => '081200000012',
                 'address' => 'Jl. Raya Telukjambe No. 8, Telukjambe Timur, Karawang',
                 'latitude' => -6.3268,
@@ -48,7 +48,7 @@ class PartnerSeeder extends Seeder
             ],
             [
                 'name' => 'Pengepul Rengasdengklok',
-                'type' => 'Collector',
+                'type' => 'Pengepul',
                 'phone' => '081200000013',
                 'address' => 'Jl. Proklamasi, Rengasdengklok, Karawang',
                 'latitude' => -6.1588,

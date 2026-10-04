@@ -44,6 +44,28 @@ class DemoSeederTest extends TestCase
         $this->assertFalse(Transaction::whereColumn('estimated_total', '<', 'pickup_fee')->where('estimated_total', 0)->exists());
     }
 
+    /**
+     * Dasbor menghitung berdasarkan completed_at. Transaksi selesai tanpa
+     * kolom itu lenyap dari angka bulanan, grafik, dan peringkat karyawan
+     * meski tetap tercatat di daftar transaksi.
+     */
+    public function test_completed_demo_transactions_count_on_the_dashboard(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $this->assertFalse(
+            Transaction::where('status', Transaction::STATUS_COMPLETED)->whereNull('completed_at')->exists(),
+            'Ada transaksi selesai tanpa completed_at.'
+        );
+
+        $monthly = $this->actingAs(User::where('email', 'admin@cuantah.test')->firstOrFail())
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->viewData('monthly');
+
+        $this->assertGreaterThan(6, collect($monthly)->filter(fn (array $month) => $month['volume'] > 0)->count());
+    }
+
     public function test_partner_stock_stays_between_empty_and_full(): void
     {
         $this->seed(DatabaseSeeder::class);
