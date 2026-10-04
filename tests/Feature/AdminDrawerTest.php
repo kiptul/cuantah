@@ -90,6 +90,20 @@ class AdminDrawerTest extends TestCase
         $this->assertStringNotContainsString('Menu operasional', $tanpaHeader);
     }
 
+    public function test_halaman_admin_tanpa_laci_tidak_menampilkan_pemicunya(): void
+    {
+        /**
+         * Halaman Akun memakai layout dasar, bukan layouts/admin, jadi tidak
+         * punya laci. Pemicunya dulu tetap tampil dan tidak membuka apa pun.
+         */
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $isi = $this->actingAs($admin)->get(route('profile.edit'))->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('id="adminDrawer"', $isi);
+        $this->assertStringNotContainsString('for="adminDrawer"', $isi);
+    }
+
     public function test_saklar_bersaudara_langsung_dengan_lacinya(): void
     {
         /**

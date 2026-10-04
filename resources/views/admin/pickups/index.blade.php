@@ -191,7 +191,7 @@
                             @endif
                         @else
                             <p class="mt-4 rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-600">
-                                Pickup sudah {{ $pickup->status === 'completed' ? 'selesai' : 'ditolak' }}, assignment tidak bisa diubah.
+                                Pickup sudah {{ ['completed' => 'selesai', 'cancelled' => 'dibatalkan'][$pickup->status] ?? 'ditolak' }}, assignment tidak bisa diubah.
                             </p>
                         @endif
                     </aside>

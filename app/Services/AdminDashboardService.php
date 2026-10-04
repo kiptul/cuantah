@@ -28,7 +28,12 @@ class AdminDashboardService
             ->where('status', Transaction::STATUS_COMPLETED);
 
         $current = $this->periodTotals($completed(), $thisMonth, now());
-        $previous = $this->periodTotals($completed(), $lastMonth, $thisMonth);
+        /**
+         * Dibandingkan dengan periode yang sama bulan lalu, bukan sebulan
+         * penuh. Di awal bulan, membandingkan tiga hari dengan tiga puluh hari
+         * selalu tampak anjlok.
+         */
+        $previous = $this->periodTotals($completed(), $lastMonth, now()->subMonthNoOverflow());
 
         return [
             'kpis' => [

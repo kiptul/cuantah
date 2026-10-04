@@ -68,6 +68,7 @@ class TransactionService
                 ? $partner->deliveryFeeForDistance($this->distanceKm((float) $partner->latitude, (float) $partner->longitude, $latitude, $longitude))
                 : 0;
             $grossTotal = (int) round($estimatedLiter * $price->price_per_liter);
+            $proyeksiSebelum = $partner->projectedLiter();
 
             // Ongkir dipotong dari penerimaan user. Tanpa penjagaan ini setoran
             // jemput bervolume kecil bisa lolos dengan nominal nol: user sudah
@@ -134,6 +135,15 @@ class TransactionService
                     : $user->name.' akan mengantar sendiri setoran '.$transaction->code.' ke mitra.',
             );
 
+            $this->peringatkanBilaMelewatiKapasitas(
+                $transaction,
+                $partner,
+                $proyeksiSebelum,
+                $proyeksiSebelum + $estimatedLiter,
+                'Kapasitas %s akan terlampaui',
+                'Setoran berjalan di %s kini diperkirakan %s L, melebihi kapasitas %s L. Setoran tetap diterima; jadwalkan penyaluran sebelum semuanya selesai ditakar.',
+            );
+
             return $transaction->load('pickup.partner', 'partner');
         });
     }
@@ -168,9 +178,12 @@ class TransactionService
                 'user_id' => $employeeId,
                 'transaction_id' => $pickup->transaction->id,
                 'title' => 'Pickup ditugaskan kepadamu',
-                'message' => 'Jemput '.$pickup->transaction->code.' di '.$pickup->address
-                    .($pickup->pickup_date ? ' pada '.$pickup->pickup_date->translatedFormat('d M') : '')
-                    .($pickup->pickup_time ? ', '.substr((string) $pickup->pickup_time, 0, 5) : '').'.',
+                // Drop-off diantar penyetor ke mitra, jadi tidak ada yang dijemput.
+                'message' => $pickup->transaction->method === Transaction::METHOD_DROP_OFF
+                    ? 'Terima dan takar drop-off '.$pickup->transaction->code.' di '.$pickup->address.'.'
+                    : 'Jemput '.$pickup->transaction->code.' di '.$pickup->address
+                        .($pickup->pickup_date ? ' pada '.$pickup->pickup_date->translatedFormat('d M') : '')
+                        .($pickup->pickup_time ? ', '.substr((string) $pickup->pickup_time, 0, 5) : '').'.',
                 'type' => 'pickup',
             ]);
 
@@ -183,9 +196,16 @@ class TransactionService
         $this->pastikanBelumFinal($pickup->transaction, 'dilepas dari karyawan');
 
         return DB::transaction(function () use ($pickup) {
+            /**
+             * Drop-off kembali ke awaiting_dropoff, bukan 'scanned'. Status
+             * 'scanned' tidak termasuk kategori mana pun, sehingga drop-off
+             * yang dilepas hilang dari tab Menunggu justru saat ia perlu
+             * dipegang karyawan baru. scanned_at tetap tersimpan, jadi ia
+             * tetap tampil di daftar pickup admin.
+             */
             $pickup->update([
                 'assigned_user_id' => null,
-                'status' => $pickup->transaction->method === Transaction::METHOD_DROP_OFF ? 'scanned' : 'pending',
+                'status' => $pickup->transaction->method === Transaction::METHOD_DROP_OFF ? 'awaiting_dropoff' : 'pending',
                 'assigned_at' => null,
             ]);
 
@@ -248,6 +268,7 @@ class TransactionService
 
         return DB::transaction(function () use ($transaction, $data, $buktiPath) {
             $actualLiter = (float) $data['actual_liter'];
+            $stokSebelum = $transaction->partner?->availableLiter();
             $total = max((int) round($actualLiter * $transaction->price_per_liter) - (int) $transaction->pickup_fee, 0);
 
             $transaction->update([
@@ -263,6 +284,17 @@ class TransactionService
             ]);
 
             $transaction->pickup?->update(['status' => 'completed']);
+
+            if ($stokSebelum !== null) {
+                $this->peringatkanBilaMelewatiKapasitas(
+                    $transaction,
+                    $transaction->partner,
+                    $stokSebelum,
+                    $stokSebelum + $actualLiter,
+                    'Stok %s melebihi kapasitas',
+                    'Stok %s kini %s L, melebihi kapasitas %s L. Salurkan sebagian supaya setoran berikutnya tetap tertampung.',
+                );
+            }
 
             Notification::create([
                 'user_id' => $transaction->user_id,
@@ -458,26 +490,6 @@ class TransactionService
     }
 
     /**
-     * Mengirim notifikasi ke seluruh admin yang terhubung dengan mitra transaksi.
-     */
-    /**
-     * Menyimpan bukti pembayaran dan mengembalikan jalur berkasnya.
-     *
-     * Disimpan di disk privat, bukan di public/storage. Foto ini memuat
-     * nominal uang dan kerap memuat wajah orang, sehingga tautan yang bisa
-     * ditebak sudah cukup untuk membocorkannya tanpa perlu masuk akun.
-     * Penyajiannya lewat rute yang memeriksa TransactionPolicy.
-     *
-     * Nama berkas dibuat oleh Laravel, tidak memakai nama asli dari
-     * pengunggah, supaya nama yang disusun untuk menyesatkan tidak ikut
-     * tersimpan.
-     *
-     * Berkas ditulis sebelum transaksi basis data dibuka. Bila basis data
-     * gagal sesudahnya, yang tertinggal hanyalah berkas yang tidak ditunjuk
-     * siapa pun; sebaliknya, menulis berkas di dalam transaksi tidak membuat
-     * penulisannya ikut dibatalkan, sebab disk tidak mengenal rollback.
-     */
-    /**
      * Mengoreksi volume transaksi yang sudah selesai.
      *
      * Karyawan menakar di lapangan dan mengetik angkanya di ponsel, jadi
@@ -577,11 +589,31 @@ class TransactionService
         }
     }
 
+    /**
+     * Menyimpan bukti pembayaran dan mengembalikan jalur berkasnya.
+     *
+     * Disimpan di disk privat, bukan di public/storage. Foto ini memuat
+     * nominal uang dan kerap memuat wajah orang, sehingga tautan yang bisa
+     * ditebak sudah cukup untuk membocorkannya tanpa perlu masuk akun.
+     * Penyajiannya lewat rute yang memeriksa TransactionPolicy.
+     *
+     * Nama berkas dibuat oleh Laravel, tidak memakai nama asli dari
+     * pengunggah, supaya nama yang disusun untuk menyesatkan tidak ikut
+     * tersimpan.
+     *
+     * Berkas ditulis sebelum transaksi basis data dibuka. Bila basis data
+     * gagal sesudahnya, yang tertinggal hanyalah berkas yang tidak ditunjuk
+     * siapa pun; sebaliknya, menulis berkas di dalam transaksi tidak membuat
+     * penulisannya ikut dibatalkan, sebab disk tidak mengenal rollback.
+     */
     private function simpanBuktiBayar(UploadedFile $bukti, Transaction $transaction): string
     {
         return $bukti->store('bukti-bayar/'.$transaction->getKey(), 'local');
     }
 
+    /**
+     * Mengirim notifikasi ke seluruh admin yang terhubung dengan mitra transaksi.
+     */
     private function notifyPartnerAdmins(Transaction $transaction, string $title, string $message): void
     {
         User::query()
@@ -595,6 +627,28 @@ class TransactionService
                 'message' => $message,
                 'type' => 'transaction',
             ]));
+    }
+
+    /**
+     * Memperingatkan admin mitra saat liter mitra pertama kali melewati kapasitasnya.
+     *
+     * Setoran tidak ditolak; mitra yang memutuskan kapan menyalurkan. Pesan
+     * hanya dikirim pada saat ambang dilewati, bukan pada setiap setoran
+     * sesudahnya, supaya peringatannya tidak tenggelam oleh pengulangan.
+     */
+    private function peringatkanBilaMelewatiKapasitas(Transaction $transaction, Partner $partner, float $sebelum, float $sesudah, string $judul, string $pesan): void
+    {
+        $kapasitas = (float) $partner->capacity_liter;
+
+        if ($kapasitas <= 0 || $sebelum > $kapasitas || $sesudah <= $kapasitas) {
+            return;
+        }
+
+        $this->notifyPartnerAdmins(
+            $transaction,
+            sprintf($judul, $partner->name),
+            sprintf($pesan, $partner->name, $this->angkaRapi($sesudah), $this->angkaRapi($kapasitas)),
+        );
     }
 
     /**
