@@ -21,7 +21,7 @@
                 <span class="text-sm font-bold text-slate-700">Berlaku mulai</span>
                 <input name="effective_date" type="date" value="{{ old('effective_date') }}" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
             </label>
-            <label class="flex items-center gap-2 text-sm font-bold text-slate-700"><input name="is_active" value="1" type="checkbox" class="checkbox checkbox-sm border-emerald-200 [--chkbg:#047857] [--chkfg:white]" checked> Jadikan harga aktif</label>
+            <label class="flex items-center gap-2 text-sm font-bold text-slate-700"><input name="is_active" value="1" type="checkbox" class="h-5 w-5 shrink-0 cursor-pointer accent-emerald-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200" checked> Jadikan harga aktif</label>
             <label class="block md:col-span-3">
                 <span class="text-sm font-bold text-slate-700">Catatan <span class="font-medium text-slate-500">(opsional)</span></span>
                 <textarea name="notes" rows="2" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">{{ old('notes') }}</textarea>
