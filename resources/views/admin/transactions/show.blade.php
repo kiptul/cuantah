@@ -2,6 +2,15 @@
     @php
         $final = $transaction->isFinal();
         $estimasi = (float) $transaction->estimated_liter;
+
+        /**
+         * Kolom kanan hanya berisi keberatan penyetor dan panel aksi, dan
+         * keduanya bisa sama-sama tidak ada: transaksi yang sudah selesai
+         * tanpa sanggahan menyisakannya kosong sepenuhnya sementara seluruh
+         * isi halaman menumpuk di kolom kiri. Halaman seperti itu tidak perlu
+         * dibagi dua.
+         */
+        $adaPanelSamping = $transaction->disputed_at !== null || ! $final;
     @endphp
 
     <div class="mb-6">
@@ -20,7 +29,10 @@
         </div>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-[1fr_380px]">
+    <div @class([
+        'grid items-start gap-6',
+        'lg:grid-cols-[1fr_380px]' => $adaPanelSamping,
+    ])>
         <section class="space-y-6">
             <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
                 <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Informasi</h2>
@@ -97,14 +109,19 @@
 
                 {{-- Tanpa ini admin mengunggah tanpa pernah bisa memeriksa
                      berkas mana yang akhirnya tersimpan, dan saat menutup
-                     sanggahan ia tidak punya bukti untuk dilihat. --}}
+                     sanggahan ia tidak punya bukti untuk dilihat.
+
+                     Lebarnya mengikuti gambar, bukan kolomnya. Bukti bayar
+                     hampir selalu tangkapan layar ponsel yang jangkung, dan
+                     w-full membuatnya terbingkai kotak putih selebar kolom
+                     dengan gambar setipis pita di tengahnya. --}}
                 @if($transaction->hasPaymentProof())
                     <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                         <p class="text-xs font-black uppercase tracking-[0.12em] text-slate-500">Bukti pembayaran</p>
                         <a href="{{ route('transactions.payment-proof', $transaction) }}" target="_blank" rel="noopener">
                             <img src="{{ route('transactions.payment-proof', $transaction) }}"
                                  alt="Bukti pembayaran transaksi {{ $transaction->code }}"
-                                 class="mt-2 max-h-72 w-full rounded-lg border border-slate-200 bg-white object-contain">
+                                 class="mx-auto mt-2 max-h-96 w-auto max-w-full rounded-lg border border-slate-200 bg-white">
                         </a>
                     </div>
                 @endif
@@ -211,6 +228,7 @@
             @endif
         </section>
 
+        @if($adaPanelSamping)
         <aside class="space-y-5">
             {{-- Keberatan penyetor ditaruh paling atas karena menuntut tindakan,
                  bukan sekadar catatan yang cukup dibaca. --}}
@@ -302,6 +320,7 @@
                 </div>
             @endif
         </aside>
+        @endif
     </div>
 
     <script>
