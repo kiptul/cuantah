@@ -70,7 +70,7 @@
                     @endif
                 </div>
                 <p class="mt-3 text-2xl font-black tracking-tight tabular-nums text-slate-950">{{ $value }}</p>
-                <p class="mt-2 text-xs font-medium text-slate-400">{{ $footnote }}</p>
+                <p class="mt-2 text-xs font-medium text-slate-500">{{ $footnote }}</p>
             </div>
         @endforeach
     </section>
@@ -86,7 +86,7 @@
     <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/5 sm:p-6">
         <div class="flex items-center justify-between gap-3">
             <div>
-                <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Perlu tindakan</p>
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Perlu tindakan</p>
                 <h2 class="mt-1 text-lg font-black text-slate-950">
                     {{ $totalAttention > 0 ? $totalAttention.' hal menunggu keputusanmu' : 'Semua beres' }}
                 </h2>
@@ -113,11 +113,19 @@
                     ])>{{ $label }}</p>
                     <p @class([
                         'mt-2 text-3xl font-black tracking-tight tabular-nums',
-                        'text-slate-300' => $count === 0,
+                        'text-slate-500' => $count === 0,
                         'text-amber-950' => $count > 0 && $tone === 'amber',
                         'text-rose-950' => $count > 0 && $tone === 'rose',
                     ])>{{ $count }}</p>
-                    <p class="mt-1 text-xs font-medium text-slate-500">{{ $count > 0 ? $hint : 'Tidak ada' }}</p>
+                    {{-- Keterangannya ikut nada kartu, sama seperti label dan
+                         angkanya. Selain lebih padu, slate-500 di atas latar
+                         bernoda turun ke 4,33 dan tidak lagi memenuhi batas. --}}
+                    <p @class([
+                        'mt-1 text-xs font-medium',
+                        'text-slate-500' => $count === 0,
+                        'text-amber-800' => $count > 0 && $tone === 'amber',
+                        'text-rose-800' => $count > 0 && $tone === 'rose',
+                    ])>{{ $count > 0 ? $hint : 'Tidak ada' }}</p>
                 </a>
             @endforeach
         </div>
@@ -132,7 +140,7 @@
                                 <a href="{{ route('admin.transactions.show', $transaction) }}" class="block px-4 py-3 transition hover:bg-slate-50">
                                     <div class="flex items-center justify-between gap-3">
                                         <p class="truncate text-sm font-bold text-slate-900">{{ $transaction->user->name }}</p>
-                                        <span class="shrink-0 text-xs text-slate-400">{{ $transaction->disputed_at->diffForHumans() }}</span>
+                                        <span class="shrink-0 text-xs text-slate-500">{{ $transaction->disputed_at->diffForHumans() }}</span>
                                     </div>
                                     <p class="mt-1 line-clamp-1 text-sm text-slate-500">{{ $transaction->dispute_reason }}</p>
                                 </a>

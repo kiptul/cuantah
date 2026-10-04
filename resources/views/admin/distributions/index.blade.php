@@ -31,7 +31,7 @@
                 <input name="distributed_at" type="date" value="{{ old('distributed_at') }}" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" required>
             </label>
             <label class="block md:col-span-4">
-                <span class="text-sm font-bold text-slate-700">Catatan <span class="font-medium text-slate-400">(opsional)</span></span>
+                <span class="text-sm font-bold text-slate-700">Catatan <span class="font-medium text-slate-500">(opsional)</span></span>
                 <textarea name="notes" rows="2" class="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">{{ old('notes') }}</textarea>
             </label>
             <button class="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-emerald-800 md:col-span-4">Catat Penyaluran</button>

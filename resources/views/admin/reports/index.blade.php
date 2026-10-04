@@ -32,15 +32,15 @@
                 <p class="mt-0.5 text-xs text-slate-500">Karyawan: {{ $transaction->pickup?->assignedUser?->name ?? '-' }}</p>
                 <dl class="mt-4 grid grid-cols-3 gap-3">
                     <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-400">Volume</dt>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">Volume</dt>
                         <dd class="mt-0.5 text-sm font-bold tabular-nums">{{ number_format($transaction->actual_liter, 2, ',', '.') }} L</dd>
                     </div>
                     <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-400">Nilai</dt>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">Nilai</dt>
                         <dd class="mt-0.5 text-sm font-bold tabular-nums">Rp{{ number_format($transaction->total_value, 0, ',', '.') }}</dd>
                     </div>
                     <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-400">Bayar</dt>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">Bayar</dt>
                         <dd class="mt-0.5 text-sm font-bold">{{ str($transaction->payment_method)->title() ?: '-' }}</dd>
                     </div>
                 </dl>

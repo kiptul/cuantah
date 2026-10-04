@@ -96,15 +96,15 @@
                 <p class="mt-1 text-sm text-slate-600">{{ $transaction->user->name }} · {{ $transaction->partner?->name ?? 'Tanpa mitra' }}</p>
                 <dl class="mt-4 grid grid-cols-3 gap-3">
                     <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-400">Metode</dt>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">Metode</dt>
                         <dd class="mt-0.5 text-sm font-bold">{{ $transaction->method === 'pickup' ? 'Jemput' : 'Antar' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-400">Liter</dt>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">Liter</dt>
                         <dd class="mt-0.5 text-sm font-bold">{{ number_format($transaction->actual_liter ?? $transaction->estimated_liter, 2, ',', '.') }} L</dd>
                     </div>
                     <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-400">Total</dt>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">Total</dt>
                         <dd class="mt-0.5 text-sm font-bold">Rp{{ number_format($transaction->total_value ?? $transaction->estimated_total, 0, ',', '.') }}</dd>
                     </div>
                 </dl>

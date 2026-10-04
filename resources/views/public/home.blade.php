@@ -117,12 +117,12 @@
 
                     <div class="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-2xl bg-slate-50 p-3">
                         <div>
-                            <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Volume</p>
+                            <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Volume</p>
                             <p id="calculator-liters-display" class="mt-1 text-base font-black text-emerald-950">4,8 L</p>
                         </div>
-                        <span class="text-xl font-black text-slate-300">×</span>
+                        <span class="text-xl font-black text-slate-500">×</span>
                         <div>
-                            <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Harga aktif</p>
+                            <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Harga aktif</p>
                             <p id="calculator-price-display" class="mt-1 text-base font-black text-emerald-950">Rp{{ number_format($price?->price_per_liter ?? 4000, 0, ',', '.') }}/L</p>
                         </div>
                     </div>

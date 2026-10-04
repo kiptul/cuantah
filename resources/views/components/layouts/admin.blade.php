@@ -55,7 +55,7 @@
                 </svg>
             </label>
             <div class="border-b border-slate-100 px-3 pb-3">
-                <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Operasional</p>
+                <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Operasional</p>
                 <p class="mt-1 text-sm font-black text-slate-900">Kelola CUANTAH</p>
             </div>
             {{-- Menumpuk ke bawah di semua ukuran. Pembungkusan mendatar dulu

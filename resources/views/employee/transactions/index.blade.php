@@ -27,7 +27,7 @@
                             <p class="font-black tabular-nums text-slate-900">
                                 {{ number_format($transaction->actual_liter ?? $transaction->estimated_liter, 2, ',', '.') }} L
                             </p>
-                            <p class="mt-1 text-xs text-slate-400">{{ $transaction->actual_liter ? 'aktual' : 'estimasi' }}</p>
+                            <p class="mt-1 text-xs text-slate-500">{{ $transaction->actual_liter ? 'aktual' : 'estimasi' }}</p>
                         </div>
                     </div>
                 </a>

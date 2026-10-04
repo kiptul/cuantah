@@ -74,11 +74,11 @@
                         <div class="min-w-0">
                             <p class="text-sm font-bold text-slate-900">{{ $notification->title }}</p>
                             <p class="mt-0.5 text-sm leading-6 text-slate-600">{{ $notification->message }}</p>
-                            <p class="mt-1 text-xs text-slate-400">{{ $notification->created_at->diffForHumans() }}</p>
+                            <p class="mt-1 text-xs text-slate-500">{{ $notification->created_at->diffForHumans() }}</p>
                         </div>
 
                         @if($tujuan)
-                            <svg class="mt-1 h-4 w-4 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <svg class="mt-1 h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                 <path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                         @endif

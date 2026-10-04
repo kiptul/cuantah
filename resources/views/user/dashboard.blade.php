@@ -110,7 +110,7 @@
                                     <span @class([
                                         'mt-2 block text-xs font-bold',
                                         'text-emerald-800' => $index <= $step,
-                                        'text-slate-400' => $index > $step,
+                                        'text-slate-500' => $index > $step,
                                     ])>{{ $label }}</span>
                                 </li>
                             @endforeach

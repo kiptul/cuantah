@@ -72,7 +72,7 @@
                         <span class="block truncate text-sm text-slate-500">{{ $user->email }}</span>
                     </span>
                     <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold {{ $peranWarna }}">{{ $peranLabel }}</span>
-                    <span class="hidden text-sm tabular-nums text-slate-400 sm:inline">{{ $user->transactions_count }} transaksi</span>
+                    <span class="hidden text-sm tabular-nums text-slate-500 sm:inline">{{ $user->transactions_count }} transaksi</span>
                     <span class="rounded-lg px-3 py-1.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">Ubah</span>
                 </summary>
 

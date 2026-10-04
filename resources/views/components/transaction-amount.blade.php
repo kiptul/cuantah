@@ -15,7 +15,7 @@
 @if($nilai !== null)
     Rp{{ number_format($nilai, 0, ',', '.') }}
 @elseif($tanpaPembayaran)
-    <span class="text-slate-400">–</span>
+    <span class="text-slate-500">–</span>
 @else
     {{-- Masih berjalan: angkanya perkiraan, dan ditandai begitu. --}}
     <span class="text-slate-500">±Rp{{ number_format($transaction->estimated_total, 0, ',', '.') }}</span>

@@ -17,15 +17,15 @@
                 <p class="mt-1 text-sm text-slate-500">{{ $transaction->partner?->name ?? '-' }}</p>
                 <dl class="mt-4 grid grid-cols-3 gap-3">
                     <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-400">Metode</dt>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">Metode</dt>
                         <dd class="mt-0.5 text-sm font-bold">{{ $transaction->method === 'pickup' ? 'Jemput' : 'Antar' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-400">Estimasi</dt>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">Estimasi</dt>
                         <dd class="mt-0.5 text-sm font-bold">{{ number_format($transaction->estimated_liter, 2, ',', '.') }} L</dd>
                     </div>
                     <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-400">Total</dt>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">Total</dt>
                         <dd class="mt-0.5 text-sm font-bold"><x-transaction-amount :transaction="$transaction" /></dd>
                     </div>
                 </dl>

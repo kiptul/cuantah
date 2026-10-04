@@ -10,7 +10,7 @@
         <p class="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{{ $label }}</p>
     </div>
     <p class="mt-3 text-2xl font-black tracking-tight tabular-nums text-slate-900">
-        {{ $value }}@if($unit)<span class="ml-1 text-base font-bold text-slate-400">{{ $unit }}</span>@endif
+        {{ $value }}@if($unit)<span class="ml-1 text-base font-bold text-slate-500">{{ $unit }}</span>@endif
     </p>
     @if($hint)
         <p class="mt-1 text-xs leading-5 text-slate-500">{{ $hint }}</p>

@@ -11,7 +11,7 @@
             aria-haspopup="true" aria-expanded="false" data-account-toggle>
         <span class="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-700 text-xs font-black text-white">{{ $inisial }}</span>
         <span class="hidden max-w-[9rem] truncate sm:block">{{ $user->name }}</span>
-        <svg class="h-3.5 w-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <svg class="h-3.5 w-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
     </button>
@@ -23,7 +23,7 @@
             <p class="truncate text-xs text-slate-500">{{ $user->email }}</p>
         </div>
         <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50" role="menuitem">
-            <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <svg class="h-4 w-4 text-slate-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
                 <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.9" />
             </svg>

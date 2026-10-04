@@ -55,11 +55,11 @@
                 <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Volume &amp; nilai</h2>
                 <div class="mt-4 grid gap-4 sm:grid-cols-3">
                     <div>
-                        <p class="text-xs font-bold uppercase tracking-[0.1em] text-slate-400">Estimasi penyetor</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.1em] text-slate-500">Estimasi penyetor</p>
                         <p class="mt-1 text-xl font-black tabular-nums text-slate-900">{{ number_format($estimasi, 2, ',', '.') }} L</p>
                     </div>
                     <div>
-                        <p class="text-xs font-bold uppercase tracking-[0.1em] text-slate-400">Hasil takaran</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.1em] text-slate-500">Hasil takaran</p>
                         <p class="mt-1 text-xl font-black tabular-nums text-slate-900">
                             {{ $transaction->actual_liter !== null ? number_format($transaction->actual_liter, 2, ',', '.').' L' : 'Belum ditakar' }}
                         </p>
@@ -77,7 +77,7 @@
                         @endif
                     </div>
                     <div>
-                        <p class="text-xs font-bold uppercase tracking-[0.1em] text-slate-400">Diterima penyetor</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.1em] text-slate-500">Diterima penyetor</p>
                         <p class="mt-1 text-xl font-black tabular-nums text-emerald-800">Rp{{ number_format($transaction->total_value ?? $transaction->estimated_total, 0, ',', '.') }}</p>
                         <p class="mt-1 text-xs text-slate-500">
                             Rp{{ number_format($transaction->price_per_liter, 0, ',', '.') }}/L
