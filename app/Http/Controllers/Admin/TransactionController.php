@@ -12,6 +12,47 @@ use Illuminate\Support\Facades\Auth;
 
 class TransactionController extends Controller
 {
+    public function scanForm()
+    {
+        return view('admin.transactions.scan');
+    }
+
+    /**
+     * Membuka setoran antar sendiri dari kode QR-nya.
+     *
+     * Cadangan untuk saat seluruh karyawan sedang menjemput dan penyetor
+     * terlanjur datang ke lokasi mitra. Pemindaiannya tidak mengubah apa pun,
+     * hanya mengantar ke halaman rinciannya; yang mencatat penerimaannya
+     * adalah panel Selesaikan di sana.
+     */
+    public function scan(Request $request, TransactionService $service)
+    {
+        $data = $request->validate(['code' => ['required', 'string', 'max:40']]);
+
+        $transaction = $service->findByCodeFor($data['code'], $request->user());
+
+        /**
+         * Sebabnya disebut satu per satu. "Kode tidak ditemukan" untuk
+         * transaksi jemput akan membuat admin memindai ulang QR yang
+         * sebenarnya sudah terbaca benar, lalu menyimpulkan pemindainya rusak.
+         */
+        if (! $transaction) {
+            return back()->withErrors(['code' => 'Kode tidak ditemukan, atau transaksinya bukan milik mitra yang kamu kelola.']);
+        }
+
+        if ($transaction->isFinal()) {
+            return back()->withErrors(['code' => 'Transaksi '.$transaction->code.' sudah '.$transaction->statusLabel().', jadi tidak ada lagi yang perlu diterima.']);
+        }
+
+        if (! $transaction->adminCanComplete()) {
+            return back()->withErrors(['code' => 'Transaksi '.$transaction->code.' memakai metode jemput, dan diselesaikan karyawan di lapangan. Tugaskan karyawan lewat halaman Pickup.']);
+        }
+
+        return redirect()
+            ->route('admin.transactions.show', $transaction)
+            ->with('success', 'QR terbaca: '.$transaction->code.'. Takar jelantahnya, lalu selesaikan di bawah.');
+    }
+
     public function index(Request $request)
     {
         $filters = [

@@ -27,8 +27,21 @@ class VerifyTransactionRequest extends FormRequest
             return false;
         }
 
-        return $transaksi instanceof Transaction
-            && $pengguna->canAccessPartnerId($transaksi->partner_id);
+        if (! $transaksi instanceof Transaction) {
+            return false;
+        }
+
+        /**
+         * Aturannya di sini, bukan hanya di tampilan. Menyembunyikan panelnya
+         * saja menutup pintunya tetapi meninggalkan jendelanya: rutenya tetap
+         * menerima kiriman dari tab lama yang masih terbuka atau dari siapa
+         * pun yang tahu alamatnya.
+         */
+        if (! $transaksi->adminCanComplete()) {
+            return false;
+        }
+
+        return $pengguna->canAccessPartnerId($transaksi->partner_id);
     }
 
     public function rules(): array

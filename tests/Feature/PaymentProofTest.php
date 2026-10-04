@@ -70,6 +70,24 @@ class PaymentProofTest extends TestCase
     /**
      * Penjemputan yang sudah ditugaskan kepada karyawan dan siap diverifikasi.
      */
+    /**
+     * Setoran yang diantar sendiri ke lokasi mitra.
+     *
+     * Dipakai test yang menguji jalur admin. Transaksi jemput ditutup karyawan
+     * di lapangan, sehingga rute verifikasi admin menolaknya dengan 403 dan
+     * aturan buktinya tidak akan pernah terbaca.
+     */
+    private function setoranAntarSendiri(): Transaction
+    {
+        return Transaction::factory()->create([
+            'user_id' => $this->penyetor->id,
+            'partner_id' => $this->mitra->id,
+            'oil_price_id' => OilPrice::factory(),
+            'method' => Transaction::METHOD_DROP_OFF,
+            'status' => Transaction::STATUS_SCHEDULED,
+        ]);
+    }
+
     private function tugas(): Transaction
     {
         $transaksi = Transaction::factory()->pickup()->create([
@@ -189,7 +207,7 @@ class PaymentProofTest extends TestCase
     public function test_admin_tidak_bisa_memverifikasi_pembayaran_lunas_tanpa_bukti(): void
     {
         $this->siapkan();
-        $transaksi = $this->tugas();
+        $transaksi = $this->setoranAntarSendiri();
 
         $this->actingAs($this->admin)
             ->post(route('admin.transactions.verify', $transaksi), $this->isianVerifikasi())

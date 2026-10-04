@@ -215,6 +215,31 @@ class TransactionService
         });
     }
 
+    /**
+     * Mencari transaksi dari kodenya, sebatas yang boleh dilihat pengguna itu.
+     *
+     * Tidak mengubah apa pun, berbeda dengan scanDropOff() yang sekalian
+     * menugaskan transaksinya kepada karyawan yang memindai. Admin bukan
+     * karyawan: menugaskan transaksi kepadanya akan mengotori peringkat
+     * karyawan dan laporan, dan menulis scanned_at akan memunculkan drop-off
+     * itu di antrean Pickup yang sedetik lagi ia tinggalkan karena langsung
+     * diselesaikan. Yang mencatat bahwa setorannya benar-benar diterima
+     * adalah verify(), beserta volume, bukti bayar, dan waktunya.
+     *
+     * Kelayakannya tidak diputuskan di sini. Transaksi yang ketemu tetapi
+     * tidak boleh ditutup admin dikembalikan apa adanya, supaya pemanggilnya
+     * bisa menyebut sebabnya: "itu transaksi jemput" menolong pemindainya,
+     * sedangkan "kode tidak ditemukan" membuatnya memindai ulang QR yang
+     * sebenarnya sudah terbaca benar.
+     */
+    public function findByCodeFor(string $code, User $user): ?Transaction
+    {
+        return Transaction::query()
+            ->where('code', $code)
+            ->visibleTo($user)
+            ->first();
+    }
+
     public function scanDropOff(string $code, User $employee): ?Pickup
     {
         return DB::transaction(function () use ($code, $employee) {

@@ -19,7 +19,15 @@ class TransactionFlowTest extends TestCase
 
     protected function setUp(): void
     {
-        if (! extension_loaded('pdo_sqlite')) {
+        /**
+         * Dilewati hanya bila test memang akan memakai sqlite. Suite ini tidak
+         * bergantung pada satu driver, jadi mengikat seluruh berkas pada satu
+         * extension akan membuatnya tak pernah dieksekusi di mesin yang
+         * menjalankannya lewat MySQL.
+         */
+        $connection = $_SERVER['DB_CONNECTION'] ?? (getenv('DB_CONNECTION') ?: 'sqlite');
+
+        if ($connection === 'sqlite' && ! extension_loaded('pdo_sqlite')) {
             $this->markTestSkipped('pdo_sqlite extension is required for in-memory feature tests.');
         }
 
@@ -111,16 +119,9 @@ class TransactionFlowTest extends TestCase
             'estimated_liter' => 5,
             'price_per_liter' => 4000,
             'estimated_total' => 20000,
-            'pickup_fee' => 10000,
-            'method' => Transaction::METHOD_PICKUP,
+            'pickup_fee' => 0,
+            'method' => Transaction::METHOD_DROP_OFF,
             'status' => Transaction::STATUS_SCHEDULED,
-        ]);
-        $transaction->pickup()->create([
-            'partner_id' => $partner->id,
-            'address' => 'Jl. Pickup',
-            'latitude' => -6.3055,
-            'longitude' => 107.3053,
-            'status' => 'assigned',
         ]);
 
         Storage::fake('local');
@@ -137,7 +138,7 @@ class TransactionFlowTest extends TestCase
         $this->assertDatabaseHas('transactions', [
             'id' => $transaction->id,
             'actual_liter' => 4.8,
-            'total_value' => 9200,
+            'total_value' => 19200,
             'payment_method' => 'transfer',
             'payment_status' => 'paid',
             'status' => Transaction::STATUS_COMPLETED,
@@ -285,7 +286,16 @@ class TransactionFlowTest extends TestCase
     public function test_employee_completes_an_assigned_pickup_with_a_single_form(): void
     {
         $employee = User::factory()->create(['role' => 'employee']);
-        $transaction = Transaction::factory()->pickup()->create(['status' => Transaction::STATUS_SCHEDULED, 'price_per_liter' => 4000]);
+        /**
+         * Berongkir, supaya potongannya ikut terjaga di sini. Dulu satu-satunya
+         * test yang membuktikan ongkir dipotong dari hasil adalah test admin
+         * menyelesaikan transaksi jemput, dan jalur itu sudah ditutup.
+         */
+        $transaction = Transaction::factory()->pickup()->create([
+            'status' => Transaction::STATUS_SCHEDULED,
+            'price_per_liter' => 4000,
+            'pickup_fee' => 10000,
+        ]);
         $employee->partners()->attach($transaction->partner_id);
         Pickup::factory()->assignedTo($employee)->create([
             'transaction_id' => $transaction->id,
@@ -315,7 +325,8 @@ class TransactionFlowTest extends TestCase
         $transaction->refresh();
         $this->assertSame(Transaction::STATUS_COMPLETED, $transaction->status);
         $this->assertSame('paid', $transaction->payment_status);
-        $this->assertSame(30000, $transaction->total_value);
+        // 7,5 L x Rp4.000 = Rp30.000, dikurangi ongkir Rp10.000.
+        $this->assertSame(20000, $transaction->total_value);
         $this->assertSame('completed', $transaction->pickup->status);
     }
 

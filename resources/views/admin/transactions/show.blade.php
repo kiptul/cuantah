@@ -267,6 +267,17 @@
                  koreksi volume tersedia, dan kotaknya sendiri tidak menawarkan
                  tindakan apa pun. --}}
             @if(! $final)
+                {{-- Penyelesaian hanya untuk setoran yang diantar sendiri.
+                     Transaksi jemput ditakar karyawan di lapangan, di hadapan
+                     jelantahnya dan di hadapan penyetornya. Panel ini membuat
+                     admin bisa menutupnya dari kantor, yang berarti mengetik
+                     volume yang tidak pernah ia timbang dan menandai lunas uang
+                     yang tidak pernah ia serahkan.
+
+                     Transaksi jemput yang tersangkut tetap punya jalan keluar:
+                     dipindahkan ke karyawan lain lewat halaman Pickup, atau
+                     ditolak lewat panel di bawah. --}}
+                @if($transaction->adminCanComplete())
                 <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
                     <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Selesaikan transaksi</h2>
                     @if($transaction->partner && (float) $transaction->partner->capacity_liter > 0)
@@ -316,6 +327,7 @@
                         <button class="w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-black text-white shadow-sm shadow-emerald-900/20 transition hover:bg-emerald-800">Selesaikan Transaksi</button>
                     </form>
                 </div>
+                @endif
 
                 <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
                     <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Tolak transaksi</h2>
