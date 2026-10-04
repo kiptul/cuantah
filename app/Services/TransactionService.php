@@ -112,6 +112,7 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $user->id,
+                'transaction_id' => $transaction->id,
                 'title' => 'Pengajuan setor diterima',
                 'message' => 'Transaksi '.$transaction->code.' sedang menunggu proses berikutnya.',
                 'type' => 'transaction',
@@ -152,6 +153,7 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $pickup->transaction->user_id,
+                'transaction_id' => $pickup->transaction->id,
                 'title' => 'Pickup dijadwalkan',
                 'message' => 'Pickup '.$pickup->transaction->code.' sudah di-assign ke karyawan CUANTAH.',
                 'type' => 'pickup',
@@ -164,6 +166,7 @@ class TransactionService
              */
             Notification::create([
                 'user_id' => $employeeId,
+                'transaction_id' => $pickup->transaction->id,
                 'title' => 'Pickup ditugaskan kepadamu',
                 'message' => 'Jemput '.$pickup->transaction->code.' di '.$pickup->address
                     .($pickup->pickup_date ? ' pada '.$pickup->pickup_date->translatedFormat('d M') : '')
@@ -263,6 +266,7 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $transaction->user_id,
+                'transaction_id' => $transaction->id,
                 'title' => 'Transaksi selesai',
                 'message' => sprintf(
                     'Transaksi %s selesai: %s L, total Rp%s%s.',
@@ -294,6 +298,7 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $transaction->user_id,
+                'transaction_id' => $transaction->id,
                 'title' => 'Keberatan terkirim',
                 'message' => 'Keberatanmu atas takaran transaksi '.$transaction->code.' sudah diteruskan ke mitra.',
                 'type' => 'transaction',
@@ -322,6 +327,7 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $transaction->user_id,
+                'transaction_id' => $transaction->id,
                 'title' => 'Keberatan ditanggapi',
                 'message' => 'Mitra menanggapi keberatanmu pada '.$transaction->code.': '.$resolution,
                 'type' => 'transaction',
@@ -342,6 +348,7 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $transaction->user_id,
+                'transaction_id' => $transaction->id,
                 'title' => 'Setoran dibatalkan',
                 'message' => 'Kamu membatalkan transaksi '.$transaction->code.'.',
                 'type' => 'transaction',
@@ -355,6 +362,7 @@ class TransactionService
             if ($transaction->pickup?->assigned_user_id) {
                 Notification::create([
                     'user_id' => $transaction->pickup->assigned_user_id,
+                    'transaction_id' => $transaction->id,
                     'title' => 'Penjemputan dibatalkan',
                     'message' => 'Penyetor membatalkan '.$transaction->code.'. Tidak perlu berangkat ke '.$transaction->pickup->address.'.',
                     'type' => 'pickup',
@@ -384,6 +392,7 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $transaction->user_id,
+                'transaction_id' => $transaction->id,
                 'title' => 'Transaksi ditolak',
                 'message' => $reason
                     ? 'Transaksi '.$transaction->code.' ditolak. Alasan: '.$reason
@@ -438,6 +447,7 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $transaction->user_id,
+                'transaction_id' => $transaction->id,
                 'title' => 'Pembayaran diterima',
                 'message' => 'Pembayaran transaksi '.$transaction->code.' sebesar Rp'.number_format((int) $transaction->total_value, 0, ',', '.').' sudah dilunasi.',
                 'type' => 'payment',
@@ -523,6 +533,7 @@ class TransactionService
 
             Notification::create([
                 'user_id' => $transaction->user_id,
+                'transaction_id' => $transaction->id,
                 'title' => 'Volume transaksi dikoreksi',
                 'message' => sprintf(
                     'Volume %s diperbaiki dari %s L menjadi %s L, sehingga nilainya menjadi Rp%s. Alasan: %s',
@@ -579,6 +590,7 @@ class TransactionService
             ->pluck('id')
             ->each(fn (int $adminId) => Notification::create([
                 'user_id' => $adminId,
+                'transaction_id' => $transaction->id,
                 'title' => $title,
                 'message' => $message,
                 'type' => 'transaction',

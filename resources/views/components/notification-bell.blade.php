@@ -1,5 +1,16 @@
 @php
-    $notifications = auth()->user()?->notifications()->latest()->limit(8)->get() ?? collect();
+    $pembaca = auth()->user();
+
+    // Transaksi beserta pickup-nya ikut dimuat di sini, sekali untuk seluruh
+    // daftar. Tanpa itu, memeriksa boleh-tidaknya tiap notifikasi ditautkan
+    // akan menjadi satu kueri per baris, pada lonceng yang muncul di setiap
+    // halaman.
+    $notifications = $pembaca?->notifications()
+        ->with('transaction.pickup')
+        ->latest()
+        ->limit(8)
+        ->get() ?? collect();
+
     $unread = $notifications->whereNull('read_at')->count();
 @endphp
 
@@ -41,7 +52,19 @@
 
         <div class="max-h-[22rem] divide-y divide-slate-100 overflow-y-auto">
             @forelse($notifications as $notification)
-                <div @class(['px-4 py-3', 'bg-slate-50' => $notification->read_at === null])>
+                @php($tujuan = $notification->urlUntuk($pembaca))
+
+                {{-- Notifikasi yang menunjuk transaksi menjadi tautan; yang
+                     tidak, tetap teks. Notifikasi lama tanpa transaksi dan
+                     pemberitahuan soal akun termasuk yang kedua, begitu pula
+                     transaksi yang sudah tidak bisa dibuka pembacanya. --}}
+                <{{ $tujuan ? 'a' : 'div' }}
+                    @if($tujuan) href="{{ $tujuan }}" @endif
+                    @class([
+                        'block px-4 py-3',
+                        'bg-slate-50' => $notification->read_at === null,
+                        'transition hover:bg-emerald-50' => $tujuan,
+                    ])>
                     <div class="flex items-start gap-2.5">
                         @if($notification->read_at === null)
                             <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-600" aria-hidden="true"></span>
@@ -53,8 +76,14 @@
                             <p class="mt-0.5 text-sm leading-6 text-slate-600">{{ $notification->message }}</p>
                             <p class="mt-1 text-xs text-slate-400">{{ $notification->created_at->diffForHumans() }}</p>
                         </div>
+
+                        @if($tujuan)
+                            <svg class="mt-1 h-4 w-4 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        @endif
                     </div>
-                </div>
+                </{{ $tujuan ? 'a' : 'div' }}>
             @empty
                 <p class="px-4 py-8 text-center text-sm text-slate-500">Belum ada notifikasi.</p>
             @endforelse
