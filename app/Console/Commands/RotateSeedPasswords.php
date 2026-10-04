@@ -7,10 +7,12 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password as AturanPassword;
 
-#[Signature('cuantah:rotate-seed-passwords {--email=* : Batasi rotasi pada alamat email tertentu} {--force : Rotasi juga akun yang passwordnya sudah bukan bawaan}')]
-#[Description('Mengganti password akun seed dengan password acak dan menampilkannya satu kali')]
+#[Signature('cuantah:rotate-seed-passwords {--email=* : Batasi rotasi pada alamat email tertentu} {--force : Rotasi juga akun yang passwordnya sudah bukan bawaan} {--password= : Pakai kata sandi ini alih-alih membuat yang acak}')]
+#[Description('Mengganti password akun seed, acak secara bawaan atau sesuai --password')]
 class RotateSeedPasswords extends Command
 {
     /**
@@ -39,6 +41,30 @@ class RotateSeedPasswords extends Command
         $emails = $this->option('email') ?: self::SEED_EMAILS;
         $force = (bool) $this->option('force');
 
+        /**
+         * Kata sandi pilihan sendiri, bila diberikan.
+         *
+         * Diperiksa terhadap kebijakan yang sama dengan yang berlaku di
+         * aplikasi. Tanpa pemeriksaan ini, sebuah akun bisa berakhir memakai
+         * kata sandi yang justru ditolak ketika pemiliknya hendak
+         * menetapkannya sendiri lewat Pengaturan akun, dan itu sudah pernah
+         * terjadi dengan SEED_PASSWORD yang hanya berisi angka.
+         */
+        $pilihan = $this->option('password');
+
+        if ($pilihan !== null) {
+            $periksa = Validator::make(
+                ['password' => $pilihan],
+                ['password' => ['required', AturanPassword::defaults()]],
+            );
+
+            if ($periksa->fails()) {
+                $this->components->error($periksa->errors()->first('password'));
+
+                return self::FAILURE;
+            }
+        }
+
         $users = User::query()->whereIn('email', $emails)->get()->keyBy('email');
 
         foreach (array_diff($emails, $users->keys()->all()) as $missingEmail) {
@@ -61,7 +87,7 @@ class RotateSeedPasswords extends Command
                 continue;
             }
 
-            $password = Str::password(self::PASSWORD_LENGTH, symbols: false);
+            $password = $pilihan ?? Str::password(self::PASSWORD_LENGTH, symbols: false);
 
             /**
              * Remember token ikut diputar: tanpa itu cookie "ingat saya" yang
@@ -73,7 +99,7 @@ class RotateSeedPasswords extends Command
                 'remember_token' => Str::random(60),
             ])->save();
 
-            $rotated[] = [$user->email, $user->role, $password];
+            $rotated[] = [$user->email, $user->role, $pilihan === null ? $password : '(sesuai --password)'];
         }
 
         foreach ($skipped as $email) {
@@ -88,7 +114,12 @@ class RotateSeedPasswords extends Command
 
         $this->newLine();
         $this->table(['Email', 'Role', 'Password baru'], $rotated);
-        $this->components->warn('Password di atas hanya ditampilkan sekali dan tidak dicatat di log. Simpan sekarang.');
+
+        if ($pilihan === null) {
+            $this->components->warn('Password di atas hanya ditampilkan sekali dan tidak dicatat di log. Simpan sekarang.');
+        } else {
+            $this->components->info('Ketiganya memakai kata sandi yang kamu tentukan. Nilainya tidak ditayangkan ulang di sini, tetapi tertinggal di riwayat shell.');
+        }
 
         return self::SUCCESS;
     }

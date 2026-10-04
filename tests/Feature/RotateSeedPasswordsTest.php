@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -94,5 +95,47 @@ class RotateSeedPasswordsTest extends TestCase
     {
         $this->artisan('cuantah:rotate-seed-passwords', ['--email' => ['tidak-ada@cuantah.test']])
             ->assertFailed();
+    }
+
+    public function test_opsi_password_menetapkan_kata_sandi_yang_sama_untuk_semua_akun(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $this->artisan('cuantah:rotate-seed-passwords', ['--force' => true, '--password' => 'cuantah2026'])
+            ->assertSuccessful();
+
+        foreach (['admin@cuantah.test', 'karyawan@cuantah.test', 'user@cuantah.test'] as $email) {
+            $this->assertTrue(
+                Hash::check('cuantah2026', User::where('email', $email)->firstOrFail()->password),
+                "Akun {$email} tidak memakai kata sandi yang diminta lewat --password.",
+            );
+        }
+    }
+
+    public function test_opsi_password_menolak_nilai_yang_melanggar_kebijakan(): void
+    {
+        // Menerima "12345678" di sini akan menghasilkan akun yang kata sandinya
+        // justru ditolak ketika pemiliknya hendak menetapkannya sendiri lewat
+        // Pengaturan akun.
+        $this->seed(DatabaseSeeder::class);
+        $sebelum = User::where('email', 'admin@cuantah.test')->firstOrFail()->password;
+
+        $this->artisan('cuantah:rotate-seed-passwords', ['--force' => true, '--password' => '12345678'])
+            ->assertFailed();
+
+        $this->assertSame(
+            $sebelum,
+            User::where('email', 'admin@cuantah.test')->firstOrFail()->password,
+            'Kata sandi tidak boleh berubah ketika nilainya ditolak.',
+        );
+    }
+
+    public function test_opsi_password_tidak_menayangkan_ulang_nilainya(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $this->artisan('cuantah:rotate-seed-passwords', ['--force' => true, '--password' => 'cuantah2026'])
+            ->doesntExpectOutputToContain('cuantah2026')
+            ->assertSuccessful();
     }
 }
