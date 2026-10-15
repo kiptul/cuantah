@@ -37,7 +37,7 @@
                         'body' => 'Pengajuan akan diproses, lalu mitra atau petugas mengikuti status transaksi di sistem.',
                     ],
                     [
-                        'title' => 'Timbang, bayar, selesai',
+                        'title' => 'Takar, bayar, selesai',
                         'body' => 'Volume diverifikasi, pembayaran dilakukan langsung, dan riwayat transaksi tersimpan.',
                     ],
                 ] as $index => $step)
