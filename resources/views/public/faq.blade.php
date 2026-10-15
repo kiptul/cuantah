@@ -27,7 +27,7 @@
                 </div>
             </div>
 
-            <div class="mt-10 grid gap-8 lg:grid-cols-[.62fr_1.38fr] lg:items-start">
+            <div class="mt-10 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,.62fr)_minmax(0,1.38fr)] lg:items-start">
                 <div class="rounded-[1.75rem] border border-emerald-100 bg-white p-5 shadow-sm">
                     <p class="text-sm font-black uppercase tracking-[0.16em] text-emerald-700">Yang perlu diketahui</p>
 

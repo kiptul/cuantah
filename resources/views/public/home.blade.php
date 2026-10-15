@@ -9,9 +9,9 @@
 
         <div
             class="
-                relative mx-auto grid max-w-[1500px] items-center gap-8 px-4 py-8
+                relative mx-auto grid max-w-[1500px] grid-cols-[minmax(0,1fr)] items-center gap-8 px-4 py-8
                 sm:gap-10 sm:py-10
-                lg:min-h-[calc(100vh-88px)] lg:grid-cols-[.92fr_1.08fr] lg:gap-14 lg:px-8 lg:py-14
+                lg:min-h-[calc(100vh-88px)] lg:grid-cols-[minmax(0,.92fr)_minmax(0,1.08fr)] lg:gap-14 lg:px-8 lg:py-14
             "
         >
             <div class="max-w-3xl">
@@ -109,7 +109,7 @@
 
             <div
                 class="
-                    mx-auto grid w-full max-w-[860px] items-center gap-6
+                    mx-auto grid w-full max-w-[860px] grid-cols-[minmax(0,1fr)] items-center gap-6
                     md:grid-cols-[minmax(240px,1fr)_minmax(280px,330px)] md:gap-6
                 "
             >
@@ -166,9 +166,9 @@
                     </div>
 
                     <label for="calculator-liters" class="mt-4 block text-sm font-bold text-slate-600">Jumlah jelantah</label>
-                    <div
+                    <label
                         class="
-                            mt-2 flex min-w-0 items-center gap-2 rounded-2xl border border-emerald-200
+                            mt-2 flex min-w-0 cursor-text items-center gap-2 rounded-2xl border border-emerald-200
                             bg-emerald-50 px-3 py-2 focus-within:border-emerald-500
                             focus-within:ring-4 focus-within:ring-emerald-100
                         "
@@ -184,7 +184,7 @@
                             aria-label="Jumlah liter minyak jelantah"
                         >
                         <span class="rounded-xl bg-white px-3 py-2 text-base font-black text-emerald-800 shadow-sm">L</span>
-                    </div>
+                    </label>
 
                     <div
                         class="mt-3 grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 rounded-2xl bg-slate-50 p-3"

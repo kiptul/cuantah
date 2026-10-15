@@ -21,7 +21,7 @@
             'keping' => 'h-10 w-10 rounded-2xl bg-emerald-700 text-white shadow-lg shadow-emerald-900/20',
             'ikon' => 'h-6 w-6',
             'kata' => 'text-xl text-emerald-800',
-            'tagline' => 'hidden text-[10px] tracking-[0.24em] text-emerald-700/70 sm:block',
+            'tagline' => 'hidden text-[11px] tracking-[0.24em] text-emerald-700/70 sm:block',
             'teks' => 'Cuan dari minyak jelantah',
         ],
         // Panel admin memakai lambang yang sama dengan sisi aplikasi; yang
@@ -34,7 +34,7 @@
             'keping' => 'h-10 w-10 rounded-2xl bg-emerald-700 text-white shadow-lg shadow-emerald-900/20',
             'ikon' => 'h-6 w-6',
             'kata' => 'text-xl text-emerald-800',
-            'tagline' => 'block text-[10px] tracking-[0.16em] text-emerald-700/70',
+            'tagline' => 'block text-[11px] tracking-[0.16em] text-emerald-700/70',
             'teks' => 'Admin panel',
         ],
         'header' => [
@@ -42,7 +42,7 @@
             'keping' => 'h-11 w-11 rounded-2xl bg-emerald-700 text-white shadow-lg shadow-emerald-900/20 sm:h-12 sm:w-12',
             'ikon' => 'h-7 w-7 sm:h-8 sm:w-8',
             'kata' => 'text-xl text-emerald-800 sm:text-2xl',
-            'tagline' => 'hidden text-[10px] tracking-[0.24em] text-emerald-700/70 sm:block',
+            'tagline' => 'hidden text-[11px] tracking-[0.24em] text-emerald-700/70 sm:block',
             'teks' => 'Cuan dari minyak jelantah',
         ],
         // Kaki halaman berlatar gelap, jadi warnanya dibalik: keping putih
@@ -52,7 +52,7 @@
             'keping' => 'h-10 w-10 rounded-xl bg-white text-emerald-700 shadow-lg shadow-black/15 sm:h-11 sm:w-11 sm:rounded-2xl',
             'ikon' => 'h-6 w-6 sm:h-7 sm:w-7',
             'kata' => 'text-xl text-white sm:text-2xl',
-            'tagline' => 'block text-[10px] tracking-[0.2em] text-emerald-200',
+            'tagline' => 'block text-[11px] tracking-[0.2em] text-emerald-200',
             'teks' => 'Cuan dari minyak jelantah',
         ],
         // Halaman masuk dan daftar: lambangnya yang menyambut, jadi paling besar.

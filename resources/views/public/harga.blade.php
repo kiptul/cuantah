@@ -3,7 +3,7 @@
         <div class="absolute inset-y-0 right-0 hidden w-[42%] bg-gradient-to-br from-emerald-50 via-emerald-100 to-lime-100 lg:block"></div>
         <div class="absolute -right-24 top-24 hidden h-96 w-96 rounded-full bg-emerald-200/60 blur-3xl lg:block"></div>
 
-        <div class="relative mx-auto grid max-w-[1500px] items-center gap-10 px-4 py-12 lg:grid-cols-[.9fr_1.1fr] lg:gap-14 lg:px-8 lg:py-20">
+        <div class="relative mx-auto grid max-w-[1500px] grid-cols-[minmax(0,1fr)] items-center gap-10 px-4 py-12 lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)] lg:gap-14 lg:px-8 lg:py-20">
             <div>
                 <div class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-800 shadow-sm">
                     <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700 text-white">Rp</span>

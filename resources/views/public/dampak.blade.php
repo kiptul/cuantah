@@ -2,7 +2,7 @@
     <section class="relative overflow-hidden bg-white">
         <div class="absolute inset-y-0 right-0 hidden w-[40%] bg-gradient-to-br from-emerald-50 via-emerald-100 to-lime-100 lg:block"></div>
 
-        <div class="relative mx-auto grid max-w-[1500px] items-center gap-10 px-4 py-12 lg:grid-cols-[.95fr_1.05fr] lg:gap-16 lg:px-8 lg:py-20">
+        <div class="relative mx-auto grid max-w-[1500px] grid-cols-[minmax(0,1fr)] items-center gap-10 px-4 py-12 lg:grid-cols-[minmax(0,.95fr)_minmax(0,1.05fr)] lg:gap-16 lg:px-8 lg:py-20">
             <div>
                 <div class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-800 shadow-sm">
                     <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700 text-white">
@@ -70,7 +70,7 @@
 
     <section class="bg-[#f7faf5]">
         <div class="mx-auto max-w-[1500px] px-4 py-16 lg:px-8">
-            <div class="grid gap-10 lg:grid-cols-[.75fr_1.25fr] lg:items-center">
+            <div class="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,.75fr)_minmax(0,1.25fr)] lg:items-center">
                 <div>
                 <p class="text-sm font-black uppercase tracking-[0.18em] text-emerald-700">Dari dapur ke dampak</p>
                 <h2 class="mt-4 text-4xl font-black tracking-tight text-emerald-950">Alurnya sederhana, hasilnya lebih terukur.</h2>
